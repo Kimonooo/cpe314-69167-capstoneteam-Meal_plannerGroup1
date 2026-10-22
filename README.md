@@ -1,5 +1,6 @@
 # cpe314-69167-capstoneteam-Meal_plannerGroup1
-# Meal Planner – Program Flow
+
+Meal Planner – Program Flow
 
 ```text
 START APP
