@@ -6,15 +6,15 @@ Assigned Checker : Kirk Quisagan
 
 PROJECT DESIGN FILE
 
-Status : 
-Comments : 
-Checked By : 
+Status : DONE
+Comments : Has been followed up and printed with correct format and information
+Checked By : KIRK QUISAGAN
 
 PROJECT UI FILE
 
-Status : 
-Comments : 
-Checked By : 
+Status : DONE
+Comments : Double checked and was uploaded by Yvonne Tapan
+Checked By : KIRK QUISAGAN
 
 
 WEEK 08 CHECKLIST AND EVALUATION
