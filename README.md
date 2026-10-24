@@ -19,15 +19,15 @@ Checked By : KIRK QUISAGAN
 
 WEEK 08 CHECKLIST AND EVALUATION
 
-Status : 
-Comments : 
-Checked By : 
+Status : Uploaded and Done
+Comments : Rechecked the evaluation form. Printed and Completed
+Checked By : Venice Nadela
 
 
 
 PRINTED FILES 
 
-Status : 
-Comments : 
-Checked By : 
+Status : Done
+Comments : Three files printed. Softcopies are uploaded.
+Checked By : Venice Nadela
 
