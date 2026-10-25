@@ -13,9 +13,9 @@ API: TheMealDB
 | Name | Student Number | GitHub Username | Role |
 |---|---|---|---|
 | Luistro, Kimberly | <fill in> | luistrokimberly1-lchf | Team Leader |
-| Librea, Nesley Cate | <fill in> | <fill in> | UI |
+| Librea, Nesley Cate | <fill in> | libreanesleycate | UI |
 | Nadela, Venice | <fill in> | nadelavenice | QA |
-| Tapan, Yvonne Mae | <fill in> | <fill in> | UI |
-| Quisagan, Kirk Ryan | <fill in> | <fill in> | Developer |
+| Tapan, Yvonne Mae | <fill in> | yvonnetapan | UI |
+| Quisagan, Kirk Ryan | <fill in> | KIRKQUISAGAN | Developer |
 | Tamidles, Ken | <fill in> | Kimonooo | DB Admin |
 
