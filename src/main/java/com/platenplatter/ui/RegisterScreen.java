@@ -1,5 +1,9 @@
 package com.platenplatter.ui;
 
+import com.platenplatter.db.UserDao;
+import com.platenplatter.model.User;
+import com.platenplatter.util.PasswordHasher;
+import java.sql.SQLException;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -11,8 +15,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 
-/** The sign-up form. Day 1: layout + a button that checks the form. Day 2: save to the database. */
+/** The sign-up form. Day 2: a valid form is saved to the database with a salted password hash. */
 public class RegisterScreen {
+    private final UserDao userDao = new UserDao();
     private final TextField nameField = new TextField();
     private final TextField usernameField = new TextField();
     private final TextField ageField = new TextField();
@@ -52,7 +57,7 @@ public class RegisterScreen {
         return root;
     }
 
-    /** Checks the form. Day 2: after these checks pass, save the user with UserDao. */
+    /** Checks the form, then saves the new user. Shows a message for every possible problem. */
     private void handleCreateAccount() {
         String name = nameField.getText().trim();
         String username = usernameField.getText().trim();
@@ -63,21 +68,60 @@ public class RegisterScreen {
 
         if (name.isEmpty() || username.isEmpty() || ageText.isEmpty()
                 || gender == null || password.isEmpty()) {
-            messageLabel.setText("Please fill in every field.");
+            showError("Please fill in every field.");
             return;
         }
         int age;
         try {
             age = Integer.parseInt(ageText);
         } catch (NumberFormatException e) {
-            messageLabel.setText("Age must be a number.");
+            showError("Age must be a number.");
+            return;
+        }
+        if (age < 1 || age > 120) {
+            showError("Age must be between 1 and 120.");
+            return;
+        }
+        if (password.length() < 6) {
+            showError("Password must be at least 6 characters.");
             return;
         }
         if (!password.equals(confirm)) {
-            messageLabel.setText("Passwords do not match.");
+            showError("Passwords do not match.");
             return;
         }
-        messageLabel.setText("Form is valid for " + username + " (age " + age
-                + "). Saving to the database comes on Day 2.");
+
+        try {
+            if (userDao.findByUsername(username) != null) {
+                showError("That username is already taken. Please choose another.");
+                return;
+            }
+            String salt = PasswordHasher.generateSalt();
+            String hash = PasswordHasher.hash(password, salt); // the real password is never saved
+            userDao.insertUser(new User(0, name, username, age, gender, hash, salt));
+            showSuccess("Account created! Welcome, " + name + ".");
+            clearForm();
+        } catch (SQLException e) {
+            showError("Database problem: " + e.getMessage());
+        }
+    }
+
+    private void showError(String text) {
+        messageLabel.setStyle("-fx-text-fill: #B00020;");
+        messageLabel.setText(text);
+    }
+
+    private void showSuccess(String text) {
+        messageLabel.setStyle("-fx-text-fill: #1B5E20;");
+        messageLabel.setText(text);
+    }
+
+    private void clearForm() {
+        nameField.clear();
+        usernameField.clear();
+        ageField.clear();
+        genderBox.setValue(null);
+        passwordField.clear();
+        confirmField.clear();
     }
 }
