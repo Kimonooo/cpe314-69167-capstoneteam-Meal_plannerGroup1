@@ -54,3 +54,11 @@ CREATE TABLE IF NOT EXISTS meal_plan_entries (
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (recipe_id) REFERENCES recipes(id)
 );
+
+CREATE TABLE IF NOT EXISTS meal_history (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+plan_date TEXT NOT NULL,
+recipe_name TEXT NOT NULL,
+category TEXT NOT NULL,
+prep_minutes INTEGER NOT NULL CHECK (prep_minutes >= 0)
+);
