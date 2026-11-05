@@ -1,54 +1,40 @@
 package com.platenplatter.ui;
 
-import com.platenplatter.util.ImportRow;
-import com.platenplatter.util.Loader;
-import com.platenplatter.util.RowSink;
+import com.platenplatter.util.InMemoryPlanStore;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.stage.Stage;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 /**
- * Lets Yvonne test Import + Analytics together WITHOUT the database:
- * imported rows go into an in-memory list. Run on the LAPTOP:
+ * The Import and Analytics tabs together, on a throw-away memory store (nothing is saved).
+ * Run on Kimberly's laptop:
  *   mvn javafx:run -Dapp.mainClass=com.platenplatter.ui.ImportAnalyticsPreview
- * Try: import sample_data/meal_history_3000.csv, switch to Analytics, press Refresh.
+ * Try: import sample_data/meal_history_30000.csv, then open the Analytics tab.
  */
 public class ImportAnalyticsPreview extends Application {
     @Override
     public void start(Stage stage) {
-        List<ImportRow> store = Collections.synchronizedList(new ArrayList<>());
-        RowSink sink = store::add;
-        Loader<List<String>> categories = () -> {
-            List<String> out = new ArrayList<>();
-            synchronized (store) {
-                for (ImportRow r : store) {
-                    out.add(r.getCategory());
-                }
-            }
-            return out;
-        };
-        Loader<List<Integer>> minutes = () -> {
-            List<Integer> out = new ArrayList<>();
-            synchronized (store) {
-                for (ImportRow r : store) {
-                    out.add(r.getPrepMinutes());
-                }
-            }
-            return out;
-        };
+        InMemoryPlanStore store = new InMemoryPlanStore();
+        ImportScreen importScreen = new ImportScreen(store::addImported);
+        AnalyticsScreen analytics = new AnalyticsScreen(store::categories, store::prepMinutes);
+        importScreen.setOnImportFinished(analytics::refresh);
 
         TabPane tabs = new TabPane();
-        tabs.getTabs().add(new Tab("Import", new ImportScreen(sink).getView()));
-        tabs.getTabs().add(new Tab("Analytics", new AnalyticsScreen(categories, minutes).getView()));
-        tabs.getTabs().forEach(t -> t.setClosable(false));
+        tabs.getStyleClass().add("pnp-tabs");
+        Tab importTab = new Tab("Import", importScreen.getView());
+        Tab analyticsTab = new Tab("Analytics", analytics.getView());
+        analyticsTab.setOnSelectionChanged(e -> {
+            if (analyticsTab.isSelected()) {
+                analytics.refresh();
+            }
+        });
+        tabs.getTabs().addAll(importTab, analyticsTab);
+        tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        Theme.apply(tabs);
         stage.setTitle("Import + Analytics preview");
-        stage.setScene(new Scene(tabs, 800, 600));
+        stage.setScene(new Scene(tabs, 960, 780));
         stage.show();
     }
 
