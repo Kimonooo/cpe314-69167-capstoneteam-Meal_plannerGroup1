@@ -18,7 +18,7 @@ public class ImportAnalyticsPreview extends Application {
     public void start(Stage stage) {
         InMemoryPlanStore store = new InMemoryPlanStore();
         ImportScreen importScreen = new ImportScreen(store::addImported);
-        AnalyticsScreen analytics = new AnalyticsScreen(store::categories, store::prepMinutes);
+        AnalyticsScreen analytics = new AnalyticsScreen(store);
         importScreen.setOnImportFinished(analytics::refresh);
 
         TabPane tabs = new TabPane();
