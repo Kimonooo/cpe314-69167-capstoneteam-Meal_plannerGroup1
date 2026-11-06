@@ -1,6 +1,11 @@
 package com.platenplatter.util;
 
+import com.platenplatter.model.PrepTier;
+
 import java.time.LocalDate;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -9,9 +14,79 @@ import java.util.TreeSet;
  * Rule: the streak counts back from today. If nothing is planned today YET but yesterday had a meal,
  * the streak is still alive ("at risk"): plan something today to keep it. If neither today nor
  * yesterday has a meal, the streak is 0.
+ *
+ * The streak BADGE also sorts the meals of the current streak by prep time (Quick, Average, Slow),
+ * and names the badge after the tier the user cooks most: Quick Cook, Home Cook or Slow-Food Chef.
  */
 public final class StreakCalculator {
     private StreakCalculator() { }
+
+    /**
+     * The first and last day of the current streak, or null when there is no streak.
+     * The last day is today, or yesterday when the streak is "at risk".
+     */
+    public static LocalDate[] currentRange(Set<LocalDate> days, LocalDate today) {
+        int current = current(days, today);
+        if (current == 0) {
+            return null;
+        }
+        LocalDate end = days.contains(today) ? today : today.minusDays(1);
+        return new LocalDate[] {end.minusDays(current - 1L), end};
+    }
+
+    /** How many meals are Quick, Average and Slow. Every tier is listed, even with 0. */
+    public static EnumMap<PrepTier, Integer> tierCounts(List<PlannedMeal> meals) {
+        EnumMap<PrepTier, Integer> counts = new EnumMap<>(PrepTier.class);
+        for (PrepTier tier : PrepTier.values()) {
+            counts.put(tier, 0);
+        }
+        if (meals != null) {
+            for (PlannedMeal meal : meals) {
+                counts.merge(meal.getPrepTier(), 1, Integer::sum);
+            }
+        }
+        return counts;
+    }
+
+    /** The tier with the most meals (a tie goes to the quicker tier), or null when there are none. */
+    public static PrepTier mainTier(Map<PrepTier, Integer> counts) {
+        PrepTier best = null;
+        int bestCount = 0;
+        for (PrepTier tier : PrepTier.values()) { // Quick, Average, Slow
+            int n = counts == null ? 0 : counts.getOrDefault(tier, 0);
+            if (n > bestCount) {
+                best = tier;
+                bestCount = n;
+            }
+        }
+        return best;
+    }
+
+    /** The badge name: Quick Cook, Home Cook or Slow-Food Chef, or "No badge yet". */
+    public static String badgeTitle(Map<PrepTier, Integer> counts) {
+        PrepTier main = mainTier(counts);
+        if (main == null) {
+            return "No badge yet";
+        }
+        switch (main) {
+            case QUICK: return "Quick Cook";
+            case AVERAGE: return "Home Cook";
+            default: return "Slow-Food Chef";
+        }
+    }
+
+    /** For example "3 quick · 2 average · 1 slow". */
+    public static String tierLine(Map<PrepTier, Integer> counts) {
+        StringBuilder line = new StringBuilder();
+        for (PrepTier tier : PrepTier.values()) {
+            if (line.length() > 0) {
+                line.append(" · ");
+            }
+            int n = counts == null ? 0 : counts.getOrDefault(tier, 0);
+            line.append(n).append(' ').append(tier.getLabel().toLowerCase());
+        }
+        return line.toString();
+    }
 
     /** The current streak in days. */
     public static int current(Set<LocalDate> days, LocalDate today) {
