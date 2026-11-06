@@ -187,3 +187,84 @@
 .pnp-check:selected > .box > .mark { -fx-background-color: white; }
 .pnp-check-done .text { -fx-strikethrough: true; -fx-fill: #A89B8C; }
 .pnp-warning { -fx-background-color: #FFF1B8; -fx-background-radius: 10; -fx-padding: 10 14 10 14; }
+
+/* ================= Accounts, meal slots, healthy levels and prep tiers ================= */
+/* Healthy level colors are the same everywhere: Healthy #3A9D5D green, Moderate #F2B705 yellow,
+   Indulgent #C0392B red. Prep tiers are shades of maroon (darker = slower). */
+
+/* ---------- log in / sign up / account ---------- */
+.pnp-link { -fx-background-color: transparent; -fx-text-fill: #5C0008; -fx-font-weight: bold; -fx-underline: true; -fx-padding: 0; -fx-cursor: hand; }
+.pnp-link:hover { -fx-text-fill: #8B1A26; }
+.pnp-link:disabled { -fx-opacity: 0.45; }
+.pnp-header-button { -fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-color: #F3D9A0; -fx-border-radius: 16; -fx-background-radius: 16; -fx-padding: 5 14 5 14; -fx-cursor: hand; }
+.pnp-header-button:hover { -fx-background-color: #7A0A14; }
+
+/* ---------- streak badge ---------- */
+.pnp-streak-tiers { -fx-text-fill: #3E0005; -fx-font-size: 10px; }
+.pnp-badge, .pnp-root .pnp-badge { -fx-text-fill: #5C0008; -fx-font-weight: bold; -fx-font-size: 12px; }
+
+/* ---------- chips ---------- */
+.pnp-root .chip-healthy { -fx-background-color: #D3EFD9; -fx-text-fill: #1B6B2F; }
+.pnp-root .chip-moderate { -fx-background-color: #FFF1B8; -fx-text-fill: #6B4E00; }
+.pnp-root .chip-indulgent { -fx-background-color: #F8D3D0; -fx-text-fill: #8A1C1C; }
+.pnp-root .chip-slot { -fx-background-color: #EFE9D4; -fx-text-fill: #5C0008; }
+.pnp-root .chip-quick { -fx-background-color: #F6E3E5; -fx-text-fill: #5C0008; }
+.pnp-root .chip-average { -fx-background-color: #E7B9BE; -fx-text-fill: #5C0008; }
+.pnp-root .chip-slow { -fx-background-color: #A8323E; -fx-text-fill: white; }
+
+/* ---------- Today tab: meals grouped by slot ---------- */
+.pnp-slot-heading, .pnp-root .pnp-slot-heading { -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #7A6A62; }
+.pnp-slot-section { -fx-padding: 0 0 8 0; -fx-border-color: transparent transparent #F1EAD2 transparent; -fx-border-width: 0 0 1 0; }
+.pnp-small-add { -fx-background-color: #FFF1B8; -fx-text-fill: #6B4E00; -fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 2 10 2 10; -fx-cursor: hand; }
+.pnp-small-add:hover { -fx-background-color: #FFE27A; }
+
+/* ---------- calendar: a day is colored by its meals' healthy level ---------- */
+.pnp-day.day-healthy { -fx-background-color: #BFE5C8; -fx-text-fill: #14501F; }
+.pnp-day.day-healthy:hover { -fx-background-color: #A6DBB2; }
+.pnp-day.day-moderate { -fx-background-color: #FFE27A; -fx-text-fill: #4A3600; }
+.pnp-day.day-moderate:hover { -fx-background-color: #FFD43B; }
+.pnp-day.day-indulgent { -fx-background-color: #F4B4AE; -fx-text-fill: #6E1010; }
+.pnp-day.day-indulgent:hover { -fx-background-color: #EE9A92; }
+/* the picked day always stays dark, whatever its color (this rule must come after the three above) */
+.pnp-day.day-selected, .pnp-day.day-selected:hover { -fx-background-color: #5C0008; -fx-text-fill: white; -fx-font-weight: bold; }
+.pnp-legend-swatch { -fx-background-radius: 4; -fx-min-width: 14; -fx-min-height: 14; }
+.legend-healthy { -fx-background-color: #BFE5C8; }
+.legend-moderate { -fx-background-color: #FFE27A; }
+.legend-indulgent { -fx-background-color: #F4B4AE; }
+
+/* ---------- Analytics: grouped bar chart colors (bars AND legend) ---------- */
+.group-healthy_level .default-color0.chart-bar, .group-healthy_level .default-color0.chart-bar:hover { -fx-bar-fill: #3A9D5D; }
+.group-healthy_level .default-color1.chart-bar { -fx-bar-fill: #F2B705; }
+.group-healthy_level .default-color2.chart-bar { -fx-bar-fill: #C0392B; }
+.group-healthy_level .chart-legend-item-symbol.default-color0 { -fx-background-color: #3A9D5D; }
+.group-healthy_level .chart-legend-item-symbol.default-color1 { -fx-background-color: #F2B705; }
+.group-healthy_level .chart-legend-item-symbol.default-color2 { -fx-background-color: #C0392B; }
+
+.group-prep_time .default-color0.chart-bar, .group-prep_time .default-color0.chart-bar:hover { -fx-bar-fill: #DE8F99; }
+.group-prep_time .default-color1.chart-bar { -fx-bar-fill: #A8323E; }
+.group-prep_time .default-color2.chart-bar { -fx-bar-fill: #5C0008; }
+.group-prep_time .chart-legend-item-symbol.default-color0 { -fx-background-color: #DE8F99; }
+.group-prep_time .chart-legend-item-symbol.default-color1 { -fx-background-color: #A8323E; }
+.group-prep_time .chart-legend-item-symbol.default-color2 { -fx-background-color: #5C0008; }
+
+.group-meal_slot .default-color0.chart-bar, .group-meal_slot .default-color0.chart-bar:hover { -fx-bar-fill: #F2B705; }
+.group-meal_slot .default-color1.chart-bar { -fx-bar-fill: #E07B39; }
+.group-meal_slot .default-color2.chart-bar { -fx-bar-fill: #5C0008; }
+.group-meal_slot .default-color3.chart-bar { -fx-bar-fill: #8A1C52; }
+.group-meal_slot .chart-legend-item-symbol.default-color0 { -fx-background-color: #F2B705; }
+.group-meal_slot .chart-legend-item-symbol.default-color1 { -fx-background-color: #E07B39; }
+.group-meal_slot .chart-legend-item-symbol.default-color2 { -fx-background-color: #5C0008; }
+.group-meal_slot .chart-legend-item-symbol.default-color3 { -fx-background-color: #8A1C52; }
+.pnp-chart .chart-bar:hover { -fx-opacity: 0.85; }
+
+/* ---------- Analytics: breakdown mini bars, same colors as the chart ---------- */
+.pnp-mini-bar.bar-healthy > .bar { -fx-background-color: #3A9D5D; }
+.pnp-mini-bar.bar-moderate > .bar { -fx-background-color: #F2B705; }
+.pnp-mini-bar.bar-indulgent > .bar { -fx-background-color: #C0392B; }
+.pnp-mini-bar.bar-quick > .bar { -fx-background-color: #DE8F99; }
+.pnp-mini-bar.bar-average > .bar { -fx-background-color: #A8323E; }
+.pnp-mini-bar.bar-slow > .bar { -fx-background-color: #5C0008; }
+.pnp-mini-bar.bar-breakfast > .bar { -fx-background-color: #F2B705; }
+.pnp-mini-bar.bar-lunch > .bar { -fx-background-color: #E07B39; }
+.pnp-mini-bar.bar-dinner > .bar { -fx-background-color: #5C0008; }
+.pnp-mini-bar.bar-snack > .bar { -fx-background-color: #8A1C52; }

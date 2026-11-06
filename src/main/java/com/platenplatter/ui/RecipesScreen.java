@@ -2,8 +2,12 @@ package com.platenplatter.ui;
 
 import com.platenplatter.api.MealData;
 import com.platenplatter.api.MealDbClient;
+import com.platenplatter.model.HealthyLevel;
+import com.platenplatter.model.MealSlot;
+import com.platenplatter.model.PrepTier;
 import com.platenplatter.util.CategoryMapper;
 import com.platenplatter.util.DateTimeText;
+import com.platenplatter.util.HealthClassifier;
 import com.platenplatter.util.ImportRow;
 import com.platenplatter.util.PlanStore;
 import com.platenplatter.util.PlannedMeal;
@@ -12,8 +16,10 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -41,11 +47,14 @@ import java.util.List;
  *  - the website is NEVER called on the UI thread (a background Task does it);
  *  - saving a meal (with its ingredient list, for the shopping list) also runs in a background Task, so the window never freezes.
  * Controls that work: search box (Enter), Search button, quick-search buttons, results list,
- * date picker, prep-time spinner and the Add to plan button.
+ * date picker, meal slot (Breakfast / Lunch / Dinner / Snack), prep-time spinner, calories,
+ * healthy level (Auto works it out from the calories) and the Add to plan button.
  */
 public class RecipesScreen {
     private static final String[] QUICK_SEARCHES = {"chicken", "beef", "cake", "soup", "pasta"};
     private static final int MAX_PLANNED_SHOWN = 6;
+    private static final int MAX_CALORIES = 5000;
+    private static final String AUTO = "Auto";
 
     private final MealDbClient client;
     private final PlanStore store;
@@ -70,8 +79,15 @@ public class RecipesScreen {
     private final Label instructions = new Label();
 
     private final DatePicker datePicker = new DatePicker(LocalDate.now());
+    private final ComboBox<MealSlot> slotBox = new ComboBox<>();
     private final Spinner<Integer> prepSpinner = new Spinner<>();
+    private final TextField caloriesField = new TextField();
+    private final ComboBox<String> healthBox = new ComboBox<>();
+    private final Label autoHint = new Label();
     private final Button addButton = new Button("Add to my plan");
+    /** True once the user (or the Today tab) chose a slot, so picking a recipe no longer changes it. */
+    private boolean slotPickedByUser = false;
+    private boolean settingSlot = false;
     private final VBox plannedBox = new VBox(6);
     private final VBox plannedList = new VBox(6);
     private final Label plannedHeader = new Label();
@@ -97,6 +113,18 @@ public class RecipesScreen {
     /** Jumps the date picker to a day (used by the Meal Plan tab's "Add a meal" button). */
     public void setDate(LocalDate date) {
         datePicker.setValue(date);
+    }
+
+    /** Picks the meal slot (used by the Today tab's "Add" buttons). It stays until a meal is added. */
+    public void setSlot(MealSlot slot) {
+        if (slot == null) {
+            return;
+        }
+        settingSlot = true;
+        slotBox.setValue(slot);
+        settingSlot = false;
+        slotPickedByUser = true;
+        updateAutoHint();
     }
 
     /** Re-reads the "Planned for ..." list. */
@@ -219,29 +247,50 @@ public class RecipesScreen {
 
         datePicker.setId("datePicker");
         datePicker.setEditable(false);
+        slotBox.setId("slotBox");
+        slotBox.getItems().addAll(MealSlot.values());
+        slotBox.setValue(MealSlot.DINNER);
+        slotBox.setPrefWidth(120);
         prepSpinner.setId("prepSpinner");
         prepSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(5, 480, 30, 5));
         prepSpinner.setPrefWidth(95);
+        caloriesField.setId("caloriesField");
+        caloriesField.setPromptText("e.g. 520");
+        caloriesField.setPrefWidth(95);
+        healthBox.setId("healthBox");
+        healthBox.getItems().addAll(AUTO, HealthyLevel.HEALTHY.getLabel(), HealthyLevel.MODERATE.getLabel(),
+                HealthyLevel.INDULGENT.getLabel());
+        healthBox.setValue(AUTO);
+        healthBox.setPrefWidth(125);
+        autoHint.setId("autoHint");
+        autoHint.getStyleClass().add("pnp-muted");
+        autoHint.setWrapText(true);
         addButton.setId("addButton");
         addButton.getStyleClass().add("pnp-button");
         addButton.disableProperty().bind(resultsList.getSelectionModel().selectedItemProperty().isNull().or(adding));
 
-        Label dateLabel = new Label("Date");
-        dateLabel.getStyleClass().add("pnp-muted");
-        Label prepLabel = new Label("Prep time (min)");
-        prepLabel.getStyleClass().add("pnp-muted");
+        HBox firstRow = new HBox(10, labeled("Date", datePicker), labeled("Meal", slotBox),
+                labeled("Prep time (min)", prepSpinner));
+        firstRow.setAlignment(Pos.BOTTOM_LEFT);
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
-        HBox controls = new HBox(10, new VBox(3, dateLabel, datePicker), new VBox(3, prepLabel, prepSpinner), spacer, addButton);
-        controls.setAlignment(Pos.BOTTOM_LEFT);
+        HBox secondRow = new HBox(10, labeled("Calories (kcal)", caloriesField), labeled("Healthy level", healthBox),
+                spacer, addButton);
+        secondRow.setAlignment(Pos.BOTTOM_LEFT);
 
         plannedHeader.getStyleClass().add("pnp-muted");
         plannedHeader.setStyle("-fx-font-weight: bold;");
         plannedBox.getChildren().addAll(plannedHeader, plannedList);
 
-        VBox card = new VBox(10, title, controls, plannedBox);
+        VBox card = new VBox(10, title, firstRow, secondRow, autoHint, plannedBox);
         card.getStyleClass().add("pnp-card");
         return card;
+    }
+
+    private static VBox labeled(String text, Node control) {
+        Label label = new Label(text);
+        label.getStyleClass().add("pnp-muted");
+        return new VBox(3, label, control);
     }
 
     private void wireEvents() {
@@ -251,6 +300,60 @@ public class RecipesScreen {
         resultsList.getSelectionModel().selectedItemProperty()
                 .addListener((obs, oldMeal, newMeal) -> showDetails(newMeal));
         datePicker.valueProperty().addListener((obs, oldDate, newDate) -> refreshPlanned());
+        slotBox.valueProperty().addListener((obs, oldSlot, newSlot) -> {
+            if (!settingSlot) {
+                slotPickedByUser = true;
+            }
+            updateAutoHint();
+        });
+        prepSpinner.valueProperty().addListener((obs, oldValue, newValue) -> updateAutoHint());
+        caloriesField.textProperty().addListener((obs, oldText, newText) -> updateAutoHint());
+        healthBox.valueProperty().addListener((obs, oldValue, newValue) -> updateAutoHint());
+    }
+
+    // ------------------------------------------------------------------ calories and healthy level
+
+    /** The calories typed in: 0 when empty (not known), -1 when it is not a whole number from 0 to 5000. */
+    private int typedCalories() {
+        String text = caloriesField.getText() == null ? "" : caloriesField.getText().trim();
+        if (text.isEmpty()) {
+            return 0;
+        }
+        try {
+            int calories = Integer.parseInt(text);
+            return calories < 0 || calories > MAX_CALORIES ? -1 : calories;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    /** The level the user picked, or (for Auto) the one HealthClassifier works out. */
+    private HealthyLevel chosenLevel(MealData meal, MealSlot slot, int calories) {
+        String picked = healthBox.getValue();
+        if (picked != null && !AUTO.equals(picked)) {
+            return HealthyLevel.fromText(picked);
+        }
+        return HealthClassifier.classify(calories, slot, meal == null ? null : meal.getCategory());
+    }
+
+    /** Shows, under the boxes, which level and prep tier the meal will get, and why. */
+    private void updateAutoHint() {
+        int calories = typedCalories();
+        if (calories < 0) {
+            autoHint.setText("Calories must be a whole number from 0 to " + MAX_CALORIES + " (or leave it empty).");
+            return;
+        }
+        MealData meal = resultsList.getSelectionModel().getSelectedItem();
+        MealSlot slot = slotBox.getValue() == null ? MealSlot.DINNER : slotBox.getValue();
+        String category = meal == null ? null : meal.getCategory();
+        HealthyLevel auto = HealthClassifier.classify(calories, slot, category);
+        String picked = healthBox.getValue();
+        String level = picked == null || AUTO.equals(picked)
+                ? "Auto: " + auto.getLabel() + " (" + HealthClassifier.explain(calories, slot, category) + ")"
+                : "You picked " + picked + " (Auto would say " + auto.getLabel() + ")";
+        Integer prep = prepSpinner.getValue();
+        PrepTier tier = PrepTier.of(prep == null ? 0 : prep);
+        autoHint.setText(level + ".  Prep tier: " + tier.getLabel() + " (" + tier.getRange() + ").");
     }
 
     // ------------------------------------------------------------------ actions
@@ -302,8 +405,20 @@ public class RecipesScreen {
             Theme.status(statusLabel, "Pick a date and a prep time first.", Theme.Kind.ERROR);
             return;
         }
+        MealSlot slot = slotBox.getValue();
+        if (slot == null) {
+            Theme.status(statusLabel, "Pick Breakfast, Lunch, Dinner or Snack first.", Theme.Kind.ERROR);
+            return;
+        }
+        int calories = typedCalories();
+        if (calories < 0) {
+            Theme.status(statusLabel, "Calories must be a whole number from 0 to " + MAX_CALORIES
+                    + ". Leave it empty if you do not know.", Theme.Kind.ERROR);
+            return;
+        }
+        HealthyLevel level = chosenLevel(meal, slot, calories);
         ImportRow row = new ImportRow(date.toString(), meal.getName(),
-                CategoryMapper.toPlanCategory(meal.getCategory()), prep);
+                CategoryMapper.toPlanCategory(meal.getCategory()), prep, slot, calories, level);
         adding.set(true);
 
         Task<Void> task = new Task<>() {
@@ -314,9 +429,14 @@ public class RecipesScreen {
             }
         };
         task.setOnSucceeded(e -> {
-            Theme.status(statusLabel, "Added \"" + meal.getName() + "\" to your plan on "
-                    + DateTimeText.shortDate(date) + ".", Theme.Kind.OK);
+            Theme.status(statusLabel, "Added \"" + meal.getName() + "\" to " + slot.getLabel() + " on "
+                    + DateTimeText.shortDate(date) + " (" + level.getLabel() + ", "
+                    + row.getPrepTier().getLabel() + " prep).", Theme.Kind.OK);
             adding.set(false);
+            // ready for the next recipe: its own calories, its own default slot
+            caloriesField.clear();
+            healthBox.setValue(AUTO);
+            slotPickedByUser = false;
             refreshPlanned();
             onPlanChanged.run();
         });
@@ -361,8 +481,15 @@ public class RecipesScreen {
         detailContent.setVisible(has);
         detailContent.setManaged(has);
         if (!has) {
+            updateAutoHint();
             return;
         }
+        if (!slotPickedByUser) { // a breakfast recipe goes to Breakfast, a dessert to Snack, the rest to Dinner
+            settingSlot = true;
+            slotBox.setValue(MealSlot.defaultFor(CategoryMapper.toPlanCategory(meal.getCategory())));
+            settingSlot = false;
+        }
+        updateAutoHint();
         detailName.setText(meal.getName());
         detailChips.getChildren().clear();
         String plan = CategoryMapper.toPlanCategory(meal.getCategory());
