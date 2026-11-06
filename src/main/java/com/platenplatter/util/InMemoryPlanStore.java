@@ -2,6 +2,7 @@ package com.platenplatter.util;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -10,6 +11,12 @@ import java.util.Set;
 
 /** A PlanStore that keeps everything in memory. Used for previews, tests and screenshots. */
 public class InMemoryPlanStore implements PlanStore {
+    /** Same order as the database: by date, then Breakfast, Lunch, Dinner, Snack, then oldest first. */
+    private static final Comparator<PlannedMeal> PLAN_ORDER = Comparator
+            .comparing(PlannedMeal::getDate)
+            .thenComparing(PlannedMeal::getMealSlot)
+            .thenComparingLong(PlannedMeal::getId);
+
     private final List<PlannedMeal> meals = new ArrayList<>();
     private final Map<String, List<String>> ingredients = new LinkedHashMap<>();
     private long nextId = 1;
@@ -24,7 +31,8 @@ public class InMemoryPlanStore implements PlanStore {
 
     @Override
     public synchronized void addImported(ImportRow row) {
-        meals.add(new PlannedMeal(nextId++, row.getDate(), row.getRecipeName(), row.getCategory(), row.getPrepMinutes()));
+        meals.add(new PlannedMeal(nextId++, row.getDate(), row.getRecipeName(), row.getCategory(),
+                row.getPrepMinutes(), row.getMealSlot(), row.getCalories(), row.getHealthyLevel()));
     }
 
     @Override
@@ -41,7 +49,14 @@ public class InMemoryPlanStore implements PlanStore {
                 out.add(m);
             }
         }
-        out.sort((a, b) -> a.getDate().equals(b.getDate()) ? Long.compare(a.getId(), b.getId()) : a.getDate().compareTo(b.getDate()));
+        out.sort(PLAN_ORDER);
+        return out;
+    }
+
+    @Override
+    public synchronized List<PlannedMeal> allMeals() {
+        List<PlannedMeal> out = new ArrayList<>(meals);
+        out.sort(PLAN_ORDER);
         return out;
     }
 
