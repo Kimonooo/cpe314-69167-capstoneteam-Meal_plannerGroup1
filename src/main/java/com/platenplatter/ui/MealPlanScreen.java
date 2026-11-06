@@ -1,5 +1,7 @@
 package com.platenplatter.ui;
 
+import com.platenplatter.model.HealthyLevel;
+import com.platenplatter.service.StatisticsService;
 import com.platenplatter.util.CalendarMath;
 import com.platenplatter.util.DateTimeText;
 import com.platenplatter.util.PlanStore;
@@ -21,16 +23,18 @@ import javafx.scene.layout.VBox;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.TextStyle;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
- * The "Meal Plan" tab: a month calendar in the same cream and gold style as our first version.
- * Gold days have meals planned, the maroon outline is today, and the dark day is the one you picked.
+ * The "Meal Plan" tab: a month calendar in the same cream style as our first version.
+ * A day with meals is colored by how healthy its meals are: green = mostly Healthy, yellow = mostly
+ * Moderate, red = mostly Indulgent (a tie shows the less healthy color). The maroon outline is
+ * today, and the dark day is the one you picked.
  * Click a day to see its meals on the right, remove a meal, or jump to the Recipes tab to add one.
  * Controls that work: previous / next month, Today, every day button, Remove, Add a meal.
  * All database reads and deletes run in background Tasks.
@@ -43,7 +47,8 @@ public class MealPlanScreen {
 
     private YearMonth month;
     private LocalDate selected;
-    private Set<LocalDate> plannedDates = new HashSet<>();
+    /** The color of each day of the shown month that has meals. */
+    private Map<LocalDate, HealthyLevel> dayLevels = new HashMap<>();
 
     private final VBox root = new VBox(14);
     private final Label monthTitle = new Label();
@@ -79,16 +84,20 @@ public class MealPlanScreen {
         this.onPlanChanged = onPlanChanged == null ? () -> { } : onPlanChanged;
     }
 
-    /** Re-reads which days have meals and the meals of the picked day. */
+    /** Re-reads the shown month's meals (to color the days) and the meals of the picked day. */
     public void refresh() {
-        Task<Set<LocalDate>> task = new Task<>() {
+        YearMonth shown = month;
+        Task<Map<LocalDate, HealthyLevel>> task = new Task<>() {
             @Override
-            protected Set<LocalDate> call() throws Exception {
-                return store.plannedDates();
+            protected Map<LocalDate, HealthyLevel> call() throws Exception {
+                return StatisticsService.levelByDay(store.mealsBetween(shown.atDay(1), shown.atEndOfMonth()));
             }
         };
         task.setOnSucceeded(e -> {
-            plannedDates = task.getValue();
+            if (!shown.equals(month)) {
+                return; // the user already moved to another month; that month's own refresh will draw it
+            }
+            dayLevels = task.getValue();
             drawMonth();
             loadDay();
         });
@@ -101,7 +110,7 @@ public class MealPlanScreen {
     private VBox buildHeader() {
         Label title = new Label("Meal Plan");
         title.getStyleClass().add("pnp-title");
-        Label subtitle = new Label("Pick a day to see what is planned. Gold days have meals.");
+        Label subtitle = new Label("Pick a day to see what is planned. Days are colored by how healthy their meals are.");
         subtitle.getStyleClass().add("pnp-subtitle");
         return new VBox(2, title, subtitle);
     }
@@ -152,15 +161,19 @@ public class MealPlanScreen {
             grid.getColumnConstraints().add(cc);
         }
 
-        Region gold = new Region();
-        gold.getStyleClass().add("pnp-legend-gold");
-        Label goldText = new Label("meals planned");
-        goldText.getStyleClass().add("pnp-muted");
+        HBox legend = new HBox(8);
+        for (HealthyLevel level : HealthyLevel.values()) {
+            Region swatch = new Region();
+            swatch.getStyleClass().addAll("pnp-legend-swatch", "legend-" + level.name().toLowerCase());
+            Label text = new Label(level.getLabel());
+            text.getStyleClass().add("pnp-muted");
+            legend.getChildren().addAll(swatch, text);
+        }
         Region ring = new Region();
         ring.getStyleClass().add("pnp-legend-ring");
         Label ringText = new Label("today");
         ringText.getStyleClass().add("pnp-muted");
-        HBox legend = new HBox(8, gold, goldText, ring, ringText);
+        legend.getChildren().addAll(ring, ringText);
         legend.setAlignment(Pos.CENTER_LEFT);
 
         VBox card = new VBox(12, nav, grid, legend);
@@ -189,7 +202,9 @@ public class MealPlanScreen {
 
     private void goToMonth(YearMonth target) {
         month = target;
+        dayLevels = new HashMap<>(); // draw the new month at once, then color it when its meals are read
         drawMonth();
+        refresh();
     }
 
     private void drawMonth() {
@@ -211,8 +226,9 @@ public class MealPlanScreen {
             b.setId("day-" + date);
             b.setMaxWidth(Double.MAX_VALUE);
             b.setPrefHeight(42);
-            if (plannedDates.contains(date)) {
-                b.getStyleClass().add("day-has-meals");
+            HealthyLevel level = dayLevels.get(date);
+            if (level != null) {
+                b.getStyleClass().addAll("day-has-meals", "day-" + level.name().toLowerCase());
             }
             if (date.equals(today)) {
                 b.getStyleClass().add("day-today");

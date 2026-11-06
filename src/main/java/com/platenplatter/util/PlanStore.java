@@ -22,6 +22,9 @@ public interface PlanStore {
     /** All meals from one date to another, both days included. */
     List<PlannedMeal> mealsBetween(LocalDate from, LocalDate to) throws Exception;
 
+    /** Every planned meal, oldest first (used by the "All time" view of the Analytics tab). */
+    List<PlannedMeal> allMeals() throws Exception;
+
     /** Every day that has at least one planned meal (used for the calendar and the streak). */
     Set<LocalDate> plannedDates() throws Exception;
 

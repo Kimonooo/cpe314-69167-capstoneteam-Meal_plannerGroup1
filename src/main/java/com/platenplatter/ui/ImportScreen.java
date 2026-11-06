@@ -8,6 +8,7 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -30,6 +31,8 @@ public class ImportScreen {
     private Runnable onImportFinished = () -> { };
 
     private final VBox root = new VBox(14);
+    /** The page scrolls when the window is shorter than it, so nothing at the bottom is cut off. */
+    private final ScrollPane scroller = new ScrollPane(root);
     private final VBox dropZone = new VBox(10);
     private final Button chooseButton = new Button("Choose CSV...");
     private final Label fileLabel = new Label("No file chosen yet");
@@ -53,6 +56,9 @@ public class ImportScreen {
         root.setPadding(new Insets(22));
         root.getChildren().addAll(buildHeader(), buildPickCard(), buildImportCard(), resultsRow, buildFormatCard());
         Theme.apply(root);
+        scroller.setFitToWidth(true);
+        scroller.getStyleClass().add("pnp-scroll");
+        Theme.apply(scroller);
         Theme.status(statusLabel, "Choose a CSV file to begin.", Theme.Kind.INFO);
         resultsRow.setVisible(false);
         resultsRow.setManaged(false);
@@ -60,7 +66,7 @@ public class ImportScreen {
     }
 
     public Parent getView() {
-        return root;
+        return scroller;
     }
 
     /** Called when an import ends (finished, failed or cancelled), so other tabs can refresh. */
@@ -150,9 +156,16 @@ public class ImportScreen {
     private VBox buildFormatCard() {
         Label title = new Label("What the CSV must look like");
         title.getStyleClass().add("pnp-section");
-        Label example = new Label("date,recipe_name,category,prep_minutes\n2026-11-03,Chicken Adobo,MainCourse,45\n2026-11-04,Leche Flan,Dessert,50");
+        Label example = new Label("date,recipe_name,category,prep_minutes,meal_slot,calories,healthy_level\n"
+                + "2026-11-03,Chicken Adobo,MainCourse,45,Dinner,620,Healthy\n"
+                + "2026-11-04,Leche Flan,Dessert,50,Snack,350,Indulgent\n"
+                + "2026-11-05,Tapsilog,Breakfast,20");
         example.getStyleClass().add("pnp-mono");
-        Label note = new Label("Rows with a wrong date, a missing name or a bad number are skipped and counted. They never stop the import.");
+        Label note = new Label("The last three columns are optional, so old 4-column files still work. "
+                + "Without them a meal gets the slot of its type (Breakfast, Snack for desserts, otherwise Dinner) "
+                + "and its healthy level is worked out from the calories. The meals are added to YOUR plan. "
+                + "Rows with a wrong date, a missing name, a bad number or an unknown slot or level are skipped "
+                + "and counted. They never stop the import.");
         note.getStyleClass().add("pnp-muted");
         note.setWrapText(true);
         VBox card = new VBox(8, title, example, note);
@@ -192,6 +205,13 @@ public class ImportScreen {
             e.setDropCompleted(ok);
             e.consume();
         });
+    }
+
+    /** Stops an import that is still running (used when the user logs out). Safe to call any time. */
+    public void cancelImport() {
+        if (currentTask != null) {
+            currentTask.cancel();
+        }
     }
 
     /** Picks a file in code (used by tests and previews), exactly as if the user had chosen it. */

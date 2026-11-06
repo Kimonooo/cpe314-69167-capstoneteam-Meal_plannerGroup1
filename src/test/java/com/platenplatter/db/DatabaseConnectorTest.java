@@ -31,6 +31,16 @@ class DatabaseConnectorTest {
     }
 
     @Test
+    void switchesForeignKeysOn() throws SQLException {
+        try (Connection c = DatabaseConnector.open("jdbc:sqlite::memory:");
+             PreparedStatement ps = c.prepareStatement("PRAGMA foreign_keys");
+             ResultSet rs = ps.executeQuery()) {
+            assertTrue(rs.next());
+            assertEquals(1, rs.getInt(1));
+        }
+    }
+
+    @Test
     void theConnectionWorksWithTheMealHistoryDao() throws SQLException {
         try (Connection c = DatabaseConnector.open("jdbc:sqlite::memory:")) {
             MealPlanHistoryDao dao = new MealPlanHistoryDao(c);

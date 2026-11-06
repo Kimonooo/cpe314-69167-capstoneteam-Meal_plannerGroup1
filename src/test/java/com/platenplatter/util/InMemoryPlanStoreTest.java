@@ -52,6 +52,19 @@ class InMemoryPlanStoreTest {
     }
 
     @Test
+    void allMealsComeBackByDateThenSlot() {
+        InMemoryPlanStore s = new InMemoryPlanStore();
+        s.addImported(row("2026-11-04", "Leche Flan", "Dessert", 50));   // Snack
+        s.addImported(row("2026-11-04", "Tapsilog", "Breakfast", 20));   // Breakfast
+        s.addImported(row("2026-11-03", "Chicken Adobo", "MainCourse", 45));
+        List<PlannedMeal> all = s.allMeals();
+        assertEquals(3, all.size());
+        assertEquals("Chicken Adobo", all.get(0).getRecipeName());
+        assertEquals("Tapsilog", all.get(1).getRecipeName());
+        assertEquals("Leche Flan", all.get(2).getRecipeName());
+    }
+
+    @Test
     void plannedDatesHasNoDuplicates() {
         InMemoryPlanStore s = new InMemoryPlanStore();
         s.addImported(row("2026-11-03", "A", "Dessert", 5));
