@@ -41,4 +41,43 @@ class CsvRecipeParserTest {
         assertThrows(IllegalArgumentException.class,
                 () -> CsvRecipeParser.parseLine("11/03/2026,Halo-Halo,Dessert,10"));
     }
+
+    @Test
+    void readsTheThreeOptionalColumns() {
+        ImportRow row = CsvRecipeParser.parseLine("2026-11-03,Chicken Adobo,MainCourse,45,Dinner,620,Healthy");
+        assertEquals(com.platenplatter.model.MealSlot.DINNER, row.getMealSlot());
+        assertEquals(620, row.getCalories());
+        assertEquals(com.platenplatter.model.HealthyLevel.HEALTHY, row.getHealthyLevel());
+    }
+
+    @Test
+    void anOldFourColumnLineGetsTheDefaults() {
+        ImportRow row = CsvRecipeParser.parseLine("2026-11-02,Tapsilog,Breakfast,20");
+        assertEquals(com.platenplatter.model.MealSlot.BREAKFAST, row.getMealSlot());
+        assertEquals(0, row.getCalories());
+        assertEquals(com.platenplatter.model.HealthyLevel.MODERATE, row.getHealthyLevel());
+    }
+
+    @Test
+    void emptyOptionalColumnsAreWorkedOut() {
+        ImportRow row = CsvRecipeParser.parseLine("2026-11-03,Sinigang,MainCourse,40,Lunch,500,");
+        assertEquals(com.platenplatter.model.MealSlot.LUNCH, row.getMealSlot());
+        assertEquals(com.platenplatter.model.HealthyLevel.HEALTHY, row.getHealthyLevel()); // 500 <= 650 lunch budget
+        ImportRow noSlot = CsvRecipeParser.parseLine("2026-11-03,Leche Flan,Dessert,50,,,");
+        assertEquals(com.platenplatter.model.MealSlot.SNACK, noSlot.getMealSlot());
+    }
+
+    @Test
+    void aBadSlotCaloriesOrLevelIsRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> CsvRecipeParser.parseLine("2026-11-03,Adobo,MainCourse,45,Brunch"));
+        assertThrows(IllegalArgumentException.class,
+                () -> CsvRecipeParser.parseLine("2026-11-03,Adobo,MainCourse,45,Dinner,lots"));
+        assertThrows(IllegalArgumentException.class,
+                () -> CsvRecipeParser.parseLine("2026-11-03,Adobo,MainCourse,45,Dinner,-5"));
+        assertThrows(IllegalArgumentException.class,
+                () -> CsvRecipeParser.parseLine("2026-11-03,Adobo,MainCourse,45,Dinner,600,Okay"));
+        assertThrows(IllegalArgumentException.class,
+                () -> CsvRecipeParser.parseLine("2026-11-03,Adobo,MainCourse,45,Dinner,600,Healthy,extra"));
+    }
 }
