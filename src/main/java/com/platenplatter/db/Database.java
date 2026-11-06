@@ -24,6 +24,10 @@ public class Database {
         try (PreparedStatement ps = conn.prepareStatement("PRAGMA foreign_keys = ON")) {
             ps.execute();
         }
+        // The app keeps a second connection open (DatabaseConnector); wait for it instead of failing
+        try (PreparedStatement ps = conn.prepareStatement("PRAGMA busy_timeout = 5000")) {
+            ps.execute();
+        }
         return conn;
     }
 
