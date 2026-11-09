@@ -1,32 +1,28 @@
 package com.platenplatter.ui;
 
 import com.platenplatter.util.CsvRecipeParser;
-import com.platenplatter.util.PlanStore;
+import com.platenplatter.util.RowSink;
+import javafx.concurrent.Task;
+
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.stream.IntStream;
-import javafx.concurrent.Task;
 
 /**
- * Imports a meal-history CSV on a BACKGROUND THREAD. call() never touches the screen; it reports
- * through updateProgress and updateMessage every 50 rows, which the Import page binds to its bar.
- * A bad row is counted as skipped and the import goes on; Cancel stops it before the next row.
+ * BACKGROUND THREAD: reads a big CSV and sends each valid row to a RowSink.
+ * Run it with:  new Thread(task).start();   (never call() on the UI thread)
+ * Bind a ProgressBar:  bar.progressProperty().bind(task.progressProperty());
+ * Result (task.getValue()) = number of rows imported; getSkipped() = bad rows.
  */
 public class CsvImportTask extends Task<Integer> {
     private final File file;
-    private final PlanStore store;
-    private volatile int imported = 0;
+    private final RowSink sink;
     private volatile int skipped = 0;
 
-    public CsvImportTask(File file, PlanStore store) {
+    public CsvImportTask(File file, RowSink sink) {
         this.file = file;
-        this.store = store;
-    }
-
-    public int getImported() {
-        return imported;
+        this.sink = sink;
     }
 
     public int getSkipped() {
@@ -37,30 +33,27 @@ public class CsvImportTask extends Task<Integer> {
     protected Integer call() throws Exception {
         updateMessage("Reading file...");
         List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
-        int total = lines.size() - 1;                      // line 0 is the header
-        try {
-            IntStream.rangeClosed(1, total)
-                    .takeWhile(i -> !isCancelled())         // Cancel stops before the next row
-                    .forEach(i -> importLine(lines.get(i), i, total));
-        } catch (IllegalStateException e) {
-            throw (Exception) e.getCause();                 // a real database problem stops the import
+        int total = lines.size() - 1; // line 0 is the header
+        if (total <= 0) {
+            updateProgress(1, 1);
+            return 0;
         }
-        updateProgress(1, 1);
+        int imported = 0;
+        for (int i = 1; i < lines.size(); i++) {
+            if (isCancelled()) {
+                break;
+            }
+            try {
+                sink.accept(CsvRecipeParser.parseLine(lines.get(i)));
+                imported++;
+            } catch (IllegalArgumentException badRow) {
+                skipped++;
+            }
+            if (i % 50 == 0 || i == lines.size() - 1) { // don't flood the UI thread
+                updateProgress(i, total);
+                updateMessage("Imported " + imported + " rows, skipped " + skipped);
+            }
+        }
         return imported;
-    }
-
-    private void importLine(String line, int row, int total) {
-        try {
-            store.saveMeal(CsvRecipeParser.parse(line), List.of());
-            imported++;
-        } catch (IllegalArgumentException badRow) {
-            skipped++;                                      // a bad row never stops the import
-        } catch (Exception databaseProblem) {
-            throw new IllegalStateException(databaseProblem);
-        }
-        if (row % 50 == 0 || row == total) {               // don't flood the UI thread
-            updateProgress(row, total);
-            updateMessage("Imported " + imported + " rows, skipped " + skipped);
-        }
     }
 }

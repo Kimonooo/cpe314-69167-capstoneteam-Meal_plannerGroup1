@@ -10,7 +10,8 @@
 
   <properties>
     <maven.compiler.release>17</maven.compiler.release>
-    <!-- The class that "mvn javafx:run" starts: the finished app, PlateNPlatterApp. -->
+    <!-- The class that "mvn javafx:run" starts. The finished app is PlateNPlatterApp.
+         (Old Milestone 1 app: com.platenplatter.App) -->
     <app.mainClass>com.platenplatter.PlateNPlatterApp</app.mainClass>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>

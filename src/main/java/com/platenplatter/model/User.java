@@ -1,42 +1,40 @@
 package com.platenplatter.model;
 
 /**
- * One row of the users table.
- * Every column has a field with the same name in camelCase (display_name is displayName).
- * password_hash, salt and security_answer_hash are NOT here: they stay inside UserDao,
- * so no screen can ever see them.
+ * A registered user. The password is never stored as plain text: only a salted hash.
+ * "name" is the display name shown in the header; the user can change it on the Account tab.
+ * The username (used to log in) never changes.
  */
 public class User {
-    private final long userId;
+    private final int id;
+    private final String name;
     private final String username;
-    private final String displayName;
     private final int age;
     private final String gender;
-    private final String securityQuestion;
+    private final String passwordHash;
+    private final String salt;
 
-    public User(long userId, String username, String displayName, int age, String gender, String securityQuestion) {
-        this.userId = userId;
+    public User(int id, String name, String username, int age,
+                String gender, String passwordHash, String salt) {
+        this.id = id;
+        this.name = name;
         this.username = username;
-        this.displayName = displayName;
         this.age = age;
         this.gender = gender;
-        this.securityQuestion = securityQuestion;
+        this.passwordHash = passwordHash;
+        this.salt = salt;
     }
 
-    public long getUserId() { return userId; }
+    public int getId() { return id; }
+    public String getName() { return name; }
     public String getUsername() { return username; }
-    public String getDisplayName() { return displayName; }
     public int getAge() { return age; }
     public String getGender() { return gender; }
-    public String getSecurityQuestion() { return securityQuestion; }
+    public String getPasswordHash() { return passwordHash; }
+    public String getSalt() { return salt; }
 
-    /** A copy with a new display name (a User never changes after it is made). */
-    public User withDisplayName(String newDisplayName) {
-        return new User(userId, username, newDisplayName, age, gender, securityQuestion);
-    }
-
-    @Override
-    public String toString() {
-        return displayName + " (" + username + ")";
+    /** A copy of this user with a new display name (User objects never change). */
+    public User withName(String newName) {
+        return new User(id, newName, username, age, gender, passwordHash, salt);
     }
 }

@@ -1,23 +1,23 @@
 package com.platenplatter.util;
 
-import com.platenplatter.model.SavedRecipe;
+import com.platenplatter.model.Recipe;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-/** A QUEUE of recipes to cook: first in, first out. Used by RecipeDemo. */
+/** First recipe added is the first one to be cooked (FIFO). */
 public class CookingQueue {
-    private final Queue<SavedRecipe> queue = new ArrayDeque<>();
+    private final Queue<Recipe> queue = new ArrayDeque<>();
 
-    public void add(SavedRecipe recipe) {
+    public void add(Recipe recipe) {
         queue.add(recipe);
     }
 
-    /** The recipe that has waited longest, taken off the queue; null when it is empty. */
-    public SavedRecipe next() {
+    /** Removes and returns the next recipe to cook, or null if empty. */
+    public Recipe next() {
         return queue.poll();
     }
 
-    public SavedRecipe peek() {
+    public Recipe peek() {
         return queue.peek();
     }
 

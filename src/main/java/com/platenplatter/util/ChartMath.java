@@ -1,27 +1,29 @@
 package com.platenplatter.util;
 
-import java.util.stream.LongStream;
-
-/** Picks tidy numbers for the y-axis of the chart (1, 2, 5, 10, 20, 25, 50, ...). */
+/** Picks tidy numbers for the chart's side scale (0, 250, 500...) so labels never show 0.5 meals. */
 public final class ChartMath {
     private ChartMath() { }
 
-    /** The smallest tidy step that splits the axis into about 5 parts. Negative numbers count as 0. */
-    public static int niceStep(long max) {
-        long rough = (long) Math.ceil(Math.max(max, 0) / 5.0);
+    /** The gap between two tick marks, chosen from 1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500... */
+    public static int niceStep(int max) {
+        int rough = (int) Math.ceil(Math.max(max, 0) / 5.0);
         if (rough <= 1) {
             return 1;
         }
-        return (int) LongStream.iterate(1, power -> power * 10).limit(10)          // 1, 10, 100, ...
-                .flatMap(power -> LongStream.of(power, 2 * power, power >= 10 ? 5 * power / 2 : 0, 5 * power))
-                .filter(candidate -> candidate >= rough)
-                .findFirst()
-                .orElse(rough);
+        for (long power = 1; power < 1_000_000_000L; power *= 10) {
+            long[] candidates = {power, 2 * power, power >= 10 ? 5 * power / 2 : 0, 5 * power};
+            for (long candidate : candidates) {
+                if (candidate >= rough) {
+                    return (int) candidate;
+                }
+            }
+        }
+        return rough;
     }
 
-    /** The top of the axis: one tidy step above the biggest bar. */
-    public static int upperBound(long max) {
+    /** The top of the scale: always a little higher than the tallest bar. */
+    public static int upperBound(int max) {
         int step = niceStep(max);
-        return (int) ((Math.max(max, 0) / step + 1) * step);
+        return (Math.max(max, 0) / step + 1) * step;
     }
 }
