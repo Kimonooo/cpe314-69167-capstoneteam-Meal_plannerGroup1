@@ -1,13 +1,14 @@
 package com.platenplatter.db;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.platenplatter.model.IngredientAmount;
+import com.platenplatter.model.User;
+import com.platenplatter.service.AuthService;
 import com.platenplatter.util.CsvRecipeParser;
-import com.platenplatter.util.ImportRow;
 import com.platenplatter.util.ShoppingList;
-import com.platenplatter.util.ShoppingPlanner;
 import com.platenplatter.util.StreakCalculator;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
@@ -18,16 +19,19 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** QA tests for the shopping list and the streak, running on the REAL database code (in memory, no window). */
 class ShoppingAndStreakEndToEndTest {
+    private static final LocalDate TODAY = LocalDate.of(2026, 11, 4);
+
     private Connection conn;
-    private MealPlanHistoryDao dao;
+    private MealPlanDao dao;
 
     @BeforeEach
-    void setUp() throws SQLException {
+    void setUp() throws Exception {
         conn = DatabaseConnector.open("jdbc:sqlite::memory:");
-        dao = new MealPlanHistoryDao(conn);
-        dao.initSchema();
+        DatabaseConnector.createTables(conn);
+        User kim = new UserDao(conn).insertUser(new User(0, "kim", "Kim", 20, "F", AuthService.SECURITY_QUESTIONS.get(3)),
+                "secret1", "ucmain");
+        dao = new MealPlanDao(conn, kim.getUserId());
     }
 
     @AfterEach
@@ -35,63 +39,71 @@ class ShoppingAndStreakEndToEndTest {
         conn.close();
     }
 
-    private void importFile(String name) throws Exception {
-        List<String> lines = Files.readAllLines(Path.of("sample_data", name));
-        for (String line : lines.subList(1, lines.size())) {
-            dao.insert(CsvRecipeParser.parseLine(line));
-        }
+    private void plan(String line, List<IngredientAmount> ingredients) throws Exception {
+        dao.saveMeal(CsvRecipeParser.parse(line), ingredients);
     }
 
     @Test
-    void anImportedWeekGivesAShoppingListWithNoMissingRecipes() throws Exception {
-        importFile("meal_history_small.csv"); // 5 meals, 2 to 6 November 2026
-        ShoppingList list = ShoppingPlanner.plan(dao, LocalDate.of(2026, 11, 2), LocalDate.of(2026, 11, 6));
-        assertEquals(5, list.getMealCount());
-        assertTrue(list.getMissingRecipes().isEmpty());
-        assertTrue(list.itemCount() > 15);
-        assertFalse(list.getSections().isEmpty());
+    void anImportedWeekWithoutIngredientsListsEveryRecipeAsMissing() throws Exception {
+        Files.readAllLines(Path.of("sample_data", "meal_history_small.csv")).stream().skip(1)
+                .map(CsvRecipeParser::parse).forEach(meal -> {
+                    try {
+                        dao.saveMeal(meal, List.of());
+                    } catch (SQLException e) {
+                        throw new IllegalStateException(e);
+                    }
+                });
+        LocalDate from = LocalDate.of(2026, 11, 2);
+        LocalDate to = LocalDate.of(2026, 11, 6);
+        assertTrue(dao.shoppingItems(from, to).isEmpty());
+        assertEquals(5, ShoppingList.missingRecipes(dao.mealsBetween(from, to), dao.shoppingItems(from, to)).size());
+    }
+
+    @Test
+    void theSameIngredientInTwoRecipesIsListedOnce() throws Exception {
+        plan("2026-11-03,Chicken Adobo,MainCourse,45", List.of(new IngredientAmount("Garlic", "1 head"),
+                new IngredientAmount("Chicken", "1 kg")));
+        plan("2026-11-04,Garlic Rice,Breakfast,15", List.of(new IngredientAmount("garlic", "5 cloves")));
+        var list = ShoppingList.build(dao.shoppingItems(LocalDate.of(2026, 11, 3), LocalDate.of(2026, 11, 4)));
+        assertEquals(2, ShoppingList.count(list));
+        assertTrue(ShoppingList.asText(list).contains("garlic (1 head, 5 cloves)"));
     }
 
     @Test
     void aOneDayRangeOnlyUsesThatDaysMeals() throws Exception {
-        importFile("meal_history_small.csv");
-        ShoppingList list = ShoppingPlanner.plan(dao, LocalDate.of(2026, 11, 3), LocalDate.of(2026, 11, 3));
-        assertEquals(1, list.getMealCount()); // Chicken Adobo only
-    }
-
-    @Test
-    void ingredientsSavedFromTheRecipesTabBeatTheBuiltInOnes() throws Exception {
-        dao.addMeal(new ImportRow("2026-11-03", "Chicken Adobo", "MainCourse", 45), List.of("Chicken", "Truffle oil"));
-        ShoppingList list = ShoppingPlanner.plan(dao, LocalDate.of(2026, 11, 3), LocalDate.of(2026, 11, 3));
-        assertEquals(2, list.itemCount());
+        plan("2026-11-03,Chicken Adobo,MainCourse,45", List.of(new IngredientAmount("Chicken", "1 kg")));
+        plan("2026-11-04,Leche Flan,Dessert,50", List.of(new IngredientAmount("Eggs", "10")));
+        assertEquals(1, dao.shoppingItems(LocalDate.of(2026, 11, 3), LocalDate.of(2026, 11, 3)).size());
     }
 
     @Test
     void aMealRemovedFromThePlanDisappearsFromTheList() throws Exception {
-        dao.insert(new ImportRow("2026-11-03", "Chicken Adobo", "MainCourse", 45));
-        long id = dao.mealsOn(LocalDate.of(2026, 11, 3)).get(0).getId();
-        dao.deleteMeal(id);
-        ShoppingList list = ShoppingPlanner.plan(dao, LocalDate.of(2026, 11, 3), LocalDate.of(2026, 11, 3));
-        assertTrue(list.isEmpty());
-        assertEquals(0, list.getMealCount());
+        plan("2026-11-03,Chicken Adobo,MainCourse,45", List.of(new IngredientAmount("Chicken", "1 kg")));
+        dao.deleteMeal(dao.mealsOn(LocalDate.of(2026, 11, 3)).get(0).getPlannedMealId());
+        assertTrue(dao.shoppingItems(LocalDate.of(2026, 11, 3), LocalDate.of(2026, 11, 3)).isEmpty());
     }
 
     @Test
     void theStreakIsCountedFromTheDatabaseDates() throws Exception {
-        LocalDate today = LocalDate.of(2026, 11, 4);
-        dao.insert(new ImportRow(today.toString(), "A", "Dessert", 5));
-        dao.insert(new ImportRow(today.minusDays(1).toString(), "B", "Dessert", 5));
-        dao.insert(new ImportRow(today.minusDays(2).toString(), "C", "Dessert", 5));
-        dao.insert(new ImportRow(today.minusDays(5).toString(), "D", "Dessert", 5));
-        assertEquals(3, StreakCalculator.current(dao.plannedDates(), today));
+        plan(TODAY + ",A,Dessert,5", List.of());
+        plan(TODAY.minusDays(1) + ",B,Dessert,5", List.of());
+        plan(TODAY.minusDays(2) + ",C,Dessert,5", List.of());
+        plan(TODAY.minusDays(5) + ",D,Dessert,5", List.of());
+        assertEquals(3, StreakCalculator.current(dao.plannedDates(), TODAY));
         assertEquals(3, StreakCalculator.longest(dao.plannedDates()));
     }
 
     @Test
     void theBigSampleFileHasAHugeBestStreakButNoCurrentOne() throws Exception {
-        importFile("meal_history_3000.csv"); // meals from January to October 2026
-        LocalDate today = LocalDate.of(2026, 11, 4);
-        assertEquals(0, StreakCalculator.current(dao.plannedDates(), today));
+        Files.readAllLines(Path.of("sample_data", "meal_history_3000.csv")).stream().skip(1)
+                .forEach(line -> {
+                    try {
+                        plan(line, List.of());
+                    } catch (Exception e) {
+                        throw new IllegalStateException(e);
+                    }
+                });
+        assertEquals(0, StreakCalculator.current(dao.plannedDates(), TODAY));
         assertTrue(StreakCalculator.longest(dao.plannedDates()) > 50);
     }
 }

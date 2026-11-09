@@ -3,6 +3,7 @@ package com.platenplatter.util;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
 class ChartMathTest {
@@ -26,10 +27,10 @@ class ChartMathTest {
         assertEquals(4, ChartMath.upperBound(3));
         assertEquals(60, ChartMath.upperBound(50));
         assertEquals(1250, ChartMath.upperBound(1015));
-        for (int max = 0; max < 5000; max += 7) {
+        IntStream.iterate(0, max -> max < 5000, max -> max + 7).forEach(max -> {
             assertTrue(ChartMath.upperBound(max) > max, "max " + max);
             assertEquals(0, ChartMath.upperBound(max) % ChartMath.niceStep(max), "max " + max);
-        }
+        });
     }
 
     @Test

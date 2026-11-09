@@ -1,7 +1,9 @@
 package com.platenplatter.model;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 class MealSlotAndLevelTest {
@@ -22,8 +24,9 @@ class MealSlotAndLevelTest {
     }
 
     @Test
-    void defaultSlotComesFromTheRecipeType() {
+    void defaultSlotComesFromTheRecipeOrMealType() {
         assertEquals(MealSlot.BREAKFAST, MealSlot.defaultFor("Breakfast"));
+        assertEquals(MealSlot.BREAKFAST, MealSlot.defaultFor("BREAKFAST"));
         assertEquals(MealSlot.SNACK, MealSlot.defaultFor("Dessert"));
         assertEquals(MealSlot.DINNER, MealSlot.defaultFor("MainCourse"));
         assertEquals(MealSlot.DINNER, MealSlot.defaultFor(null));
@@ -31,11 +34,7 @@ class MealSlotAndLevelTest {
 
     @Test
     void theFourBudgetsAddUpToATwoThousandCalorieDay() {
-        int sum = 0;
-        for (MealSlot slot : MealSlot.values()) {
-            sum += slot.getCalorieBudget();
-        }
-        assertEquals(2000, sum);
+        assertEquals(2000, Arrays.stream(MealSlot.values()).mapToInt(MealSlot::getCalorieBudget).sum());
     }
 
     @Test

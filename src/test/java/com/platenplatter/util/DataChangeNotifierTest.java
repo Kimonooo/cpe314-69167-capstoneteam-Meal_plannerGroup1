@@ -9,21 +9,24 @@ class DataChangeNotifierTest {
 
     @Test
     void everyListenerIsCalledOnFire() {
-        DataChangeNotifier n = new DataChangeNotifier();
+        DataChangeNotifier notifier = new DataChangeNotifier();
         AtomicInteger calls = new AtomicInteger();
-        n.addListener(calls::incrementAndGet);
-        n.addListener(calls::incrementAndGet);
-        n.fire();
+        notifier.addListener(calls::incrementAndGet);
+        notifier.addListener(calls::incrementAndGet);
+        notifier.fire();
         assertEquals(2, calls.get());
+        assertEquals(2, notifier.listenerCount());
     }
 
     @Test
     void aBrokenListenerDoesNotStopTheOthers() {
-        DataChangeNotifier n = new DataChangeNotifier();
+        DataChangeNotifier notifier = new DataChangeNotifier();
         AtomicInteger calls = new AtomicInteger();
-        n.addListener(() -> { throw new IllegalStateException("oops"); });
-        n.addListener(calls::incrementAndGet);
-        n.fire();
+        notifier.addListener(() -> {
+            throw new IllegalStateException("broken page");
+        });
+        notifier.addListener(calls::incrementAndGet);
+        notifier.fire();
         assertEquals(1, calls.get());
     }
 

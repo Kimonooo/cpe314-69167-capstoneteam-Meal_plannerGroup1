@@ -1,6 +1,8 @@
 package com.platenplatter.util;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.platenplatter.model.HealthyLevel;
 import com.platenplatter.model.MealSlot;
@@ -47,10 +49,8 @@ class HealthClassifierTest {
     }
 
     @Test
-    void anOldRowGetsItsLevelAndSlotAutomatically() {
-        ImportRow dessert = new ImportRow("2026-11-04", "Leche Flan", "Dessert", 50);
-        assertEquals(MealSlot.SNACK, dessert.getMealSlot());
-        assertEquals(HealthyLevel.INDULGENT, dessert.getHealthyLevel());
-        assertEquals(0, dessert.getCalories());
+    void theHintSaysWhyAutoChoseALevel() {
+        assertEquals("520 kcal vs 650 kcal budget for Lunch", HealthClassifier.explain(520, MealSlot.LUNCH, "Vegetarian"));
+        assertTrue(HealthClassifier.explain(0, MealSlot.LUNCH, "Vegetarian").contains("recipe type"));
     }
 }
