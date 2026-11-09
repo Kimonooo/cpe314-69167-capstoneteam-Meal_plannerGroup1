@@ -1,23 +1,21 @@
 package com.platenplatter.util;
 
 /**
- * Maps TheMealDB's many categories (Chicken, Beef, Seafood, Starter...) onto OUR three
- * plan categories so the Analytics chart stays clean: Breakfast, MainCourse, Dessert.
+ * Turns a TheMealDB category (or a CSV category) into one of our three meal types,
+ * which picks the SavedRecipe subclass: Breakfast -> BREAKFAST, Dessert -> DESSERT,
+ * everything else (Chicken, Vegetarian, MainCourse, ...) -> MAIN_COURSE.
  */
 public final class CategoryMapper {
     private CategoryMapper() { }
 
-    public static String toPlanCategory(String apiCategory) {
-        if (apiCategory == null) {
-            return "MainCourse";
+    public static String toMealType(String category) {
+        String clean = category == null ? "" : category.trim();
+        if (clean.equalsIgnoreCase("Breakfast")) {
+            return "BREAKFAST";
         }
-        String c = apiCategory.trim();
-        if (c.equalsIgnoreCase("Breakfast")) {
-            return "Breakfast";
+        if (clean.equalsIgnoreCase("Dessert")) {
+            return "DESSERT";
         }
-        if (c.equalsIgnoreCase("Dessert")) {
-            return "Dessert";
-        }
-        return "MainCourse";
+        return "MAIN_COURSE";
     }
 }

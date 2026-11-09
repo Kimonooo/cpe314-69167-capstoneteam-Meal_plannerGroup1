@@ -2,23 +2,25 @@ package com.platenplatter.service;
 
 import com.platenplatter.db.UserDao;
 import com.platenplatter.model.User;
-import com.platenplatter.util.PasswordHasher;
-
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Locale;
 
 /**
- * Accounts: sign up, log in, and change the display name.
- * Responsibility: the RULES only (what is a valid username, password, age, name). The screens
- * show the messages; UserDao does the SQL; PasswordHasher does the salting and hashing.
- * Because it has no window, every rule can be tested with plain JUnit tests.
- *
- * The password is never saved: only a random salt and the PBKDF2 hash of (password + salt).
+ * Every rule for accounts: sign up, log in, change the display name, and reset a forgotten
+ * password with the security question. The screens only show what this class decides.
  */
 public class AuthService {
     public static final int MIN_PASSWORD_LENGTH = 6;
     public static final int MAX_NAME_LENGTH = 40;
-    /** 3 to 20 letters, digits, dots or underscores. No spaces. */
     private static final String USERNAME_RULE = "[A-Za-z0-9._]{3,20}";
+
+    /** The four questions a user can pick from when signing up. */
+    public static final List<String> SECURITY_QUESTIONS = List.of(
+            "What was the name of your first pet?",
+            "In what city were you born?",
+            "What is your favorite food?",
+            "What was the name of your elementary school?");
 
     private final UserDao users;
 
@@ -26,75 +28,83 @@ public class AuthService {
         this.users = users;
     }
 
-    /**
-     * Checks the sign-up form and saves the new account.
-     * @return the saved user (with the id the database gave it)
-     * @throws AuthException with a message for the user when something in the form is wrong
-     */
-    public User register(String name, String username, String ageText, String gender,
-                         String password, String confirmPassword) throws AuthException, SQLException {
-        String cleanName = trim(name);
+    public User register(String displayName, String username, String ageText, String gender, String password,
+                         String confirmPassword, String securityQuestion, String securityAnswer)
+            throws AuthException, SQLException {
+        String name = trim(displayName);
         String cleanUsername = trim(username);
-        String cleanAge = trim(ageText);
-        if (cleanName.isEmpty() || cleanUsername.isEmpty() || cleanAge.isEmpty()
-                || gender == null || gender.isBlank() || password == null || password.isEmpty()) {
+        String answer = normalize(securityAnswer);
+        if (name.isEmpty() || cleanUsername.isEmpty() || trim(ageText).isEmpty() || trim(gender).isEmpty()
+                || password == null || password.isEmpty() || trim(securityQuestion).isEmpty() || answer.isEmpty()) {
             throw new AuthException("Please fill in every field.");
         }
-        checkName(cleanName);
+        checkName(name);
         if (!cleanUsername.matches(USERNAME_RULE)) {
             throw new AuthException("Username must be 3 to 20 letters, numbers, dots or underscores (no spaces).");
         }
-        int age;
-        try {
-            age = Integer.parseInt(cleanAge);
-        } catch (NumberFormatException e) {
-            throw new AuthException("Age must be a number.");
+        int age = age(ageText);
+        checkPassword(password, confirmPassword);
+        if (!SECURITY_QUESTIONS.contains(securityQuestion)) {
+            throw new AuthException("Please choose one of the security questions.");
         }
-        if (age < 1 || age > 120) {
-            throw new AuthException("Age must be between 1 and 120.");
-        }
-        if (password.length() < MIN_PASSWORD_LENGTH) {
-            throw new AuthException("Password must be at least " + MIN_PASSWORD_LENGTH + " characters.");
-        }
-        if (!password.equals(confirmPassword)) {
-            throw new AuthException("Passwords do not match.");
-        }
-        if (users.findByUsername(cleanUsername) != null) {
+        if (users.findByUsername(cleanUsername).isPresent()) {
             throw new AuthException("That username is already taken. Please choose another.");
         }
-        String salt = PasswordHasher.generateSalt();
-        String hash = PasswordHasher.hash(password, salt); // the real password is never saved
-        users.insertUser(new User(0, cleanName, cleanUsername, age, gender, hash, salt));
-        return users.findByUsername(cleanUsername);
+        User user = new User(0, cleanUsername, name, age, trim(gender), securityQuestion);
+        return users.insertUser(user, password, answer);
     }
 
-    /**
-     * Logs a user in.
-     * The message never says WHICH part was wrong, so nobody can find out which usernames exist.
-     */
     public User login(String username, String password) throws AuthException, SQLException {
         String cleanUsername = trim(username);
         if (cleanUsername.isEmpty() || password == null || password.isEmpty()) {
             throw new AuthException("Please enter your username and password.");
         }
-        User user = users.findByUsername(cleanUsername);
-        if (user == null || !PasswordHasher.verify(password, user.getSalt(), user.getPasswordHash())) {
-            throw new AuthException("Incorrect username or password.");
+        User user = users.findByUsername(cleanUsername).orElse(null);
+        if (user == null || !users.passwordMatches(user.getUserId(), password)) {
+            throw new AuthException("Incorrect username or password."); // never says which one was wrong
         }
         return user;
     }
 
-    /**
-     * Changes the display name shown in the header and saves it.
-     * @return the same user with the new name
-     */
     public User rename(User user, String newName) throws AuthException, SQLException {
         String clean = trim(newName);
         checkName(clean);
-        if (!users.updateName(user.getId(), clean)) {
+        if (!users.updateDisplayName(user.getUserId(), clean)) {
             throw new AuthException("Your account was not found. Please log in again.");
         }
-        return user.withName(clean);
+        return user.withDisplayName(clean);
+    }
+
+    /** Step 1 of Forgot password: the question this username chose when signing up. */
+    public String securityQuestionFor(String username) throws AuthException, SQLException {
+        return users.findByUsername(trim(username)).map(User::getSecurityQuestion)
+                .orElseThrow(() -> new AuthException("No account with that username."));
+    }
+
+    /** Step 2 of Forgot password: check the answer and the new password, then save a new hash. */
+    public void resetPassword(String username, String answer, String newPassword, String confirmPassword)
+            throws AuthException, SQLException {
+        User user = users.findByUsername(trim(username)).orElseThrow(
+                () -> new AuthException("No account with that username."));
+        checkPassword(newPassword, confirmPassword); // 6+ characters, not only spaces, typed twice
+        if (!users.answerMatches(user.getUserId(), normalize(answer))) {
+            throw new AuthException("That answer does not match.");
+        }
+        users.updatePassword(user.getUserId(), newPassword);   // new PBKDF2 hash
+    }
+
+    /** " Bantay " and "bantay" are the same answer. */
+    public static String normalize(String answer) {
+        return answer == null ? "" : answer.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static void checkPassword(String password, String confirm) throws AuthException {
+        if (password == null || password.length() < MIN_PASSWORD_LENGTH || password.isBlank()) {
+            throw new AuthException("Password must be at least " + MIN_PASSWORD_LENGTH + " characters, not only spaces.");
+        }
+        if (!password.equals(confirm)) {
+            throw new AuthException("Passwords do not match.");
+        }
     }
 
     private static void checkName(String name) throws AuthException {
@@ -104,6 +114,19 @@ public class AuthService {
         if (name.length() > MAX_NAME_LENGTH) {
             throw new AuthException("Name must be " + MAX_NAME_LENGTH + " characters or fewer.");
         }
+    }
+
+    private static int age(String ageText) throws AuthException {
+        int age;
+        try {
+            age = Integer.parseInt(trim(ageText));
+        } catch (NumberFormatException e) {
+            throw new AuthException("Age must be a number.");
+        }
+        if (age < 1 || age > 120) {
+            throw new AuthException("Age must be between 1 and 120.");
+        }
+        return age;
     }
 
     private static String trim(String text) {
