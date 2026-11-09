@@ -1,76 +1,70 @@
 package com.platenplatter.util;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.platenplatter.model.PlannedMeal;
+import com.platenplatter.service.StatisticsService;
+import com.platenplatter.service.StatisticsService.Grouping;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
-/**
- * QA tests that run the REAL sample CSV files through parser + analyzer.
- * (Maven runs tests from the project root, so "sample_data/..." resolves.)
- */
 class SampleDataPipelineTest {
 
-    private static List<ImportRow> load(String file, int[] badCount) throws IOException {
-        List<String> lines = Files.readAllLines(Path.of("sample_data", file));
-        List<ImportRow> good = new ArrayList<>();
-        for (String line : lines.subList(1, lines.size())) { // skip header
+    /** Every data line of a sample file, parsed; a bad line becomes an empty Optional. */
+    private static List<Optional<PlannedMeal>> load(String file) throws IOException {
+        return Files.readAllLines(Path.of("sample_data", file)).stream().skip(1).map(line -> {
             try {
-                good.add(CsvRecipeParser.parseLine(line));
-            } catch (IllegalArgumentException e) {
-                badCount[0]++;
+                return Optional.of(CsvRecipeParser.parse(line));
+            } catch (IllegalArgumentException bad) {
+                return Optional.<PlannedMeal>empty();
             }
-        }
-        return good;
+        }).toList();
     }
 
-    private static List<String> categoriesOf(List<ImportRow> rows) {
-        List<String> out = new ArrayList<>();
-        for (ImportRow r : rows) {
-            out.add(r.getCategory());
-        }
-        return out;
+    private static List<PlannedMeal> good(List<Optional<PlannedMeal>> rows) {
+        return rows.stream().flatMap(Optional::stream).toList();
     }
 
     @Test
     void badRowsFileKeepsOnlyTheTwoGoodRows() throws IOException {
-        int[] bad = new int[1];
-        List<ImportRow> good = load("meal_history_bad_rows.csv", bad);
-        assertEquals(2, good.size());
-        assertEquals(5, bad[0]);
-    }
-
-    @Test
-    void smallFileMinesToTheExpectedCounts() throws IOException {
-        List<ImportRow> good = load("meal_history_small.csv", new int[1]);
-        Map<String, Integer> counts = MealPlanAnalyzer.countByCategory(categoriesOf(good));
-        assertEquals(1, counts.get("Breakfast"));
-        assertEquals(2, counts.get("MainCourse"));
-        assertEquals(2, counts.get("Dessert"));
-        assertEquals("Dessert", MealPlanAnalyzer.mostFrequent(counts)); // tie -> alphabetical
+        List<Optional<PlannedMeal>> rows = load("meal_history_bad_rows.csv");
+        assertEquals(2, good(rows).size());
+        assertEquals(5, rows.size() - good(rows).size());
     }
 
     @Test
     void largeFileHas3000GoodRowsAndNoBadOnes() throws IOException {
-        int[] bad = new int[1];
-        List<ImportRow> good = load("meal_history_3000.csv", bad);
-        assertEquals(3000, good.size());
-        assertEquals(0, bad[0]);
+        List<Optional<PlannedMeal>> rows = load("meal_history_3000.csv");
+        assertEquals(3000, good(rows).size());
+        assertEquals(3000, rows.size());
     }
 
     @Test
-    void addingRowsChangesTheMiningResult() throws IOException {
-        List<String> cats = categoriesOf(load("meal_history_small.csv", new int[1]));
-        cats.add("Breakfast");
-        cats.add("Breakfast");
-        cats.add("Breakfast");
-        Map<String, Integer> counts = MealPlanAnalyzer.countByCategory(cats);
-        assertEquals(4, counts.get("Breakfast"));
-        assertEquals("Breakfast", MealPlanAnalyzer.mostFrequent(counts));
+    void theWeekTenFileMinesToTheNumbersInTheDesignDocument() throws IOException {
+        List<PlannedMeal> meals = good(load("meal_history_week10.csv"));
+        LocalDate monday = LocalDate.of(2026, 11, 2);
+        List<PlannedMeal> week = meals.stream().filter(m -> !m.getPlanDate().isAfter(monday.plusDays(6))).toList();
+        assertEquals(48, meals.size());
+        assertEquals(24, week.size());
+        assertEquals(Map.of("Healthy", 14L, "Moderate", 6L, "Indulgent", 4L),
+                StatisticsService.totals(week, Grouping.HEALTHY_LEVEL));
+        assertEquals(532.5, StatisticsService.averageCalories(week), 0.001);
+        assertEquals(37.5, StatisticsService.averagePrepMinutes(week), 0.001);
+    }
+
+    @Test
+    void addingMealsChangesTheMiningResult() throws IOException {
+        List<PlannedMeal> meals = good(load("meal_history_small.csv"));
+        long before = StatisticsService.totals(meals, Grouping.MEAL_SLOT).get("Breakfast");
+        List<PlannedMeal> more = Stream.concat(meals.stream(),
+                Stream.of(CsvRecipeParser.parse("2026-11-07,Tapsilog,Breakfast,20"))).toList();
+        assertEquals(before + 1, StatisticsService.totals(more, Grouping.MEAL_SLOT).get("Breakfast"));
     }
 }

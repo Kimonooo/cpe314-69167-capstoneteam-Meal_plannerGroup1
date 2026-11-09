@@ -17,10 +17,8 @@ class PasswordHasherTest {
 
     @Test
     void differentSaltsGiveDifferentHashesForTheSamePassword() {
-        // edge case: two users with the same password must not look the same in the database
         String saltOne = PasswordHasher.generateSalt();
         String saltTwo = PasswordHasher.generateSalt();
-
         assertNotEquals(saltOne, saltTwo);
         assertNotEquals(PasswordHasher.hash("secret123", saltOne), PasswordHasher.hash("secret123", saltTwo));
     }
@@ -29,7 +27,6 @@ class PasswordHasherTest {
     void verifyAcceptsTheRightPasswordAndRejectsAWrongOne() {
         String salt = PasswordHasher.generateSalt();
         String hash = PasswordHasher.hash("secret123", salt);
-
         assertTrue(PasswordHasher.verify("secret123", salt, hash));
         assertFalse(PasswordHasher.verify("Secret123", salt, hash)); // edge case: one capital letter
         assertNotEquals("secret123", hash); // the real password is never what gets saved

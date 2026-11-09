@@ -1,16 +1,34 @@
 package com.platenplatter.db;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-import com.platenplatter.util.ImportRow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class DatabaseConnectorTest {
+
+    private static int pragma(Connection c, String name) throws SQLException {
+        try (Statement st = c.createStatement(); ResultSet rs = st.executeQuery("PRAGMA " + name)) {
+            assertTrue(rs.next());
+            return rs.getInt(1);
+        }
+    }
+
+    private static int primaryKeyColumns(Connection c, String table) {
+        try (Statement st = c.createStatement();
+             ResultSet rs = st.executeQuery("SELECT count(*) FROM pragma_table_info('" + table + "') WHERE pk > 0")) {
+            return rs.next() ? rs.getInt(1) : 0;
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
     @Test
     void opensAWorkingConnection() throws SQLException {
@@ -21,32 +39,36 @@ class DatabaseConnectorTest {
     }
 
     @Test
-    void setsTheBusyTimeoutToFiveSeconds() throws SQLException {
-        try (Connection c = DatabaseConnector.open("jdbc:sqlite::memory:");
-             PreparedStatement ps = c.prepareStatement("PRAGMA busy_timeout");
-             ResultSet rs = ps.executeQuery()) {
-            assertTrue(rs.next());
-            assertEquals(5000, rs.getInt(1));
-        }
-    }
-
-    @Test
-    void switchesForeignKeysOn() throws SQLException {
-        try (Connection c = DatabaseConnector.open("jdbc:sqlite::memory:");
-             PreparedStatement ps = c.prepareStatement("PRAGMA foreign_keys");
-             ResultSet rs = ps.executeQuery()) {
-            assertTrue(rs.next());
-            assertEquals(1, rs.getInt(1));
-        }
-    }
-
-    @Test
-    void theConnectionWorksWithTheMealHistoryDao() throws SQLException {
+    void setsTheBusyTimeoutAndSwitchesForeignKeysOn() throws SQLException {
         try (Connection c = DatabaseConnector.open("jdbc:sqlite::memory:")) {
-            MealPlanHistoryDao dao = new MealPlanHistoryDao(c);
-            dao.initSchema();
-            dao.insert(new ImportRow("2026-11-03", "Tapsilog", "Breakfast", 20));
-            assertEquals(1, dao.count());
+            assertEquals(5000, pragma(c, "busy_timeout"));
+            assertEquals(1, pragma(c, "foreign_keys"));
+        }
+    }
+
+    @Test
+    void schemaSqlCreatesExactlyTheFivePluralTables() throws SQLException {
+        try (Connection c = DatabaseConnector.open("jdbc:sqlite::memory:")) {
+            DatabaseConnector.createTables(c);
+            assertEquals(List.of("ingredient_amounts", "ingredients", "planned_meals", "saved_recipes", "users"),
+                    DatabaseConnector.tableNames(c));
+        }
+    }
+
+    @Test
+    void creatingTheTablesTwiceIsSafe() throws SQLException {
+        try (Connection c = DatabaseConnector.open("jdbc:sqlite::memory:")) {
+            DatabaseConnector.createTables(c);
+            DatabaseConnector.createTables(c);
+            assertEquals(5, DatabaseConnector.tableNames(c).size());
+        }
+    }
+
+    @Test
+    void everyTableHasExactlyOnePrimaryKeyColumn() throws SQLException {
+        try (Connection c = DatabaseConnector.open("jdbc:sqlite::memory:")) {
+            DatabaseConnector.createTables(c);
+            DatabaseConnector.tableNames(c).forEach(table -> assertEquals(1, primaryKeyColumns(c, table), table));
         }
     }
 

@@ -1,20 +1,22 @@
 package com.platenplatter.util;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
 class StreakCalculatorTest {
     private static final LocalDate TODAY = LocalDate.of(2026, 11, 4); // a Wednesday
 
     private static Set<LocalDate> days(int... daysAgo) {
-        java.util.HashSet<LocalDate> set = new java.util.HashSet<>();
-        for (int d : daysAgo) {
-            set.add(TODAY.minusDays(d));
-        }
-        return set;
+        return Arrays.stream(daysAgo).mapToObj(TODAY::minusDays).collect(Collectors.toSet());
     }
 
     @Test
@@ -57,18 +59,14 @@ class StreakCalculatorTest {
 
     @Test
     void weekFlagsMarkTheDaysOfThisWeekMondayFirst() {
-        // today is Wednesday 4 Nov; Monday is 2 Nov, Tuesday 3 Nov
-        boolean[] flags = StreakCalculator.weekFlags(days(0, 2), TODAY);
-        assertArrayEquals(new boolean[] {true, false, true, false, false, false, false}, flags);
+        // today is Wednesday 4 Nov; Monday is 2 Nov
+        assertEquals(List.of(true, false, true, false, false, false, false), StreakCalculator.weekFlags(days(0, 2), TODAY));
     }
 
     @Test
     void bestStreakIgnoresDaysThatHaveNotHappenedYet() {
-        // planned: today and the 5 days AFTER today, plus yesterday
-        java.util.HashSet<LocalDate> set = new java.util.HashSet<>();
-        for (int i = -1; i <= 5; i++) {
-            set.add(TODAY.plusDays(i));
-        }
+        // planned: yesterday, today and the 5 days AFTER today
+        Set<LocalDate> set = IntStream.rangeClosed(-1, 5).mapToObj(TODAY::plusDays).collect(Collectors.toSet());
         assertEquals(7, StreakCalculator.longest(set));          // every day counted
         assertEquals(2, StreakCalculator.longest(set, TODAY));   // only yesterday and today count
         assertEquals(0, StreakCalculator.longest(null, TODAY));
