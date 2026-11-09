@@ -1,44 +1,30 @@
 package com.platenplatter.util;
 
-import static java.util.stream.Collectors.counting;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toMap;
-import static java.util.stream.Collectors.toSet;
-
-import com.platenplatter.model.PlannedMeal;
 import com.platenplatter.model.PrepTier;
+
 import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
+import java.util.TreeSet;
 
 /**
- * The planning streak: how many days in a row have at least one planned meal, and the
- * prep-tier badge earned by the meals in the current streak. Worked out from the dates only.
+ * The STREAK: how many days in a row have at least one planned meal.
+ * Rule: the streak counts back from today. If nothing is planned today YET but yesterday had a meal,
+ * the streak is still alive ("at risk"): plan something today to keep it. If neither today nor
+ * yesterday has a meal, the streak is 0.
+ *
+ * The streak BADGE also sorts the meals of the current streak by prep time (Quick, Average, Slow),
+ * and names the badge after the tier the user cooks most: Quick Cook, Home Cook or Slow-Food Chef.
  */
 public final class StreakCalculator {
     private StreakCalculator() { }
 
     /**
-     * Days in a row with a meal, counting back from today. If today has no meal yet, the streak
-     * is still alive and counts back from yesterday.
+     * The first and last day of the current streak, or null when there is no streak.
+     * The last day is today, or yesterday when the streak is "at risk".
      */
-    public static int current(Set<LocalDate> days, LocalDate today) {
-        if (days == null || days.isEmpty()) {
-            return 0;
-        }
-        LocalDate start = days.contains(today) ? today : today.minusDays(1);
-        return (int) Stream.iterate(start, day -> day.minusDays(1)).takeWhile(days::contains).count();
-    }
-
-    /** The first and last day of the current streak, or null when there is no streak. */
     public static LocalDate[] currentRange(Set<LocalDate> days, LocalDate today) {
         int current = current(days, today);
         if (current == 0) {
@@ -48,70 +34,116 @@ public final class StreakCalculator {
         return new LocalDate[] {end.minusDays(current - 1L), end};
     }
 
-    /** The longest run of days in a row, not counting days after today. */
-    public static int longest(Set<LocalDate> days, LocalDate today) {
-        return days == null ? 0 : longest(days.stream().filter(day -> !day.isAfter(today)).collect(toSet()));
-    }
-
-    /** The longest run of days in a row: from every day that starts a run, count how far it goes. */
-    public static int longest(Set<LocalDate> days) {
-        if (days == null) {
-            return 0;
+    /** How many meals are Quick, Average and Slow. Every tier is listed, even with 0. */
+    public static EnumMap<PrepTier, Integer> tierCounts(List<PlannedMeal> meals) {
+        EnumMap<PrepTier, Integer> counts = new EnumMap<>(PrepTier.class);
+        for (PrepTier tier : PrepTier.values()) {
+            counts.put(tier, 0);
         }
-        return (int) days.stream()
-                .filter(day -> !days.contains(day.minusDays(1)))          // a run starts here
-                .mapToLong(start -> Stream.iterate(start, day -> day.plusDays(1)).takeWhile(days::contains).count())
-                .max()
-                .orElse(0);
-    }
-
-    /** Yesterday had a meal but today has none yet: plan one today to keep the streak. */
-    public static boolean atRisk(Set<LocalDate> days, LocalDate today) {
-        return days != null && !days.contains(today) && days.contains(today.minusDays(1));
-    }
-
-    /** Monday to Sunday of this week: true for each day that has a meal. */
-    public static List<Boolean> weekFlags(Set<LocalDate> days, LocalDate today) {
-        LocalDate monday = today.minusDays(today.getDayOfWeek().getValue() - 1L);
-        return IntStream.range(0, 7).mapToObj(i -> days != null && days.contains(monday.plusDays(i))).toList();
-    }
-
-    /** How many meals of each prep tier (every tier is listed, 0 when it has none). */
-    public static Map<PrepTier, Long> tierCounts(List<PlannedMeal> meals) {
-        Map<PrepTier, Long> counted = meals == null ? Map.of()
-                : meals.stream().collect(groupingBy(PlannedMeal::getPrepTier, counting()));
-        return Arrays.stream(PrepTier.values()).collect(toMap(Function.identity(),
-                tier -> counted.getOrDefault(tier, 0L), (a, b) -> a, () -> new EnumMap<>(PrepTier.class)));
-    }
-
-    /** The tier with the most meals; a tie goes to the QUICKER tier. Null when there are no meals. */
-    public static PrepTier mainTier(Map<PrepTier, Long> counts) {
-        if (counts == null) {
-            return null;
+        if (meals != null) {
+            for (PlannedMeal meal : meals) {
+                counts.merge(meal.getPrepTier(), 1, Integer::sum);
+            }
         }
-        return Arrays.stream(PrepTier.values())
-                .filter(tier -> counts.getOrDefault(tier, 0L) > 0)
-                .max(Comparator.comparingLong((PrepTier tier) -> counts.getOrDefault(tier, 0L))
-                        .thenComparing(Comparator.comparingInt(PrepTier::ordinal).reversed()))
-                .orElse(null);
+        return counts;
     }
 
-    public static String badgeTitle(Map<PrepTier, Long> counts) {
+    /** The tier with the most meals (a tie goes to the quicker tier), or null when there are none. */
+    public static PrepTier mainTier(Map<PrepTier, Integer> counts) {
+        PrepTier best = null;
+        int bestCount = 0;
+        for (PrepTier tier : PrepTier.values()) { // Quick, Average, Slow
+            int n = counts == null ? 0 : counts.getOrDefault(tier, 0);
+            if (n > bestCount) {
+                best = tier;
+                bestCount = n;
+            }
+        }
+        return best;
+    }
+
+    /** The badge name: Quick Cook, Home Cook or Slow-Food Chef, or "No badge yet". */
+    public static String badgeTitle(Map<PrepTier, Integer> counts) {
         PrepTier main = mainTier(counts);
         if (main == null) {
             return "No badge yet";
         }
-        return switch (main) {
-            case QUICK -> "Quick Cook";
-            case AVERAGE -> "Home Cook";
-            case SLOW -> "Slow-Food Chef";
-        };
+        switch (main) {
+            case QUICK: return "Quick Cook";
+            case AVERAGE: return "Home Cook";
+            default: return "Slow-Food Chef";
+        }
     }
 
-    /** "2 quick · 1 average · 0 slow" */
-    public static String tierLine(Map<PrepTier, Long> counts) {
-        return Arrays.stream(PrepTier.values())
-                .map(tier -> (counts == null ? 0 : counts.getOrDefault(tier, 0L)) + " " + tier.getLabel().toLowerCase())
-                .collect(joining(" · "));
+    /** For example "3 quick · 2 average · 1 slow". */
+    public static String tierLine(Map<PrepTier, Integer> counts) {
+        StringBuilder line = new StringBuilder();
+        for (PrepTier tier : PrepTier.values()) {
+            if (line.length() > 0) {
+                line.append(" · ");
+            }
+            int n = counts == null ? 0 : counts.getOrDefault(tier, 0);
+            line.append(n).append(' ').append(tier.getLabel().toLowerCase());
+        }
+        return line.toString();
+    }
+
+    /** The current streak in days. */
+    public static int current(Set<LocalDate> days, LocalDate today) {
+        if (days == null || days.isEmpty()) {
+            return 0;
+        }
+        LocalDate cursor = days.contains(today) ? today : today.minusDays(1);
+        int count = 0;
+        while (days.contains(cursor)) {
+            count++;
+            cursor = cursor.minusDays(1);
+        }
+        return count;
+    }
+
+    /** The best streak up to today: days that have not happened yet (planned ahead) do not count. */
+    public static int longest(Set<LocalDate> days, LocalDate today) {
+        if (days == null) {
+            return 0;
+        }
+        Set<LocalDate> upToToday = new TreeSet<>();
+        for (LocalDate day : days) {
+            if (!day.isAfter(today)) {
+                upToToday.add(day);
+            }
+        }
+        return longest(upToToday);
+    }
+
+    /** The longest run of days in a row anywhere in the set. */
+    public static int longest(Set<LocalDate> days) {
+        if (days == null || days.isEmpty()) {
+            return 0;
+        }
+        int best = 0;
+        int run = 0;
+        LocalDate previous = null;
+        for (LocalDate day : new TreeSet<>(days)) {
+            run = (previous != null && previous.plusDays(1).equals(day)) ? run + 1 : 1;
+            best = Math.max(best, run);
+            previous = day;
+        }
+        return best;
+    }
+
+    /** True when the streak is alive but today still has no meal. */
+    public static boolean atRisk(Set<LocalDate> days, LocalDate today) {
+        return days != null && !days.contains(today) && days.contains(today.minusDays(1));
+    }
+
+    /** Seven true/false values for Monday to Sunday of today's week: is a meal planned that day? */
+    public static boolean[] weekFlags(Set<LocalDate> days, LocalDate today) {
+        boolean[] flags = new boolean[7];
+        LocalDate monday = today.minusDays(today.getDayOfWeek().getValue() - 1L);
+        for (int i = 0; i < 7; i++) {
+            flags[i] = days != null && days.contains(monday.plusDays(i));
+        }
+        return flags;
     }
 }

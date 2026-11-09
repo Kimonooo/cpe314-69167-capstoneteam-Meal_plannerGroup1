@@ -1,14 +1,8 @@
 package com.platenplatter.model;
 
-/** A main-course recipe: 10 extra minutes for cooking setup. */
-public class MainCourseRecipe extends SavedRecipe {
-    public MainCourseRecipe(long savedRecipeId, String recipeName, String cuisine, int basePrepMinutes, int usualCalories) {
-        this(savedRecipeId, recipeName, cuisine, basePrepMinutes, usualCalories, "");
-    }
-
-    public MainCourseRecipe(long savedRecipeId, String recipeName, String cuisine, int basePrepMinutes, int usualCalories,
-            String mealDbId) {
-        super(savedRecipeId, recipeName, cuisine, basePrepMinutes, usualCalories, mealDbId);
+public class MainCourseRecipe extends Recipe {
+    public MainCourseRecipe(int id, String name, String cuisine, int basePrepMinutes, int calories) {
+        super(id, name, cuisine, basePrepMinutes, calories);
     }
 
     @Override
@@ -18,6 +12,6 @@ public class MainCourseRecipe extends SavedRecipe {
 
     @Override
     public String getMealType() {
-        return "MAIN_COURSE";
+        return "MainCourse";
     }
 }

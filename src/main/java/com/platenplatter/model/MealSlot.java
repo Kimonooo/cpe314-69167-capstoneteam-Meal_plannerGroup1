@@ -1,11 +1,11 @@
 package com.platenplatter.model;
 
-import java.util.Arrays;
-
 /**
- * The four meals of a day. Each one has a calorie budget, its share of a 2,000-calorie day
- * (the day used on food labels): Breakfast 500 + Lunch 650 + Dinner 650 + Snack 200 = 2,000.
- * The database stores name(), for example LUNCH.
+ * The meal of the day a dish is planned for: Breakfast, Lunch, Dinner or Snack.
+ * Each slot has a calorie budget, its share of a 2,000-calorie day
+ * (the reference day used on nutrition labels): 500 + 650 + 650 + 200 = 2,000.
+ * HealthClassifier uses this budget to decide if a meal is Healthy, Moderate or Indulgent.
+ * The database stores the enum name (BREAKFAST, LUNCH, DINNER, SNACK).
  */
 public enum MealSlot {
     BREAKFAST("Breakfast", 500),
@@ -21,43 +21,54 @@ public enum MealSlot {
         this.calorieBudget = calorieBudget;
     }
 
+    /** The word shown on screen, for example "Breakfast". */
     public String getLabel() {
         return label;
     }
 
+    /** This slot's share of a 2,000-calorie day, in kcal. */
     public int getCalorieBudget() {
         return calorieBudget;
     }
 
-    /** Reads "LUNCH", "Lunch" or "lunch". Anything else throws, with a reason the import can show. */
+    /**
+     * Reads "Breakfast", "BREAKFAST" or "breakfast" (spaces around it are ignored).
+     * @throws IllegalArgumentException for any other word
+     */
     public static MealSlot fromText(String text) {
-        String clean = text == null ? "" : text.trim();
-        return Arrays.stream(values())
-                .filter(slot -> slot.name().equalsIgnoreCase(clean) || slot.label.equalsIgnoreCase(clean))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Unknown meal slot (use Breakfast, Lunch, Dinner or Snack): " + text));
+        if (text != null) {
+            String t = text.trim();
+            for (MealSlot slot : values()) {
+                if (slot.name().equalsIgnoreCase(t) || slot.label.equalsIgnoreCase(t)) {
+                    return slot;
+                }
+            }
+        }
+        throw new IllegalArgumentException("Unknown meal slot (use Breakfast, Lunch, Dinner or Snack): " + text);
     }
 
-    /** Like fromText, but gives the fallback instead of throwing. */
+    /** Like fromText, but returns the fallback instead of throwing (used when reading old database rows). */
     public static MealSlot fromTextOr(String text, MealSlot fallback) {
-        String clean = text == null ? "" : text.trim();
-        return Arrays.stream(values())
-                .filter(slot -> slot.name().equalsIgnoreCase(clean) || slot.label.equalsIgnoreCase(clean))
-                .findFirst()
-                .orElse(fallback);
+        try {
+            return fromText(text);
+        } catch (IllegalArgumentException e) {
+            return fallback;
+        }
     }
 
     /**
-     * The usual slot for a recipe type or meal type: breakfast recipes are Breakfast,
-     * desserts are a Snack, everything else is Dinner.
+     * The slot a recipe goes to when nobody picked one (old rows, CSV files with 4 columns).
+     * Breakfast recipes go to Breakfast, desserts and snacks to Snack, everything else to Dinner.
      */
-    public static MealSlot defaultFor(String type) {
-        String clean = type == null ? "" : type.trim();
-        if (clean.equalsIgnoreCase("Breakfast")) {
+    public static MealSlot defaultFor(String category) {
+        if (category == null) {
+            return DINNER;
+        }
+        String c = category.trim();
+        if (c.equalsIgnoreCase("Breakfast")) {
             return BREAKFAST;
         }
-        if (clean.equalsIgnoreCase("Dessert") || clean.equalsIgnoreCase("Snack")) {
+        if (c.equalsIgnoreCase("Dessert") || c.equalsIgnoreCase("Snack")) {
             return SNACK;
         }
         return DINNER;

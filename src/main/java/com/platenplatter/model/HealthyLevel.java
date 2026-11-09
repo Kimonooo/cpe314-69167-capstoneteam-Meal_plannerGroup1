@@ -1,8 +1,10 @@
 package com.platenplatter.model;
 
-import java.util.Arrays;
-
-/** How healthy a planned meal is. The database stores name(), for example HEALTHY. */
+/**
+ * How healthy a planned meal is. The calendar, the meal chips and the Analytics chart all use the
+ * same three colors: Healthy = green, Moderate = yellow, Indulgent = red.
+ * The database stores the enum name (HEALTHY, MODERATE, INDULGENT).
+ */
 public enum HealthyLevel {
     HEALTHY("Healthy"),
     MODERATE("Moderate"),
@@ -18,23 +20,29 @@ public enum HealthyLevel {
         return label;
     }
 
-    /** Reads "HEALTHY", "Healthy" or "healthy". Anything else throws, with a reason the import can show. */
+    /**
+     * Reads "Healthy", "HEALTHY" or "healthy".
+     * @throws IllegalArgumentException for any other word
+     */
     public static HealthyLevel fromText(String text) {
-        String clean = text == null ? "" : text.trim();
-        return Arrays.stream(values())
-                .filter(level -> level.name().equalsIgnoreCase(clean) || level.label.equalsIgnoreCase(clean))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Unknown healthy level (use Healthy, Moderate or Indulgent): " + text));
+        if (text != null) {
+            String t = text.trim();
+            for (HealthyLevel level : values()) {
+                if (level.name().equalsIgnoreCase(t) || level.label.equalsIgnoreCase(t)) {
+                    return level;
+                }
+            }
+        }
+        throw new IllegalArgumentException("Unknown healthy level (use Healthy, Moderate or Indulgent): " + text);
     }
 
-    /** Like fromText, but gives the fallback instead of throwing. */
+    /** Like fromText, but returns the fallback instead of throwing (used when reading old database rows). */
     public static HealthyLevel fromTextOr(String text, HealthyLevel fallback) {
-        String clean = text == null ? "" : text.trim();
-        return Arrays.stream(values())
-                .filter(level -> level.name().equalsIgnoreCase(clean) || level.label.equalsIgnoreCase(clean))
-                .findFirst()
-                .orElse(fallback);
+        try {
+            return fromText(text);
+        } catch (IllegalArgumentException e) {
+            return fallback;
+        }
     }
 
     @Override

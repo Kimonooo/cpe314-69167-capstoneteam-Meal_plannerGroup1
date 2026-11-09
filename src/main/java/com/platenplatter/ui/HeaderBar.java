@@ -1,17 +1,10 @@
 package com.platenplatter.ui;
 
-import com.platenplatter.model.PlannedMeal;
 import com.platenplatter.model.PrepTier;
+import com.platenplatter.util.DateTimeText;
 import com.platenplatter.util.PlanStore;
+import com.platenplatter.util.PlannedMeal;
 import com.platenplatter.util.StreakCalculator;
-import com.platenplatter.util.TextFormat;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -20,8 +13,6 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ToggleButton;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -29,70 +20,103 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
+
 /**
- * The top of every page, like the header of a website:
- *   row 1: the logo, one rounded pill per page, the user's initials and Log out;
- *   row 2: the greeting with the date and time, the streak and the prep-tier badge.
- * The clock ticks every second; at midnight it refreshes the streak and tells the other pages.
+ * The maroon band at the top of the app.
+ * It shows the greeting with the user's display name, the REAL-TIME date and clock (updated every
+ * second by a Timeline, so it never needs a button) and the STREAK badge: how many days in a row
+ * have a planned meal, and how the streak's meals split into Quick, Average and Slow.
+ * The streak is re-counted from the database whenever refresh() is called (when a meal is added,
+ * removed or imported) and automatically when the clock passes midnight.
  */
 public class HeaderBar {
-    private record StreakData(Set<LocalDate> days, List<PlannedMeal> streakMeals) { }
-
     private final PlanStore store;
     private final Supplier<LocalDateTime> now;
-    private final VBox root = new VBox();
-    private final ToggleGroup pills = new ToggleGroup();
-    private final Label avatar = new Label();
+
+    private final HBox root = new HBox(18);
     private final Label greetingLabel = new Label();
-    private final Label streakChip = new Label("0-day streak");
-    private final Label badgeChip = new Label("No badge yet");
-    private final Label hintLabel = new Label("Plan a meal today to keep your streak!");
+    private final Label dateLabel = new Label();
+    private final Label timeLabel = new Label();
+    private final Label hintLabel = new Label();
+    private final Label streakValue = new Label("0");
+    private final Label streakCaption = new Label("DAY STREAK");
+    private final Label streakTiers = new Label();
+    private final VBox streakPill = new VBox(0, streakValue, streakCaption, streakTiers);
     private final Tooltip streakTip = new Tooltip();
+    private final Button logoutButton = new Button("Log out");
     private final Timeline clock;
+
     private String userName = "";
     private LocalDate shownDate;
     private Runnable onNewDay = () -> { };
 
-    public HeaderBar(PlanStore store, List<String> pageNames, Consumer<String> onOpen, Runnable onLogout) {
-        this(store, pageNames, onOpen, onLogout, LocalDateTime::now);
+    /** What one streak re-count finds: the planned days, and the meals inside the current streak. */
+    private static final class StreakData {
+        final Set<LocalDate> days;
+        final List<PlannedMeal> streakMeals;
+
+        StreakData(Set<LocalDate> days, List<PlannedMeal> streakMeals) {
+            this.days = days;
+            this.streakMeals = streakMeals;
+        }
     }
 
-    public HeaderBar(PlanStore store, List<String> pageNames, Consumer<String> onOpen, Runnable onLogout,
-                     Supplier<LocalDateTime> now) {
+    public HeaderBar(PlanStore store) {
+        this(store, LocalDateTime::now);
+    }
+
+    /** The second constructor lets a test pretend it is any time of day. */
+    public HeaderBar(PlanStore store, Supplier<LocalDateTime> now) {
         this.store = store;
         this.now = now;
-        HBox pillRow = new HBox(4);
-        pageNames.forEach(name -> pillRow.getChildren().add(pill(name, onOpen)));
-        Region gap = new Region();
-        HBox.setHgrow(gap, Priority.ALWAYS);
-        avatar.getStyleClass().add("pnp-avatar");
-        Button logout = new Button("Log out");
-        logout.setId("headerLogout");
-        logout.getStyleClass().add("pnp-link");
-        logout.setOnAction(e -> onLogout.run());
-        HBox nav = new HBox(18, Theme.logo(46), pillRow, gap, avatar, logout);
-        nav.setAlignment(Pos.CENTER_LEFT);
-        nav.getStyleClass().add("pnp-nav");
-        pillRow.setAlignment(Pos.CENTER_LEFT);
 
+        Label title = new Label("Plate N Platter");
+        title.getStyleClass().add("pnp-header-title");
+        greetingLabel.getStyleClass().add("pnp-header-greeting");
         greetingLabel.setId("headerGreeting");
-        greetingLabel.getStyleClass().add("pnp-subtitle");
-        streakChip.setId("streakChip");
-        streakChip.getStyleClass().add("pnp-streak-chip");
-        badgeChip.setId("badgeChip");
-        badgeChip.getStyleClass().add("pnp-streak-chip");
-        hintLabel.getStyleClass().add("pnp-badge");
-        Theme.show(hintLabel, false);
-        Tooltip.install(streakChip, streakTip);
-        Region gap2 = new Region();
-        HBox.setHgrow(gap2, Priority.ALWAYS);
-        HBox hello = new HBox(8, greetingLabel, gap2, hintLabel, streakChip, badgeChip);
-        hello.setAlignment(Pos.CENTER_LEFT);
-        hello.getStyleClass().add("pnp-hello");
+        VBox left = new VBox(2, title, greetingLabel);
 
-        root.getChildren().addAll(nav, hello);
+        dateLabel.getStyleClass().add("pnp-header-date");
+        dateLabel.setId("headerDate");
+        timeLabel.getStyleClass().add("pnp-header-time");
+        timeLabel.setId("headerTime");
+        hintLabel.getStyleClass().add("pnp-header-greeting");
+        hintLabel.setId("headerHint");
+        hintLabel.setStyle("-fx-text-fill: #FFD84D;");
+        VBox clockBox = new VBox(0, dateLabel, timeLabel, hintLabel);
+        clockBox.setAlignment(Pos.CENTER_RIGHT);
+
+        streakValue.getStyleClass().add("pnp-streak-value");
+        streakValue.setId("streakValue");
+        streakCaption.getStyleClass().add("pnp-streak-caption");
+        streakCaption.setId("streakCaption");
+        streakTiers.getStyleClass().add("pnp-streak-tiers");
+        streakTiers.setId("streakTiers");
+        streakPill.getStyleClass().add("pnp-streak");
+        streakPill.setId("streakPill");
+        Tooltip.install(streakPill, streakTip);
+
+        logoutButton.setId("headerLogout");
+        logoutButton.getStyleClass().add("pnp-header-button");
+        logoutButton.setVisible(false);
+        logoutButton.setManaged(false);
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        root.getChildren().addAll(left, spacer, clockBox, streakPill, logoutButton);
+        root.setAlignment(Pos.CENTER_LEFT);
+        root.getStyleClass().add("pnp-header");
         Theme.apply(root);
+
         tick();
+        refresh();
         clock = new Timeline(new KeyFrame(Duration.seconds(1), e -> tick()));
         clock.setCycleCount(Animation.INDEFINITE);
         clock.play();
@@ -102,50 +126,46 @@ public class HeaderBar {
         return root;
     }
 
-    /** Marks a page's pill as the selected one (without clicking it). */
-    public void select(String pageName) {
-        pills.getToggles().stream()
-                .filter(toggle -> pageName.equals(toggle.getUserData()))
-                .findFirst()
-                .ifPresent(toggle -> toggle.setSelected(true));
-    }
-
+    /** The display name used in the greeting ("Good morning, Jon!"). Call again after a rename. */
     public void setUserName(String name) {
-        userName = name == null ? "" : name.trim();
-        avatar.setText(userName.isEmpty() ? "?" : userName.substring(0, 1).toUpperCase());
+        this.userName = name == null ? "" : name.trim();
         tick();
     }
 
-    public void setOnNewDay(Runnable onNewDay) {
-        this.onNewDay = onNewDay;
+    /** Shows the Log out button; null hides it (previews have nobody to log out). */
+    public void setOnLogout(Runnable onLogout) {
+        boolean show = onLogout != null;
+        logoutButton.setVisible(show);
+        logoutButton.setManaged(show);
+        logoutButton.setOnAction(show ? e -> onLogout.run() : null);
     }
 
+    /** Called when the clock passes midnight, so other tabs can show the new day. */
+    public void setOnNewDay(Runnable onNewDay) {
+        this.onNewDay = onNewDay == null ? () -> { } : onNewDay;
+    }
+
+    /** Stops the clock (call when the window closes or the user logs out). */
     public void stop() {
         clock.stop();
     }
 
-    private ToggleButton pill(String name, Consumer<String> onOpen) {
-        ToggleButton pill = new ToggleButton(name);
-        pill.setId("nav-" + name.replace(" ", ""));
-        pill.setUserData(name);
-        pill.setToggleGroup(pills);
-        pill.getStyleClass().add("pnp-nav-pill");
-        pill.setOnAction(e -> onOpen.accept(name));     // AppShell opens the page and keeps the pill selected
-        return pill;
-    }
-
+    /** Runs once a second: updates the date, the clock and the greeting. */
     private void tick() {
         LocalDateTime moment = now.get();
+        dateLabel.setText(DateTimeText.date(moment.toLocalDate()));
+        timeLabel.setText(DateTimeText.time(moment.toLocalTime()));
         String who = userName.isEmpty() ? "" : ", " + userName;
-        greetingLabel.setText(TextFormat.greeting(moment.toLocalTime()) + who + " · "
-                + TextFormat.date(moment.toLocalDate()) + " · " + TextFormat.time(moment.toLocalTime()));
+        greetingLabel.setText(DateTimeText.greeting(moment.toLocalTime()) + who + "! What are we cooking?");
         if (shownDate != null && !shownDate.equals(moment.toLocalDate())) {
-            onNewDay.run();                                // a new day: Today and the streak change
+            shownDate = moment.toLocalDate();
+            refresh();
+            onNewDay.run();
         }
         shownDate = moment.toLocalDate();
     }
 
-    /** Reads the streak in the background and shows it. */
+    /** Re-counts the streak and its prep-time tiers from the database (in the background). */
     public void refresh() {
         LocalDate today = now.get().toLocalDate();
         Task<StreakData> task = new Task<>() {
@@ -153,29 +173,44 @@ public class HeaderBar {
             protected StreakData call() throws Exception {
                 Set<LocalDate> days = store.plannedDates();
                 LocalDate[] range = StreakCalculator.currentRange(days, today);
-                return new StreakData(days, range == null ? List.of() : store.mealsBetween(range[0], range[1]));
+                List<PlannedMeal> meals = range == null ? new ArrayList<>() : store.mealsBetween(range[0], range[1]);
+                return new StreakData(days, meals);
             }
         };
         task.setOnSucceeded(e -> showStreak(today, task.getValue()));
-        task.setOnFailed(e -> streakTip.setText("Could not read the meal plan."));
-        AppShell.runInBackground(task);
+        task.setOnFailed(e -> {
+            streakValue.setText("-");
+            streakTiers.setText("");
+            streakTip.setText("Could not read the meal plan.");
+        });
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private void showStreak(LocalDate today, StreakData data) {
-        int current = StreakCalculator.current(data.days(), today);
-        int best = StreakCalculator.longest(data.days(), today);
-        boolean atRisk = StreakCalculator.atRisk(data.days(), today);
-        Map<PrepTier, Long> tiers = StreakCalculator.tierCounts(data.streakMeals());
-        streakChip.setText(current + "-day streak");
-        streakChip.getStyleClass().remove("at-risk");
+        int current = StreakCalculator.current(data.days, today);
+        int best = StreakCalculator.longest(data.days, today);
+        boolean atRisk = StreakCalculator.atRisk(data.days, today);
+        Map<PrepTier, Integer> tiers = StreakCalculator.tierCounts(data.streakMeals);
+
+        streakValue.setText(String.valueOf(current));
+        streakTiers.setText(current == 0 ? "plan a meal to start" : StreakCalculator.tierLine(tiers));
+
+        streakPill.getStyleClass().remove("at-risk");
         if (atRisk) {
-            streakChip.getStyleClass().add("at-risk");
+            streakPill.getStyleClass().add("at-risk");
         }
-        Theme.show(hintLabel, atRisk);
-        badgeChip.setText(current == 0 ? "Plan a meal to start" : StreakCalculator.badgeTitle(tiers) + " badge");
-        streakTip.setText("Current streak: " + current + (current == 1 ? " day" : " days")
+        hintLabel.setText(atRisk ? "Plan a meal today to keep your streak!" : "");
+        hintLabel.setVisible(atRisk);
+        hintLabel.setManaged(atRisk);
+        streakTip.setText("Badge: " + StreakCalculator.badgeTitle(tiers)
+                + "\nCurrent streak: " + current + (current == 1 ? " day" : " days")
                 + "\nBest streak: " + best + (best == 1 ? " day" : " days")
-                + "\nMeals in this streak: " + StreakCalculator.tierLine(tiers)
-                + "\nPlan at least one meal every day to keep it going.");
+                + "\n\nMeals in this streak by prep time:"
+                + "\n  Quick (" + PrepTier.QUICK.getRange() + "): " + tiers.get(PrepTier.QUICK)
+                + "\n  Average (" + PrepTier.AVERAGE.getRange() + "): " + tiers.get(PrepTier.AVERAGE)
+                + "\n  Slow (" + PrepTier.SLOW.getRange() + "): " + tiers.get(PrepTier.SLOW)
+                + "\n\nPlan at least one meal every day to keep it going.");
     }
 }

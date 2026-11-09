@@ -1,23 +1,17 @@
 package com.platenplatter.model;
 
-/** A dessert recipe: 15 extra minutes for chilling or setting. */
-public class DessertRecipe extends SavedRecipe {
-    public DessertRecipe(long savedRecipeId, String recipeName, String cuisine, int basePrepMinutes, int usualCalories) {
-        this(savedRecipeId, recipeName, cuisine, basePrepMinutes, usualCalories, "");
-    }
-
-    public DessertRecipe(long savedRecipeId, String recipeName, String cuisine, int basePrepMinutes, int usualCalories,
-            String mealDbId) {
-        super(savedRecipeId, recipeName, cuisine, basePrepMinutes, usualCalories, mealDbId);
+public class DessertRecipe extends Recipe {
+    public DessertRecipe(int id, String name, String cuisine, int basePrepMinutes, int calories) {
+        super(id, name, cuisine, basePrepMinutes, calories);
     }
 
     @Override
     public int getPrepMinutes() {
-        return getBasePrepMinutes() + 15; // dessert: +15 min for chilling or setting
+        return getBasePrepMinutes() + 15; // dessert: +15 min for chilling/setting
     }
 
     @Override
     public String getMealType() {
-        return "DESSERT";
+        return "Dessert";
     }
 }

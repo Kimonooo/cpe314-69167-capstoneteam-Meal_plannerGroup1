@@ -1,64 +1,81 @@
--- Plate N Platter database: 5 tables, one primary key each.
--- Table names are plural; a primary key is named after one row (user_id, saved_recipe_id, ...);
--- a foreign key has the same name as the key it points to.
--- DatabaseConnector.createTables runs this file every time the app starts (IF NOT EXISTS makes that safe).
-
 CREATE TABLE IF NOT EXISTS users (
-    user_id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    username             TEXT    NOT NULL UNIQUE COLLATE NOCASE,
-    display_name         TEXT    NOT NULL,
-    age                  INTEGER CHECK (age BETWEEN 1 AND 120),
-    gender               TEXT,
-    password_hash        TEXT    NOT NULL,
-    salt                 TEXT    NOT NULL,
-    security_question    TEXT    NOT NULL,
-    security_answer_hash TEXT    NOT NULL
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    username TEXT NOT NULL UNIQUE,
+    age INTEGER,
+    gender TEXT,
+    password_hash TEXT NOT NULL,
+    salt TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS saved_recipes (
-    saved_recipe_id   INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id           INTEGER NOT NULL
-        REFERENCES users(user_id) ON DELETE CASCADE,
-    recipe_name       TEXT    NOT NULL COLLATE NOCASE,
-    meal_type         TEXT    NOT NULL
-        CHECK (meal_type IN ('BREAKFAST', 'MAIN_COURSE', 'DESSERT')),
-    cuisine           TEXT    NOT NULL DEFAULT '',
-    base_prep_minutes INTEGER NOT NULL DEFAULT 0 CHECK (base_prep_minutes >= 0),
-    usual_calories    INTEGER NOT NULL DEFAULT 0 CHECK (usual_calories >= 0),
-    mealdb_id         TEXT    NOT NULL DEFAULT '',
-    UNIQUE (user_id, recipe_name)
+CREATE TABLE IF NOT EXISTS recipes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    name TEXT NOT NULL,
+    meal_type TEXT NOT NULL,
+    cuisine TEXT,
+    healthy_level TEXT,
+    prep_minutes INTEGER NOT NULL DEFAULT 0,
+    calories INTEGER NOT NULL DEFAULT 0,
+    external_id TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS recipe_components (
+    parent_recipe_id INTEGER NOT NULL,
+    sub_recipe_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1,
+    PRIMARY KEY (parent_recipe_id, sub_recipe_id),
+    FOREIGN KEY (parent_recipe_id) REFERENCES recipes(id),
+    FOREIGN KEY (sub_recipe_id) REFERENCES recipes(id)
 );
 
 CREATE TABLE IF NOT EXISTS ingredients (
-    ingredient_id   INTEGER PRIMARY KEY AUTOINCREMENT,
-    ingredient_name TEXT    NOT NULL UNIQUE COLLATE NOCASE,
-    food_group      TEXT    NOT NULL DEFAULT 'OTHER'
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE
 );
 
-CREATE TABLE IF NOT EXISTS ingredient_amounts (
-    ingredient_amount_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    saved_recipe_id      INTEGER NOT NULL
-        REFERENCES saved_recipes(saved_recipe_id) ON DELETE CASCADE,
-    ingredient_id        INTEGER NOT NULL
-        REFERENCES ingredients(ingredient_id),
-    measure              TEXT    NOT NULL DEFAULT '',
-    UNIQUE (saved_recipe_id, ingredient_id)
+CREATE TABLE IF NOT EXISTS recipe_ingredients (
+    recipe_id INTEGER NOT NULL,
+    ingredient_id INTEGER NOT NULL,
+    measure TEXT,
+    PRIMARY KEY (recipe_id, ingredient_id),
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id),
+    FOREIGN KEY (ingredient_id) REFERENCES ingredients(id)
 );
 
-CREATE TABLE IF NOT EXISTS planned_meals (
-    planned_meal_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id         INTEGER NOT NULL
-        REFERENCES users(user_id) ON DELETE CASCADE,
-    saved_recipe_id INTEGER NOT NULL
-        REFERENCES saved_recipes(saved_recipe_id),
-    plan_date       TEXT    NOT NULL,                  -- yyyy-mm-dd
-    meal_slot       TEXT    NOT NULL
-        CHECK (meal_slot IN ('BREAKFAST', 'LUNCH', 'DINNER', 'SNACK')),
-    prep_minutes    INTEGER NOT NULL CHECK (prep_minutes >= 0),
-    calories        INTEGER NOT NULL DEFAULT 0 CHECK (calories >= 0),
-    healthy_level   TEXT    NOT NULL
-        CHECK (healthy_level IN ('HEALTHY', 'MODERATE', 'INDULGENT'))
+CREATE TABLE IF NOT EXISTS meal_plan_entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    recipe_id INTEGER NOT NULL,
+    plan_date TEXT NOT NULL,
+    meal_slot TEXT NOT NULL,
+    eaten INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_planned_meals_user_date
-    ON planned_meals (user_id, plan_date);
+-- The table every tab of the app reads and writes (MealPlanHistoryDao creates the same table,
+-- and adds the newer columns to a database file that was made by an older build).
+--   user_id       whose meal it is (NULL only for rows saved before accounts existed)
+--   meal_slot     BREAKFAST, LUNCH, DINNER or SNACK
+--   calories      kcal of one serving, 0 = not known
+--   healthy_level HEALTHY, MODERATE or INDULGENT
+-- The prep-time tier (Quick, Average, Slow) is NOT a column: it is worked out from prep_minutes.
+CREATE TABLE IF NOT EXISTS meal_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER REFERENCES users(id),
+    plan_date TEXT NOT NULL,
+    meal_slot TEXT NOT NULL DEFAULT 'DINNER' CHECK (meal_slot IN ('BREAKFAST', 'LUNCH', 'DINNER', 'SNACK')),
+    recipe_name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    prep_minutes INTEGER NOT NULL CHECK (prep_minutes >= 0),
+    calories INTEGER NOT NULL DEFAULT 0 CHECK (calories >= 0),
+    healthy_level TEXT NOT NULL DEFAULT 'MODERATE' CHECK (healthy_level IN ('HEALTHY', 'MODERATE', 'INDULGENT'))
+);
+
+CREATE TABLE IF NOT EXISTS meal_ingredient (
+    recipe_name TEXT NOT NULL COLLATE NOCASE,
+    ingredient TEXT NOT NULL,
+    PRIMARY KEY (recipe_name, ingredient)
+);

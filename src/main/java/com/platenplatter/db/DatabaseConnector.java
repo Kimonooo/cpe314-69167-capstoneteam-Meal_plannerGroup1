@@ -1,25 +1,23 @@
 package com.platenplatter.db;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Arrays;
-import java.util.List;
 
 /**
- * Opens connections to the SQLite file and creates the 5 tables from schema.sql.
- * Every connection switches foreign keys on (SQLite ignores them otherwise) and waits up to
- * 5 seconds for a busy database instead of failing with "database is locked".
+ * The one place that opens the app's SQLite database for the Milestone 2 tabs.
+ * Responsibility: open a connection and set it up:
+ *   - foreign_keys = ON: SQLite ignores foreign keys unless this is switched on for each connection,
+ *     so a meal can never point at a user who does not exist;
+ *   - busy_timeout = 5000: WAIT (up to 5 seconds) instead of failing when another connection
+ *     is writing at the same moment.
+ *
+ * It must point at the SAME file the rest of the app uses (Database.java uses platenplatter.db too).
  */
 public final class DatabaseConnector {
-    /** The database file, made in the folder the app is started from. */
-    public static final String DEFAULT_URL = "jdbc:sqlite:plate_n_platter.db";
+    /** The database file in the project folder (the file called platenplatter.db). */
+    public static final String DEFAULT_URL = "jdbc:sqlite:platenplatter.db";
 
     private DatabaseConnector() { }
 
@@ -32,38 +30,10 @@ public final class DatabaseConnector {
         try (Statement st = connection.createStatement()) {
             st.execute("PRAGMA foreign_keys = ON");
             st.execute("PRAGMA busy_timeout = 5000");
-            st.execute("PRAGMA synchronous = OFF");     // faster imports; fine for class data
         } catch (SQLException e) {
             connection.close();
             throw e;
         }
         return connection;
-    }
-
-    /** Runs schema.sql. Safe every time the app starts, because each table is CREATE ... IF NOT EXISTS. */
-    public static void createTables(Connection connection) throws SQLException {
-        try (Statement st = connection.createStatement()) {
-            st.executeUpdate(readSchema());   // SQLite runs every statement in the script
-        }
-    }
-
-    /** The names of the tables in the database, A to Z (used by the tests). */
-    public static List<String> tableNames(Connection connection) throws SQLException {
-        String sql = "SELECT group_concat(name) FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'";
-        try (PreparedStatement ps = connection.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
-            String names = rs.next() ? rs.getString(1) : null;
-            return names == null ? List.of() : Arrays.stream(names.split(",")).sorted().toList();
-        }
-    }
-
-    private static String readSchema() throws SQLException {
-        try (InputStream in = DatabaseConnector.class.getResourceAsStream("/schema.sql")) {
-            if (in == null) {
-                throw new SQLException("schema.sql was not found on the classpath");
-            }
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new SQLException("Could not read schema.sql", e);
-        }
     }
 }

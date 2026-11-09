@@ -1,38 +1,100 @@
 package com.platenplatter.util;
 
-import com.platenplatter.model.SavedRecipe;
+import com.platenplatter.model.Recipe;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
 
 /**
- * Totals for nested recipes, worked out with RECURSION and no loop.
- *
- * A recipe can hold sub-recipes (a cake holds a filling, the filling holds a cream).
- * Base case: a recipe with no sub-recipes. Its stream is empty, so the sum is 0 and
- * only its own time is returned.
- * Recursive case: its own time plus the total of each sub-recipe, to any depth.
- *
- * A loop in the tree (a recipe inside itself) can never be built: SavedRecipe.addSubRecipe
- * asks wouldCreateCycle first and throws CircularRecipeException. So these walks always end.
+ * Totals values across a recipe and all of its nested sub-recipes (to any depth).
+ * Day 2: it now notices when a recipe contains itself and stops instead of looping forever.
  */
-public final class RecipeCalculator {
+public class RecipeCalculator {
+
     private RecipeCalculator() { }
 
-    /** Base case: no sub-recipes, so the stream is empty and its sum is 0. */
-    public static int totalPrepMinutes(SavedRecipe recipe) {
-        return recipe.getPrepMinutes() + recipe.getSubRecipes().stream()
-                .mapToInt(RecipeCalculator::totalPrepMinutes)   // recursive case
-                .sum();
+    /** Own prep time + the total of every sub-recipe. Throws CircularRecipeException on a loop. */
+    public static int getTotalPrepMinutes(Recipe recipe) {
+        return totalPrepMinutes(recipe, newPath());
     }
 
-    /** The same pattern for calories: its own usual calories plus every sub-recipe's total. */
-    public static int totalCalories(SavedRecipe recipe) {
-        return recipe.getUsualCalories() + recipe.getSubRecipes().stream()
-                .mapToInt(RecipeCalculator::totalCalories)
-                .sum();
+    /** Same idea for calories. */
+    public static int getTotalCalories(Recipe recipe) {
+        return totalCalories(recipe, newPath());
     }
 
-    /** True when sub is the parent itself or already contains it at any depth. */
-    public static boolean wouldCreateCycle(SavedRecipe parent, SavedRecipe sub) {
-        return sub == parent || sub.getSubRecipes().stream()
-                .anyMatch(inner -> wouldCreateCycle(parent, inner));
+    /**
+     * BASE CASE: a recipe with no sub-recipes returns just its own time.
+     * RECURSIVE CASE: otherwise it adds the total of each sub-recipe.
+     * "path" remembers the recipes we are currently inside. If we meet one of them again,
+     * the recipe contains itself, which would loop forever, so we stop.
+     */
+    private static int totalPrepMinutes(Recipe recipe, Set<Recipe> path) {
+        enter(recipe, path);
+        int total = recipe.getPrepMinutes();
+        for (Recipe sub : recipe.getSubRecipes()) {
+            total += totalPrepMinutes(sub, path);
+        }
+        path.remove(recipe); // we are leaving this recipe, so it may appear again elsewhere
+        return total;
+    }
+
+    private static int totalCalories(Recipe recipe, Set<Recipe> path) {
+        enter(recipe, path);
+        int total = recipe.getCalories();
+        for (Recipe sub : recipe.getSubRecipes()) {
+            total += totalCalories(sub, path);
+        }
+        path.remove(recipe);
+        return total;
+    }
+
+    private static void enter(Recipe recipe, Set<Recipe> path) {
+        if (!path.add(recipe)) {
+            throw new CircularRecipeException(
+                    "Circular reference: \"" + recipe.getName() + "\" contains itself");
+        }
+    }
+
+    /**
+     * Ask this BEFORE adding "candidate" inside "parent".
+     * True means it would make a loop (candidate is the parent, or already contains the parent).
+     */
+    public static boolean wouldCreateCycle(Recipe parent, Recipe candidate) {
+        return candidate == parent || contains(candidate, parent, newPath());
+    }
+
+    /** Recursive search: is "target" anywhere inside "root"? */
+    private static boolean contains(Recipe root, Recipe target, Set<Recipe> visited) {
+        if (root == target) {
+            return true;
+        }
+        if (!visited.add(root)) {
+            return false; // already searched this one
+        }
+        for (Recipe sub : root.getSubRecipes()) {
+            if (contains(sub, target, visited)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Quick / Easy / Hard from the total prep time.
+     * These cut-offs are placeholders: the group can change them.
+     */
+    public static String getDifficultyLabel(int totalMinutes) {
+        if (totalMinutes <= 30) {
+            return "Quick";
+        } else if (totalMinutes <= 60) {
+            return "Easy";
+        }
+        return "Hard";
+    }
+
+    // Recipes are compared by identity (same object), not by name
+    private static Set<Recipe> newPath() {
+        return Collections.newSetFromMap(new IdentityHashMap<>());
     }
 }
