@@ -1,8 +1,14 @@
 package com.platenplatter.model;
 
-public class BreakfastRecipe extends Recipe {
-    public BreakfastRecipe(int id, String name, String cuisine, int basePrepMinutes, int calories) {
-        super(id, name, cuisine, basePrepMinutes, calories);
+/** A breakfast recipe: its prep time is just the base minutes. */
+public class BreakfastRecipe extends SavedRecipe {
+    public BreakfastRecipe(long savedRecipeId, String recipeName, String cuisine, int basePrepMinutes, int usualCalories) {
+        this(savedRecipeId, recipeName, cuisine, basePrepMinutes, usualCalories, "");
+    }
+
+    public BreakfastRecipe(long savedRecipeId, String recipeName, String cuisine, int basePrepMinutes, int usualCalories,
+            String mealDbId) {
+        super(savedRecipeId, recipeName, cuisine, basePrepMinutes, usualCalories, mealDbId);
     }
 
     @Override
@@ -12,6 +18,6 @@ public class BreakfastRecipe extends Recipe {
 
     @Override
     public String getMealType() {
-        return "Breakfast";
+        return "BREAKFAST";
     }
 }

@@ -1,270 +1,239 @@
-/* Plate N Platter - shared look for the Milestone 2 tabs.
-   Colors: maroon #5C0008, cream #FFFBD0, gold #F2B705, text #2B1B17, muted #7A6A62 */
+/*
+ * Plate N Platter: one stylesheet for the whole app, in a web-page style.
+ * Colors come from the team logo: maroon for buttons and the active page, cream for the
+ * page background, brown for small labels. Healthy, Moderate and Indulgent keep the same
+ * green, amber and red everywhere.
+ */
 
+/* ------------------------------------------------------------------ page */
 .pnp-root {
-    -fx-background-color: #FFFBD0;
-    -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-background-color: #F6F0E4;
+    -fx-font-family: "Segoe UI";
     -fx-font-size: 13px;
-    -fx-text-fill: #2B1B17;
+    -fx-text-fill: #2A1B1E;
+    /* The default text color of every label, check box and chart label. JavaFX would otherwise
+       choose black or white from the background behind the text, and pick white on a see-through one. */
+    -fx-text-background-color: #2A1B1E;
 }
+.pnp-page { -fx-background-color: #F6F0E4; }
+.pnp-scroll, .pnp-scroll > .viewport { -fx-background-color: transparent; -fx-background: #F6F0E4; }
+.pnp-scroll { -fx-padding: 0; }
 
-/* ---------- text ---------- */
-.pnp-title { -fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #5C0008; }
-.pnp-root .pnp-title { -fx-text-fill: #5C0008; }
-.pnp-subtitle, .pnp-root .pnp-subtitle { -fx-font-size: 13px; -fx-text-fill: #7A6A62; }
-.pnp-section, .pnp-root .pnp-section { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #5C0008; }
-.pnp-muted, .pnp-root .pnp-muted { -fx-text-fill: #7A6A62; }
-.pnp-empty, .pnp-root .pnp-empty { -fx-text-fill: #A89B8C; -fx-font-size: 14px; }
-.pnp-mono { -fx-font-family: "Consolas", "Courier New", monospace; -fx-font-size: 12px; }
-.pnp-status, .pnp-root .pnp-status { -fx-font-size: 13px; -fx-text-fill: #7A6A62; }
-.pnp-status.ok, .pnp-root .pnp-status.ok { -fx-text-fill: #1B6B2F; -fx-font-weight: bold; }
-.pnp-status.error, .pnp-root .pnp-status.error { -fx-text-fill: #B3261E; -fx-font-weight: bold; }
+.pnp-title { -fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #4E0920; }
+.pnp-subtitle { -fx-font-size: 13px; -fx-text-fill: #7A6A6C; }
+.pnp-section { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2A1B1E; }
+.pnp-muted { -fx-text-fill: #7A6A6C; }
+.pnp-empty { -fx-text-fill: #9B8F8A; -fx-font-style: italic; }
+.pnp-mono { -fx-font-family: "Consolas"; -fx-font-size: 12px; -fx-background-color: #F6F0E4;
+            -fx-background-radius: 8; -fx-padding: 10; }
+.pnp-overline { -fx-font-size: 10.5px; -fx-font-weight: bold; -fx-text-fill: #764640; }
+.pnp-card-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #2A1B1E; }
+.pnp-note { -fx-background-color: #F6F0E4; -fx-background-radius: 9; -fx-padding: 9 11 9 11;
+            -fx-text-fill: #7A6A6C; -fx-font-size: 12px; }
 
-/* ---------- cards ---------- */
+/* ------------------------------------------------------------------ top navigation bar */
+.pnp-nav {
+    -fx-background-color: white;
+    -fx-border-color: transparent transparent #E7DFD2 transparent;
+    -fx-padding: 8 22 8 22;
+    -fx-spacing: 18;
+}
+.pnp-nav-pill {
+    -fx-background-color: transparent;
+    -fx-background-radius: 999;
+    -fx-padding: 8 13 8 13;
+    -fx-text-fill: #5B4A4D;
+    -fx-font-size: 13.5px;
+    -fx-cursor: hand;
+}
+.pnp-nav-pill:hover { -fx-background-color: #F3E9EC; }
+.pnp-nav-pill:selected { -fx-background-color: #6B0E2D; -fx-text-fill: white; -fx-font-weight: bold; }
+.pnp-avatar {
+    -fx-background-color: #E2DBC9; -fx-background-radius: 999; -fx-text-fill: #6B0E2D;
+    -fx-font-weight: bold; -fx-min-width: 32; -fx-min-height: 32; -fx-alignment: center;
+}
+.pnp-hello { -fx-padding: 18 26 0 26; }
+.pnp-streak-chip {
+    -fx-background-color: white; -fx-background-radius: 999; -fx-border-color: #E7DFD2;
+    -fx-border-radius: 999; -fx-padding: 4 10 4 10; -fx-text-fill: #764640;
+    -fx-font-size: 11.5px; -fx-font-weight: bold;
+}
+.pnp-streak-chip.at-risk { -fx-border-color: #C98A00; -fx-background-color: #FFF1CF; -fx-text-fill: #9A6A00; }
+
+/* ------------------------------------------------------------------ cards */
 .pnp-card {
     -fx-background-color: white;
     -fx-background-radius: 14;
+    -fx-border-color: #E7DFD2;
+    -fx-border-radius: 14;
     -fx-padding: 16;
-    -fx-effect: dropshadow(gaussian, rgba(92, 0, 8, 0.14), 12, 0.1, 0, 3);
+    -fx-effect: dropshadow(gaussian, rgba(60, 20, 30, 0.07), 10, 0, 0, 2);
 }
-.pnp-stat-value, .pnp-root .pnp-stat-value { -fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #5C0008; }
-.pnp-stat-label, .pnp-root .pnp-stat-label { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #7A6A62; }
-.pnp-accent-bar { -fx-background-color: #F2B705; -fx-background-radius: 3; }
+.pnp-recipe-card { -fx-cursor: hand; -fx-padding: 14 14 12 14; }
+.pnp-recipe-card:hover { -fx-border-color: #6B0E2D; -fx-effect: dropshadow(gaussian, rgba(107, 14, 45, 0.15), 14, 0, 0, 4); }
+.pnp-recipe-card.selected { -fx-border-color: #6B0E2D; -fx-border-width: 2; -fx-background-color: #FFF9F6; }
 
-/* ---------- buttons ---------- */
+/* ------------------------------------------------------------------ buttons and fields */
 .pnp-button {
-    -fx-background-color: #5C0008;
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
-    -fx-background-radius: 20;
-    -fx-padding: 8 22 8 22;
-    -fx-cursor: hand;
+    -fx-background-color: #6B0E2D; -fx-background-radius: 10; -fx-text-fill: white;
+    -fx-font-weight: bold; -fx-font-size: 13.5px; -fx-padding: 9 18 9 18; -fx-cursor: hand;
 }
-.pnp-button:hover { -fx-background-color: #7A0A14; }
-.pnp-button:pressed { -fx-background-color: #3E0005; }
+.pnp-button:hover { -fx-background-color: #4E0920; }
+.pnp-button:pressed { -fx-background-color: #3A0718; }
 .pnp-button:disabled { -fx-opacity: 0.45; }
 .pnp-button-secondary {
-    -fx-background-color: white;
-    -fx-text-fill: #5C0008;
-    -fx-font-weight: bold;
-    -fx-border-color: #5C0008;
-    -fx-border-radius: 20;
-    -fx-background-radius: 20;
-    -fx-padding: 7 20 7 20;
-    -fx-cursor: hand;
+    -fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #6B0E2D;
+    -fx-border-radius: 10; -fx-border-width: 1.5; -fx-text-fill: #6B0E2D; -fx-font-weight: bold;
+    -fx-padding: 8 16 8 16; -fx-cursor: hand;
 }
-.pnp-button-secondary:hover { -fx-background-color: #FBE9EB; }
+.pnp-button-secondary:hover { -fx-background-color: #F3E9EC; }
 .pnp-button-secondary:disabled { -fx-opacity: 0.45; }
-.pnp-suggest {
-    -fx-background-color: #FFF1B8;
-    -fx-text-fill: #6B4E00;
-    -fx-font-size: 12px;
-    -fx-background-radius: 14;
-    -fx-padding: 3 12 3 12;
-    -fx-cursor: hand;
+.pnp-small-button {
+    -fx-background-color: transparent; -fx-text-fill: #B3261E; -fx-font-size: 12px;
+    -fx-background-radius: 8; -fx-padding: 3 8 3 8; -fx-cursor: hand;
 }
-.pnp-suggest:hover { -fx-background-color: #FFE27A; }
-
-/* ---------- inputs ---------- */
-.pnp-field {
-    -fx-background-color: white;
-    -fx-background-radius: 20;
-    -fx-border-color: #E3D8B5;
-    -fx-border-radius: 20;
-    -fx-padding: 9 16 9 16;
-    -fx-prompt-text-fill: #A89B8C;
+.pnp-small-button:hover { -fx-background-color: #FDE7E5; }
+.pnp-small-add {
+    -fx-background-color: #F3E9EC; -fx-text-fill: #6B0E2D; -fx-font-weight: bold; -fx-font-size: 12px;
+    -fx-background-radius: 999; -fx-padding: 3 10 3 10; -fx-cursor: hand;
 }
-.pnp-field:focused { -fx-border-color: #5C0008; }
-.pnp-root .date-picker, .pnp-root .spinner { -fx-background-radius: 10; }
-
-/* ---------- chips ---------- */
-.pnp-chip { -fx-padding: 2 10 2 10; -fx-background-radius: 11; -fx-font-size: 11px; -fx-font-weight: bold; }
-.pnp-root .chip-breakfast { -fx-background-color: #FFE08A; -fx-text-fill: #6B4E00; }
-.pnp-root .chip-main { -fx-background-color: #F4D6D9; -fx-text-fill: #5C0008; }
-.pnp-root .chip-dessert { -fx-background-color: #FAD4E4; -fx-text-fill: #8A1C52; }
-.pnp-root .chip-neutral { -fx-background-color: #EFE9D4; -fx-text-fill: #5E4E46; }
-.pnp-root .chip-breakfast .text, .pnp-root .chip-main .text { -fx-fill: inherit; }
-
-/* ---------- lists ---------- */
-.pnp-list {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-padding: 0;
-    -fx-focus-color: transparent;
-    -fx-faint-focus-color: transparent;
+.pnp-small-add:hover { -fx-background-color: #E8D4DA; }
+.pnp-link {
+    -fx-background-color: transparent; -fx-text-fill: #6B0E2D; -fx-font-weight: bold;
+    -fx-padding: 0; -fx-cursor: hand; -fx-underline: false;
 }
-.pnp-list .list-cell { -fx-background-color: transparent; -fx-padding: 9 10 9 10; -fx-background-radius: 10; }
-.pnp-list .list-cell:filled:hover { -fx-background-color: #FFF4C2; }
-.pnp-list .list-cell:filled:selected, .pnp-list .list-cell:filled:selected:focused { -fx-background-color: #FBE9EB; }
-.pnp-scroll, .pnp-scroll > .viewport { -fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0; }
-
-/* ---------- progress ---------- */
-.pnp-progress { -fx-accent: #5C0008; -fx-control-inner-background: #EADFC0; }
-.pnp-progress > .track { -fx-background-color: #EADFC0; -fx-background-radius: 7; -fx-background-insets: 0; }
-.pnp-progress > .bar { -fx-background-color: #5C0008; -fx-background-radius: 7; -fx-background-insets: 0; -fx-padding: 7; }
-.pnp-mini-bar > .track { -fx-background-color: #EFE6C8; -fx-background-radius: 4; -fx-background-insets: 0; }
-.pnp-mini-bar > .bar { -fx-background-color: #5C0008; -fx-background-radius: 4; -fx-background-insets: 0; -fx-padding: 4; }
-
-/* ---------- drop zone ---------- */
-.pnp-drop {
-    -fx-background-color: #FFFDF0;
-    -fx-background-radius: 14;
-    -fx-border-color: #C9B77A;
-    -fx-border-style: dashed;
-    -fx-border-width: 2;
-    -fx-border-radius: 14;
-    -fx-padding: 22;
-}
-.pnp-drop.drag-over { -fx-background-color: #FFF1B8; -fx-border-color: #5C0008; }
-
-/* ---------- chart ---------- */
-.pnp-chart { -fx-background-color: transparent; }
-.pnp-chart .chart-title { -fx-text-fill: #5C0008; -fx-font-size: 17px; -fx-font-weight: bold; }
-.pnp-chart .chart-plot-background { -fx-background-color: transparent; }
-.pnp-chart .chart-alternative-row-fill { -fx-fill: transparent; -fx-stroke: transparent; }
-.pnp-chart .chart-horizontal-grid-lines { -fx-stroke: #EFE6C8; }
-.pnp-chart .chart-vertical-grid-lines { -fx-stroke: transparent; }
-.pnp-chart .axis { -fx-tick-label-fill: #5E4E46; }
-.pnp-chart .axis-label { -fx-text-fill: #7A6A62; -fx-font-weight: bold; }
-.pnp-chart .default-color0.chart-bar { -fx-bar-fill: #5C0008; }
-.pnp-chart .default-color0.chart-bar:hover { -fx-bar-fill: #8B1A26; }
-.pnp-chart .chart-legend { -fx-background-color: transparent; }
-.pnp-chart .chart-legend-item-symbol.default-color0 { -fx-background-color: #5C0008; }
-
-/* ================= Milestone 2 final: header, tabs, calendar, week strip, shopping ================= */
-
-/* ---------- top header band ---------- */
-.pnp-header { -fx-background-color: #5C0008; -fx-padding: 14 24 14 24; }
-.pnp-header-title { -fx-text-fill: white; -fx-font-size: 24px; -fx-font-weight: bold; }
-.pnp-header-greeting { -fx-text-fill: #F3D9A0; -fx-font-size: 12px; }
-.pnp-header-date { -fx-text-fill: white; -fx-font-size: 15px; -fx-font-weight: bold; }
-.pnp-header-time { -fx-text-fill: #FFD84D; -fx-font-size: 24px; -fx-font-weight: bold; }
-.pnp-streak { -fx-background-color: #F2B705; -fx-background-radius: 18; -fx-padding: 6 18 6 18; -fx-alignment: center; }
-.pnp-streak.at-risk { -fx-border-color: white; -fx-border-width: 2; -fx-border-radius: 18; }
-.pnp-streak-value { -fx-text-fill: #3E0005; -fx-font-size: 24px; -fx-font-weight: bold; }
-.pnp-streak-caption { -fx-text-fill: #3E0005; -fx-font-size: 10px; -fx-font-weight: bold; }
-
-/* ---------- tabs ---------- */
-.pnp-tabs { -fx-background-color: #FFFBD0; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; }
-.pnp-tabs > .tab-header-area > .tab-header-background { -fx-background-color: #F3EBC2; }
-.pnp-tabs .tab { -fx-background-color: transparent; -fx-background-radius: 10 10 0 0; -fx-padding: 7 20 7 20; -fx-focus-color: transparent; -fx-faint-focus-color: transparent; }
-.pnp-tabs .tab:hover { -fx-background-color: #FFF4C2; }
-.pnp-tabs .tab:selected { -fx-background-color: #FFFBD0; }
-.pnp-tabs .tab .tab-label { -fx-text-fill: #5E4E46; -fx-font-weight: bold; -fx-font-size: 13.5px; }
-.pnp-tabs .tab:selected .tab-label { -fx-text-fill: #5C0008; }
-.pnp-tabs > .tab-content-area { -fx-background-color: #FFFBD0; }
-
-/* ---------- week strip (Today tab) ---------- */
-.pnp-weekday { -fx-background-color: #EFE9D4; -fx-background-radius: 22; -fx-min-width: 44; -fx-min-height: 44; -fx-alignment: center; -fx-font-weight: bold; -fx-text-fill: #7A6A62; }
-.pnp-weekday.has-meals { -fx-background-color: #FFD43B; -fx-text-fill: #3E0005; }
-.pnp-weekday.is-today { -fx-border-color: #5C0008; -fx-border-width: 2; -fx-border-radius: 22; }
-.pnp-week-label { -fx-font-size: 11px; -fx-text-fill: #7A6A62; -fx-font-weight: bold; }
-
-/* ---------- calendar (Meal Plan tab) ---------- */
-.pnp-month-title { -fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #5C0008; }
-.pnp-weekday-head { -fx-font-weight: bold; -fx-text-fill: #7A6A62; -fx-font-size: 12px; -fx-alignment: center; }
-.pnp-day { -fx-background-color: #EFEAD6; -fx-background-radius: 10; -fx-text-fill: #2B1B17; -fx-cursor: hand; -fx-font-size: 13px; }
-.pnp-day:hover { -fx-background-color: #FFF1B8; }
-.pnp-day.day-has-meals { -fx-background-color: #FFD43B; -fx-text-fill: #3E0005; -fx-font-weight: bold; }
-.pnp-day.day-has-meals:hover { -fx-background-color: #FFC800; }
-.pnp-day.day-today { -fx-border-color: #5C0008; -fx-border-width: 2; -fx-border-radius: 10; }
-.pnp-day.day-selected, .pnp-day.day-selected:hover { -fx-background-color: #5C0008; -fx-text-fill: white; -fx-font-weight: bold; }
-.pnp-nav-button { -fx-background-color: white; -fx-text-fill: #5C0008; -fx-font-weight: bold; -fx-background-radius: 16; -fx-border-color: #E3D8B5; -fx-border-radius: 16; -fx-padding: 4 12 4 12; -fx-cursor: hand; }
-.pnp-nav-button:hover { -fx-background-color: #FBE9EB; }
-.pnp-legend-gold { -fx-background-color: #FFD43B; -fx-background-radius: 4; -fx-min-width: 14; -fx-min-height: 14; }
-.pnp-legend-ring { -fx-background-color: white; -fx-border-color: #5C0008; -fx-border-width: 2; -fx-border-radius: 4; -fx-background-radius: 4; -fx-min-width: 14; -fx-min-height: 14; }
-.pnp-small-button { -fx-background-color: transparent; -fx-text-fill: #B3261E; -fx-font-size: 11px; -fx-underline: true; -fx-cursor: hand; -fx-padding: 2 6 2 6; }
-
-/* ---------- shopping list ---------- */
-.pnp-toggle { -fx-background-color: white; -fx-text-fill: #5C0008; -fx-font-weight: bold; -fx-background-radius: 16; -fx-border-color: #E3D8B5; -fx-border-radius: 16; -fx-padding: 6 16 6 16; -fx-cursor: hand; }
-.pnp-toggle:hover { -fx-background-color: #FBE9EB; }
-.pnp-toggle:selected { -fx-background-color: #5C0008; -fx-text-fill: white; -fx-border-color: #5C0008; }
-.pnp-aisle-header { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #5C0008; }
-.pnp-aisle-count { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #7A6A62; }
-.pnp-item-note { -fx-text-fill: #7A6A62; -fx-font-size: 12px; }
-.pnp-check { -fx-font-size: 13.5px; -fx-cursor: hand; }
-.pnp-check:selected > .box { -fx-background-color: #5C0008; -fx-border-color: #5C0008; }
-.pnp-check:selected > .box > .mark { -fx-background-color: white; }
-.pnp-check-done .text { -fx-strikethrough: true; -fx-fill: #A89B8C; }
-.pnp-warning { -fx-background-color: #FFF1B8; -fx-background-radius: 10; -fx-padding: 10 14 10 14; }
-
-/* ================= Accounts, meal slots, healthy levels and prep tiers ================= */
-/* Healthy level colors are the same everywhere: Healthy #3A9D5D green, Moderate #F2B705 yellow,
-   Indulgent #C0392B red. Prep tiers are shades of maroon (darker = slower). */
-
-/* ---------- log in / sign up / account ---------- */
-.pnp-link { -fx-background-color: transparent; -fx-text-fill: #5C0008; -fx-font-weight: bold; -fx-underline: true; -fx-padding: 0; -fx-cursor: hand; }
-.pnp-link:hover { -fx-text-fill: #8B1A26; }
+.pnp-link:hover { -fx-underline: true; }
 .pnp-link:disabled { -fx-opacity: 0.45; }
-.pnp-header-button { -fx-background-color: transparent; -fx-text-fill: white; -fx-font-weight: bold; -fx-border-color: #F3D9A0; -fx-border-radius: 16; -fx-background-radius: 16; -fx-padding: 5 14 5 14; -fx-cursor: hand; }
-.pnp-header-button:hover { -fx-background-color: #7A0A14; }
 
-/* ---------- streak badge ---------- */
-.pnp-streak-tiers { -fx-text-fill: #3E0005; -fx-font-size: 10px; }
-.pnp-badge, .pnp-root .pnp-badge { -fx-text-fill: #5C0008; -fx-font-weight: bold; -fx-font-size: 12px; }
+.pnp-field, .pnp-root .combo-box, .pnp-root .date-picker, .pnp-root .spinner {
+    -fx-background-color: #FCFAF6; -fx-background-radius: 9; -fx-border-color: #D9CFC0;
+    -fx-border-radius: 9; -fx-border-width: 1.5; -fx-padding: 6 10 6 10;
+}
+.pnp-root .date-picker, .pnp-root .spinner, .pnp-root .combo-box { -fx-padding: 1 2 1 2; }
+.pnp-root .date-picker > .text-field, .pnp-root .spinner > .text-field { -fx-background-color: transparent; }
+.pnp-field:focused { -fx-border-color: #6B0E2D; }
+.pnp-search { -fx-font-size: 14px; -fx-padding: 10 12 10 12; }
 
-/* ---------- chips ---------- */
-.pnp-root .chip-healthy { -fx-background-color: #D3EFD9; -fx-text-fill: #1B6B2F; }
-.pnp-root .chip-moderate { -fx-background-color: #FFF1B8; -fx-text-fill: #6B4E00; }
-.pnp-root .chip-indulgent { -fx-background-color: #F8D3D0; -fx-text-fill: #8A1C1C; }
-.pnp-root .chip-slot { -fx-background-color: #EFE9D4; -fx-text-fill: #5C0008; }
-.pnp-root .chip-quick { -fx-background-color: #F6E3E5; -fx-text-fill: #5C0008; }
-.pnp-root .chip-average { -fx-background-color: #E7B9BE; -fx-text-fill: #5C0008; }
-.pnp-root .chip-slow { -fx-background-color: #A8323E; -fx-text-fill: white; }
+/* ------------------------------------------------------------------ offline banner */
+.pnp-banner {
+    -fx-background-color: #FDE7E5; -fx-background-radius: 10; -fx-border-color: #F3BDB8;
+    -fx-border-radius: 10; -fx-padding: 9 12 9 12; -fx-spacing: 10; -fx-alignment: center-left;
+}
+.pnp-banner-text { -fx-text-fill: #7C1B14; -fx-font-size: 13px; }
+.pnp-banner .pnp-button { -fx-background-color: #B3261E; -fx-padding: 6 14 6 14; }
 
-/* ---------- Today tab: meals grouped by slot ---------- */
-.pnp-slot-heading, .pnp-root .pnp-slot-heading { -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #7A6A62; }
-.pnp-slot-section { -fx-padding: 0 0 8 0; -fx-border-color: transparent transparent #F1EAD2 transparent; -fx-border-width: 0 0 1 0; }
-.pnp-small-add { -fx-background-color: #FFF1B8; -fx-text-fill: #6B4E00; -fx-font-size: 11px; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 2 10 2 10; -fx-cursor: hand; }
-.pnp-small-add:hover { -fx-background-color: #FFE27A; }
+/* ------------------------------------------------------------------ chips */
+.pnp-chip {
+    -fx-background-radius: 999; -fx-padding: 3 9 3 9; -fx-font-size: 11.5px; -fx-font-weight: bold;
+}
+.pnp-root .chip-neutral, .pnp-root .chip-slot { -fx-background-color: #EFE8DB; -fx-text-fill: #5B4A4D; }
+.pnp-root .chip-tag { -fx-background-color: #E2DBC9; -fx-text-fill: #4E0920; }
+.pnp-root .chip-healthy { -fx-background-color: #E3F2E8; -fx-text-fill: #2E7D4F; }
+.pnp-root .chip-moderate { -fx-background-color: #FFF1CF; -fx-text-fill: #9A6A00; }
+.pnp-root .chip-indulgent { -fx-background-color: #FDE7E5; -fx-text-fill: #B3261E; }
+.pnp-root .chip-quick { -fx-background-color: #E3F2E8; -fx-text-fill: #2E7D4F; }
+.pnp-root .chip-average { -fx-background-color: #FFF1CF; -fx-text-fill: #9A6A00; }
+.pnp-root .chip-slow { -fx-background-color: #FDE7E5; -fx-text-fill: #B3261E; }
+.pnp-ingredient {
+    -fx-background-color: #F6F0E4; -fx-background-radius: 7; -fx-border-color: #E7DFD2;
+    -fx-border-radius: 7; -fx-padding: 3 7 3 7; -fx-font-size: 11.5px; -fx-text-fill: #4B3B3E;
+}
 
-/* ---------- calendar: a day is colored by its meals' healthy level ---------- */
-.pnp-day.day-healthy { -fx-background-color: #BFE5C8; -fx-text-fill: #14501F; }
-.pnp-day.day-healthy:hover { -fx-background-color: #A6DBB2; }
-.pnp-day.day-moderate { -fx-background-color: #FFE27A; -fx-text-fill: #4A3600; }
-.pnp-day.day-moderate:hover { -fx-background-color: #FFD43B; }
-.pnp-day.day-indulgent { -fx-background-color: #F4B4AE; -fx-text-fill: #6E1010; }
-.pnp-day.day-indulgent:hover { -fx-background-color: #EE9A92; }
-/* the picked day always stays dark, whatever its color (this rule must come after the three above) */
-.pnp-day.day-selected, .pnp-day.day-selected:hover { -fx-background-color: #5C0008; -fx-text-fill: white; -fx-font-weight: bold; }
-.pnp-legend-swatch { -fx-background-radius: 4; -fx-min-width: 14; -fx-min-height: 14; }
-.legend-healthy { -fx-background-color: #BFE5C8; }
-.legend-moderate { -fx-background-color: #FFE27A; }
-.legend-indulgent { -fx-background-color: #F4B4AE; }
+/* ------------------------------------------------------------------ status lines */
+.pnp-status { -fx-font-size: 12.5px; }
+.pnp-status.ok { -fx-text-fill: #2E7D4F; }
+.pnp-status.error { -fx-text-fill: #B3261E; }
+.pnp-status.info { -fx-text-fill: #7A6A6C; }
 
-/* ---------- Analytics: grouped bar chart colors (bars AND legend) ---------- */
-.group-healthy_level .default-color0.chart-bar, .group-healthy_level .default-color0.chart-bar:hover { -fx-bar-fill: #3A9D5D; }
-.group-healthy_level .default-color1.chart-bar { -fx-bar-fill: #F2B705; }
-.group-healthy_level .default-color2.chart-bar { -fx-bar-fill: #C0392B; }
-.group-healthy_level .chart-legend-item-symbol.default-color0 { -fx-background-color: #3A9D5D; }
-.group-healthy_level .chart-legend-item-symbol.default-color1 { -fx-background-color: #F2B705; }
-.group-healthy_level .chart-legend-item-symbol.default-color2 { -fx-background-color: #C0392B; }
+/* ------------------------------------------------------------------ stat cards */
+.pnp-stat-value { -fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #4E0920; }
+.pnp-stat-label { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #764640; }
+.pnp-badge { -fx-text-fill: #764640; -fx-font-weight: bold; -fx-font-size: 12px; }
 
-.group-prep_time .default-color0.chart-bar, .group-prep_time .default-color0.chart-bar:hover { -fx-bar-fill: #DE8F99; }
-.group-prep_time .default-color1.chart-bar { -fx-bar-fill: #A8323E; }
-.group-prep_time .default-color2.chart-bar { -fx-bar-fill: #5C0008; }
-.group-prep_time .chart-legend-item-symbol.default-color0 { -fx-background-color: #DE8F99; }
-.group-prep_time .chart-legend-item-symbol.default-color1 { -fx-background-color: #A8323E; }
-.group-prep_time .chart-legend-item-symbol.default-color2 { -fx-background-color: #5C0008; }
+/* ------------------------------------------------------------------ Today: week strip and slots */
+.pnp-week-label { -fx-font-size: 10.5px; -fx-text-fill: #7A6A6C; -fx-font-weight: bold; }
+.pnp-weekday {
+    -fx-min-width: 38; -fx-min-height: 38; -fx-alignment: center; -fx-background-radius: 999;
+    -fx-background-color: #F6F0E4; -fx-text-fill: #5B4A4D; -fx-font-weight: bold;
+}
+.pnp-weekday.has-meals { -fx-background-color: #6B0E2D; -fx-text-fill: white; }
+.pnp-weekday.is-today { -fx-border-color: #C98A00; -fx-border-width: 2; -fx-border-radius: 999; }
+.pnp-slot-heading { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #764640; }
+.pnp-slot-section { -fx-padding: 8 0 8 0; -fx-border-color: transparent transparent #F0E9DD transparent; }
 
-.group-meal_slot .default-color0.chart-bar, .group-meal_slot .default-color0.chart-bar:hover { -fx-bar-fill: #F2B705; }
-.group-meal_slot .default-color1.chart-bar { -fx-bar-fill: #E07B39; }
-.group-meal_slot .default-color2.chart-bar { -fx-bar-fill: #5C0008; }
-.group-meal_slot .default-color3.chart-bar { -fx-bar-fill: #8A1C52; }
-.group-meal_slot .chart-legend-item-symbol.default-color0 { -fx-background-color: #F2B705; }
-.group-meal_slot .chart-legend-item-symbol.default-color1 { -fx-background-color: #E07B39; }
-.group-meal_slot .chart-legend-item-symbol.default-color2 { -fx-background-color: #5C0008; }
-.group-meal_slot .chart-legend-item-symbol.default-color3 { -fx-background-color: #8A1C52; }
-.pnp-chart .chart-bar:hover { -fx-opacity: 0.85; }
+/* ------------------------------------------------------------------ Meal Plan calendar */
+.pnp-month-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #4E0920; }
+.pnp-weekday-head { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #7A6A6C; }
+.pnp-nav-button {
+    -fx-background-color: #F6F0E4; -fx-background-radius: 999; -fx-text-fill: #6B0E2D;
+    -fx-font-weight: bold; -fx-padding: 5 12 5 12; -fx-cursor: hand;
+}
+.pnp-nav-button:hover { -fx-background-color: #E8DCCB; }
+.pnp-day {
+    -fx-background-color: #FCFAF6; -fx-background-radius: 10; -fx-border-color: #EFE8DB;
+    -fx-border-radius: 10; -fx-text-fill: #2A1B1E; -fx-cursor: hand;
+}
+.pnp-day:hover { -fx-border-color: #6B0E2D; }
+.pnp-day.day-healthy { -fx-background-color: #E3F2E8; }
+.pnp-day.day-moderate { -fx-background-color: #FFF1CF; }
+.pnp-day.day-indulgent { -fx-background-color: #FDE7E5; }
+.pnp-day.day-today { -fx-border-color: #C98A00; -fx-border-width: 2; }
+.pnp-day.day-selected { -fx-border-color: #6B0E2D; -fx-border-width: 2.5; -fx-font-weight: bold; }
+.pnp-legend-swatch { -fx-min-width: 14; -fx-min-height: 14; -fx-background-radius: 4; }
+.legend-healthy { -fx-background-color: #E3F2E8; -fx-border-color: #2E7D4F; -fx-border-radius: 4; }
+.legend-moderate { -fx-background-color: #FFF1CF; -fx-border-color: #C98A00; -fx-border-radius: 4; }
+.legend-indulgent { -fx-background-color: #FDE7E5; -fx-border-color: #B3261E; -fx-border-radius: 4; }
+.pnp-legend-ring { -fx-min-width: 14; -fx-min-height: 14; -fx-border-color: #C98A00; -fx-border-width: 2; -fx-border-radius: 4; }
 
-/* ---------- Analytics: breakdown mini bars, same colors as the chart ---------- */
-.pnp-mini-bar.bar-healthy > .bar { -fx-background-color: #3A9D5D; }
-.pnp-mini-bar.bar-moderate > .bar { -fx-background-color: #F2B705; }
-.pnp-mini-bar.bar-indulgent > .bar { -fx-background-color: #C0392B; }
-.pnp-mini-bar.bar-quick > .bar { -fx-background-color: #DE8F99; }
-.pnp-mini-bar.bar-average > .bar { -fx-background-color: #A8323E; }
-.pnp-mini-bar.bar-slow > .bar { -fx-background-color: #5C0008; }
-.pnp-mini-bar.bar-breakfast > .bar { -fx-background-color: #F2B705; }
-.pnp-mini-bar.bar-lunch > .bar { -fx-background-color: #E07B39; }
-.pnp-mini-bar.bar-dinner > .bar { -fx-background-color: #5C0008; }
-.pnp-mini-bar.bar-snack > .bar { -fx-background-color: #8A1C52; }
+/* ------------------------------------------------------------------ toggles, progress, drop zone */
+.pnp-toggle {
+    -fx-background-color: white; -fx-border-color: #D9CFC0; -fx-background-radius: 999;
+    -fx-border-radius: 999; -fx-padding: 6 14 6 14; -fx-text-fill: #5B4A4D; -fx-cursor: hand;
+}
+.pnp-toggle:hover { -fx-background-color: #F3E9EC; }
+.pnp-toggle:selected { -fx-background-color: #6B0E2D; -fx-border-color: #6B0E2D; -fx-text-fill: white; -fx-font-weight: bold; }
+.pnp-progress > .track { -fx-background-color: #EFE8DB; -fx-background-radius: 999; }
+.pnp-progress > .bar { -fx-background-color: #6B0E2D; -fx-background-radius: 999; -fx-background-insets: 0; }
+.pnp-mini-bar > .track { -fx-background-color: #F0E9DD; -fx-background-radius: 999; }
+.pnp-mini-bar > .bar { -fx-background-radius: 999; -fx-background-insets: 0; -fx-background-color: #764640; }
+.pnp-mini-bar.bar-healthy > .bar, .pnp-mini-bar.bar-quick > .bar { -fx-background-color: #2E7D4F; }
+.pnp-mini-bar.bar-moderate > .bar, .pnp-mini-bar.bar-average > .bar { -fx-background-color: #C98A00; }
+.pnp-mini-bar.bar-indulgent > .bar, .pnp-mini-bar.bar-slow > .bar { -fx-background-color: #B3261E; }
+.pnp-mini-bar.bar-breakfast > .bar { -fx-background-color: #C98A00; }
+.pnp-mini-bar.bar-lunch > .bar { -fx-background-color: #2E7D4F; }
+.pnp-mini-bar.bar-dinner > .bar { -fx-background-color: #6B0E2D; }
+.pnp-mini-bar.bar-snack > .bar { -fx-background-color: #764640; }
+.pnp-drop {
+    -fx-background-color: #FCFAF6; -fx-border-color: #D9CFC0; -fx-border-style: segments(8, 6);
+    -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 22;
+}
+.pnp-drop.drag-over { -fx-border-color: #6B0E2D; -fx-background-color: #FFF9F6; }
+
+/* ------------------------------------------------------------------ shopping list */
+.pnp-group-header { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #764640; -fx-padding: 6 0 2 0; }
+.pnp-check { -fx-cursor: hand; }
+.pnp-check:selected > .box { -fx-background-color: #6B0E2D; }
+.pnp-check:selected > .box > .mark { -fx-background-color: white; }
+.pnp-check-done .text { -fx-strikethrough: true; -fx-fill: #9B8F8A; }
+
+/* ------------------------------------------------------------------ chart */
+.pnp-chart .chart-title { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #4E0920; }
+.pnp-chart .chart-plot-background { -fx-background-color: white; }
+.pnp-chart .chart-horizontal-grid-lines { -fx-stroke: #F0E9DD; }
+.pnp-chart .axis-label { -fx-font-weight: bold; -fx-text-fill: #764640; }
+.pnp-chart .chart-legend { -fx-background-color: transparent; }
+.pnp-chart .chart-bar:hover { -fx-opacity: 0.8; }
+.group-healthy_level .default-color0.chart-bar, .group-healthy_level .chart-legend-item-symbol.default-color0 { -fx-bar-fill: #2E7D4F; -fx-background-color: #2E7D4F; }
+.group-healthy_level .default-color1.chart-bar, .group-healthy_level .chart-legend-item-symbol.default-color1 { -fx-bar-fill: #C98A00; -fx-background-color: #C98A00; }
+.group-healthy_level .default-color2.chart-bar, .group-healthy_level .chart-legend-item-symbol.default-color2 { -fx-bar-fill: #B3261E; -fx-background-color: #B3261E; }
+.group-prep_time .default-color0.chart-bar, .group-prep_time .chart-legend-item-symbol.default-color0 { -fx-bar-fill: #2E7D4F; -fx-background-color: #2E7D4F; }
+.group-prep_time .default-color1.chart-bar, .group-prep_time .chart-legend-item-symbol.default-color1 { -fx-bar-fill: #C98A00; -fx-background-color: #C98A00; }
+.group-prep_time .default-color2.chart-bar, .group-prep_time .chart-legend-item-symbol.default-color2 { -fx-bar-fill: #B3261E; -fx-background-color: #B3261E; }
+.group-meal_slot .default-color0.chart-bar, .group-meal_slot .chart-legend-item-symbol.default-color0 { -fx-bar-fill: #C98A00; -fx-background-color: #C98A00; }
+.group-meal_slot .default-color1.chart-bar, .group-meal_slot .chart-legend-item-symbol.default-color1 { -fx-bar-fill: #2E7D4F; -fx-background-color: #2E7D4F; }
+.group-meal_slot .default-color2.chart-bar, .group-meal_slot .chart-legend-item-symbol.default-color2 { -fx-bar-fill: #6B0E2D; -fx-background-color: #6B0E2D; }
+.group-meal_slot .default-color3.chart-bar, .group-meal_slot .chart-legend-item-symbol.default-color3 { -fx-bar-fill: #764640; -fx-background-color: #764640; }
+
+/* ------------------------------------------------------------------ log in, sign up, forgot password */
+.pnp-auth { -fx-background-color: linear-gradient(to bottom right, #F6F0E4, #EADFCC); }
+.pnp-auth-card { -fx-padding: 28; }

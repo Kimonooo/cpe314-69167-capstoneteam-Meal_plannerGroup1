@@ -4,9 +4,8 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * A tiny "something changed" bell. When a meal is added, deleted or imported, the screen that did it
- * rings the bell (fire), and every other tab that registered a listener refreshes itself.
- * Always call fire() on the JavaFX thread, because listeners usually touch the window.
+ * The OBSERVER pattern: pages register a listener, and fire() tells all of them that the
+ * meal plan changed, so every page refreshes. A broken listener never stops the others.
  */
 public class DataChangeNotifier {
     private final List<Runnable> listeners = new CopyOnWriteArrayList<>();
@@ -16,16 +15,18 @@ public class DataChangeNotifier {
     }
 
     public void fire() {
-        for (Runnable listener : listeners) {
-            try {
-                listener.run();
-            } catch (RuntimeException e) {
-                System.err.println("A listener failed: " + e);
-            }
-        }
+        listeners.forEach(DataChangeNotifier::runSafely);
     }
 
     public int listenerCount() {
         return listeners.size();
+    }
+
+    private static void runSafely(Runnable listener) {
+        try {
+            listener.run();
+        } catch (RuntimeException e) {
+            System.err.println("A listener failed: " + e);
+        }
     }
 }

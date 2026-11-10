@@ -1,42 +1,42 @@
 package com.platenplatter.util;
 
+import com.platenplatter.model.IngredientAmount;
+import com.platenplatter.model.PlannedMeal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.OptionalInt;
 import java.util.Set;
 
 /**
- * Everything the screens need from "the meal plan", in one place.
- * The real implementation is MealPlanHistoryDao (SQLite). InMemoryPlanStore is a fake used for
- * previews and tests. Screens only know THIS interface, so they never touch SQL.
- * All methods may be slow, so screens call them from a background Task.
+ * What a screen may ask of the saved meals. The screens only know this interface, so the same
+ * screen runs on the SQLite database (MealPlanDao) or on plain lists in the tests (InMemoryPlanStore).
  */
 public interface PlanStore {
-    /** Adds one meal chosen on the Recipes tab, together with its ingredient list. */
-    void addMeal(ImportRow row, List<String> ingredients) throws Exception;
 
-    /** Adds one meal from a CSV import (no ingredient list). */
-    void addImported(ImportRow row) throws Exception;
+    /** Saves one meal and its recipe's ingredient amounts (an empty list is fine). Returns the new planned_meal_id. */
+    long saveMeal(PlannedMeal meal, List<IngredientAmount> ingredients) throws Exception;
 
-    List<PlannedMeal> mealsOn(LocalDate date) throws Exception;
-
-    /** All meals from one date to another, both days included. */
+    /** The meals from one day to another, both days included, by date. */
     List<PlannedMeal> mealsBetween(LocalDate from, LocalDate to) throws Exception;
 
-    /** Every planned meal, oldest first (used by the "All time" view of the Analytics tab). */
+    /** The meals of one day. A default method: it just asks mealsBetween for that one day. */
+    default List<PlannedMeal> mealsOn(LocalDate day) throws Exception {
+        return mealsBetween(day, day);
+    }
+
     List<PlannedMeal> allMeals() throws Exception;
 
-    /** Every day that has at least one planned meal (used for the calendar and the streak). */
+    /** Every day that has at least one meal (for the streak and the week strip). */
     Set<LocalDate> plannedDates() throws Exception;
 
-    void deleteMeal(long id) throws Exception;
+    void deleteMeal(long plannedMealId) throws Exception;
 
-    /** The saved ingredient list of a recipe (empty if we never saved one). */
-    List<String> ingredientsFor(String recipeName) throws Exception;
+    /** The ingredient amounts of every meal planned in the date range (for the shopping list). */
+    List<IngredientAmount> shoppingItems(LocalDate from, LocalDate to) throws Exception;
 
-    void saveIngredients(String recipeName, List<String> ingredients) throws Exception;
+    /** Saves ingredients found online for a recipe that was planned without them. */
+    void saveIngredients(String recipeName, List<IngredientAmount> amounts) throws Exception;
 
-    /** The category of every planned meal (input of the data-mining step). */
-    List<String> categories() throws Exception;
-
-    List<Integer> prepMinutes() throws Exception;
+    /** The calories entered the last time this recipe was planned, if any. */
+    OptionalInt usualCalories(String recipeName) throws Exception;
 }
