@@ -1,104 +1,66 @@
 package com.platenplatter.util;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+
+import com.platenplatter.model.FoodGroup;
+import com.platenplatter.model.IngredientAmount;
+import com.platenplatter.model.PlannedMeal;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
-/** The finished shopping list: items grouped by aisle, plus the recipes that had no ingredient list. */
-public class ShoppingList {
+/**
+ * Builds the shopping list from the ingredient amounts of the planned meals.
+ * The same ingredient from two recipes is listed once, with both measures.
+ */
+public final class ShoppingList {
+    private ShoppingList() { }
 
-    /** One thing to buy. */
-    public static class Item {
-        private final String key;
-        private final String name;
-        private final Aisle aisle;
-        private final int mealCount;
-        private final List<String> recipes;
-
-        public Item(String key, String name, Aisle aisle, int mealCount, List<String> recipes) {
-            this.key = key;
-            this.name = name;
-            this.aisle = aisle;
-            this.mealCount = mealCount;
-            this.recipes = recipes;
-        }
-
-        /** The cleaned lower-case name; used to remember which items are ticked. */
-        public String getKey() { return key; }
-        public String getName() { return name; }
-        public Aisle getAisle() { return aisle; }
-        /** How many planned meals need this item. */
-        public int getMealCount() { return mealCount; }
-        public List<String> getRecipes() { return recipes; }
-
-        /** For example "for 3 meals" or "Chicken Adobo". */
-        public String note() {
-            if (recipes.size() == 1 && mealCount == 1) {
-                return recipes.get(0);
-            }
-            return "for " + mealCount + (mealCount == 1 ? " meal" : " meals");
-        }
+    /** Food group -> ingredient -> measures, e.g. garlic -> [3 cloves, 1 head]. */
+    public static Map<FoodGroup, Map<String, List<String>>> build(
+            List<IngredientAmount> items) {
+        return items.stream().collect(groupingBy(
+                item -> item.getIngredient().getFoodGroup(),
+                () -> new EnumMap<>(FoodGroup.class),        // groups in fixed order
+                groupingBy(item -> item.getIngredient().getIngredientName().toLowerCase(),
+                        TreeMap::new,                         // A to Z in a group
+                        mapping(IngredientAmount::getMeasure, toList()))));
     }
 
-    /** All the items of one aisle. */
-    public static class Section {
-        private final Aisle aisle;
-        private final List<Item> items;
-
-        public Section(Aisle aisle, List<Item> items) {
-            this.aisle = aisle;
-            this.items = items;
-        }
-
-        public Aisle getAisle() { return aisle; }
-        public List<Item> getItems() { return items; }
+    /** The planned recipes that have no ingredients saved yet (sorted, no repeats). */
+    public static List<String> missingRecipes(List<PlannedMeal> meals, List<IngredientAmount> items) {
+        Set<Long> withIngredients = items.stream().map(IngredientAmount::getSavedRecipeId).collect(toSet());
+        return meals.stream()
+                .filter(meal -> !withIngredients.contains(meal.getRecipe().getSavedRecipeId()))
+                .map(PlannedMeal::getRecipeName)
+                .distinct()
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
     }
 
-    private final List<Section> sections;
-    private final List<String> missingRecipes;
-    private final int mealCount;
-
-    public ShoppingList(List<Section> sections, List<String> missingRecipes, int mealCount) {
-        this.sections = sections;
-        this.missingRecipes = missingRecipes;
-        this.mealCount = mealCount;
+    /** One line for one ingredient: "garlic (3 cloves, 1 head)". Blank measures are left out. */
+    public static String line(String ingredient, List<String> measures) {
+        String amounts = measures.stream().filter(m -> !m.isBlank()).collect(joining(", "));
+        return amounts.isEmpty() ? ingredient : ingredient + " (" + amounts + ")";
     }
 
-    public List<Section> getSections() { return sections; }
-
-    /** Recipes that are planned but have no ingredient list yet. */
-    public List<String> getMissingRecipes() { return missingRecipes; }
-
-    /** How many planned meals the list was built from. */
-    public int getMealCount() { return mealCount; }
-
-    public int itemCount() {
-        int n = 0;
-        for (Section s : sections) {
-            n += s.items.size();
-        }
-        return n;
+    /** The whole list as plain text, for Copy and Save. */
+    public static String asText(Map<FoodGroup, Map<String, List<String>>> list) {
+        return list.entrySet().stream()
+                .map(group -> group.getKey().getLabel() + "\n" + group.getValue().entrySet().stream()
+                        .map(item -> "  [ ] " + line(item.getKey(), item.getValue()))
+                        .collect(joining("\n")))
+                .collect(joining("\n\n"));
     }
 
-    public boolean isEmpty() {
-        return sections.isEmpty();
-    }
-
-    /** A plain-text version to paste into a chat or print. checkedKeys are the ticked items. */
-    public String toPlainText(String title, Set<String> checkedKeys) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(title).append('\n');
-        sb.append(mealCount).append(mealCount == 1 ? " meal, " : " meals, ")
-                .append(itemCount()).append(itemCount() == 1 ? " item" : " items").append("\n");
-        for (Section section : sections) {
-            sb.append('\n').append(section.aisle.label().toUpperCase()).append('\n');
-            for (Item item : section.items) {
-                boolean done = checkedKeys != null && checkedKeys.contains(item.key);
-                sb.append(done ? "[x] " : "[ ] ").append(item.name).append("  (").append(item.note()).append(")\n");
-            }
-        }
-        if (!missingRecipes.isEmpty()) {
-            sb.append("\nNo ingredient list yet for: ").append(String.join(", ", missingRecipes)).append('\n');
-        }
-        return sb.toString();
+    /** How many different ingredients are on the list. */
+    public static int count(Map<FoodGroup, Map<String, List<String>>> list) {
+        return list.values().stream().mapToInt(Map::size).sum();
     }
 }

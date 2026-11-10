@@ -2,28 +2,33 @@ package com.platenplatter.util;
 
 import com.platenplatter.model.HealthyLevel;
 import com.platenplatter.model.MealSlot;
-
-import java.util.ArrayList;
+import com.platenplatter.model.PlannedMeal;
+import com.platenplatter.model.SavedRecipe;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 import java.util.List;
 
 /**
- * Turns one CSV line into an ImportRow, or throws IllegalArgumentException
- * with a readable reason. Responsibility: parsing + validation only.
+ * Turns one line of a meal-history CSV into a PlannedMeal, or rejects it with a reason.
  *
- * Expected format:  date,recipe_name,category,prep_minutes[,meal_slot,calories,healthy_level]
- * The first 4 columns are required. The last 3 are optional (old files only have 4), and an
- * optional column may also be left empty:
- *   meal_slot     Breakfast, Lunch, Dinner or Snack   (empty = default for the category)
- *   calories      a whole number, 0 or more           (empty = 0 = not known)
- *   healthy_level Healthy, Moderate or Indulgent      (empty = worked out from the calories)
+ *   date,recipe_name,category,prep_minutes,meal_slot,calories,healthy_level
+ *   2026-11-03,Chicken Adobo,MainCourse,45,Dinner,620,Healthy
+ *
+ * The first 4 columns are required; the last 3 are optional. Without them the meal gets the slot of
+ * its type and a Healthy Level worked out from the calories. A bad line throws IllegalArgumentException,
+ * which the import counts as skipped.
  */
 public final class CsvRecipeParser {
     public static final int REQUIRED_FIELDS = 4;
     public static final int MAX_FIELDS = 7;
 
+    /** Splits on commas that are outside "quotes". */
+    private static final String COMMA_OUTSIDE_QUOTES = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)";
+
     private CsvRecipeParser() { }
 
-    public static ImportRow parseLine(String line) {
+    public static PlannedMeal parse(String line) {
         if (line == null || line.isBlank()) {
             throw new IllegalArgumentException("Empty line");
         }
@@ -31,77 +36,57 @@ public final class CsvRecipeParser {
         if (fields.size() < REQUIRED_FIELDS || fields.size() > MAX_FIELDS) {
             throw new IllegalArgumentException("Expected 4 to 7 fields but found " + fields.size());
         }
-        String date = fields.get(0).trim();
-        String name = fields.get(1).trim();
-        String category = fields.get(2).trim();
-        if (!date.matches("\\d{4}-\\d{2}-\\d{2}")) {
-            throw new IllegalArgumentException("Bad date (use yyyy-MM-dd): " + date);
-        }
+        LocalDate date = date(fields.get(0));
+        String name = fields.get(1);
         if (name.isEmpty()) {
             throw new IllegalArgumentException("Recipe name is empty");
         }
-        int prep;
-        try {
-            prep = Integer.parseInt(fields.get(3).trim());
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Prep minutes is not a number: " + fields.get(3));
-        }
-        if (prep < 0) {
-            throw new IllegalArgumentException("Prep minutes cannot be negative: " + prep);
-        }
-        if (category.isEmpty()) {
-            category = "Uncategorized";
-        }
-
+        String category = fields.get(2).isEmpty() ? "MainCourse" : fields.get(2);
+        int prep = number(fields.get(3), "Prep minutes");
         String slotText = optional(fields, 4);
-        MealSlot slot = slotText.isEmpty() ? null : MealSlot.fromText(slotText); // throws a readable reason
-
+        MealSlot slot = slotText.isEmpty() ? MealSlot.defaultFor(category) : MealSlot.fromText(slotText);
         String caloriesText = optional(fields, 5);
-        int calories = 0;
-        if (!caloriesText.isEmpty()) {
-            try {
-                calories = Integer.parseInt(caloriesText);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Calories is not a number: " + caloriesText);
-            }
-            if (calories < 0) {
-                throw new IllegalArgumentException("Calories cannot be negative: " + calories);
-            }
-        }
-
+        int calories = caloriesText.isEmpty() ? 0 : number(caloriesText, "Calories");
         String levelText = optional(fields, 6);
-        HealthyLevel level = levelText.isEmpty() ? null : HealthyLevel.fromText(levelText);
-
-        return new ImportRow(date, name, category, prep, slot, calories, level);
+        HealthyLevel level = levelText.isEmpty()
+                ? HealthClassifier.classify(calories, slot, category)
+                : HealthyLevel.fromText(levelText);
+        SavedRecipe recipe = SavedRecipe.create(CategoryMapper.toMealType(category), 0, name, "", prep, calories, "");
+        return new PlannedMeal(0, 0, recipe, date, slot, prep, calories, level);
     }
 
-    /** The trimmed text of an optional column, or "" when the line does not have it. */
-    private static String optional(List<String> fields, int index) {
-        return index < fields.size() ? fields.get(index).trim() : "";
-    }
-
-    /** Splits on commas but keeps commas that are inside "quotes". */
+    /** The fields of one line, trimmed, with surrounding quotes removed ("" inside quotes is one "). */
     static List<String> splitCsv(String line) {
-        List<String> out = new ArrayList<>();
-        StringBuilder cur = new StringBuilder();
-        boolean inQuotes = false;
-        for (int i = 0; i < line.length(); i++) {
-            char c = line.charAt(i);
-            if (c == '"') {
-                if (inQuotes && i + 1 < line.length() && line.charAt(i + 1) == '"') {
-                    cur.append('"');
-                    i++;
-                } else {
-                    inQuotes = !inQuotes;
-                }
-            } else if (c == ',' && !inQuotes) {
-                out.add(cur.toString());
-                cur.setLength(0);
-            } else {
-                cur.append(c);
-            }
+        return Arrays.stream(line.split(COMMA_OUTSIDE_QUOTES, -1))
+                .map(String::trim)
+                .map(field -> field.length() >= 2 && field.startsWith("\"") && field.endsWith("\"")
+                        ? field.substring(1, field.length() - 1).replace("\"\"", "\"").trim()
+                        : field)
+                .toList();
+    }
+
+    private static LocalDate date(String text) {
+        try {
+            return LocalDate.parse(text);       // yyyy-MM-dd; 2026-02-30 is rejected too
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Bad date (use yyyy-MM-dd): " + text);
         }
-        out.add(cur.toString());
-        return out;
+    }
+
+    private static int number(String text, String what) {
+        int value;
+        try {
+            value = Integer.parseInt(text.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(what + " is not a number: " + text);
+        }
+        if (value < 0) {
+            throw new IllegalArgumentException(what + " cannot be negative: " + value);
+        }
+        return value;
+    }
+
+    private static String optional(List<String> fields, int index) {
+        return index < fields.size() ? fields.get(index) : "";
     }
 }
