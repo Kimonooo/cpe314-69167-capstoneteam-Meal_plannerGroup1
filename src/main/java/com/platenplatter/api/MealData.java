@@ -1,35 +1,22 @@
 package com.platenplatter.api;
 
+import com.platenplatter.model.IngredientAmount;
 import java.util.List;
 
-/** Plain data holder for one meal returned by TheMealDB. */
-public class MealData {
-    private final String id;
-    private final String name;
-    private final String category;
-    private final String area;
-    private final String instructions;
-    private final List<String> ingredients;
+/**
+ * One recipe read from TheMealDB that is not saved yet (a search result or a recommendation).
+ * filter.php only gives the id and the name, so the other fields stay empty until lookup.php fills them in.
+ */
+public record MealData(String mealDbId, String name, String category, String area,
+                       String instructions, List<IngredientAmount> ingredients) {
 
-    public MealData(String id, String name, String category, String area,
-                    String instructions, List<String> ingredients) {
-        this.id = id;
-        this.name = name;
-        this.category = category;
-        this.area = area;
-        this.instructions = instructions;
-        this.ingredients = ingredients;
+    /** True when only the id and the name are known (a filter.php result). */
+    public boolean isSummary() {
+        return instructions.isEmpty() && ingredients.isEmpty();
     }
-
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public String getCategory() { return category; }
-    public String getArea() { return area; }
-    public String getInstructions() { return instructions; }
-    public List<String> getIngredients() { return ingredients; }
 
     @Override
     public String toString() {
-        return name + " (" + category + ", " + area + ")";
+        return name;
     }
 }
