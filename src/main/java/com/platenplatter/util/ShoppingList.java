@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collector;
 
 /**
  * Builds the shopping list from the ingredient amounts of the planned meals.
@@ -25,12 +26,16 @@ public final class ShoppingList {
     /** Food group -> ingredient -> measures, e.g. garlic -> [3 cloves, 1 head]. */
     public static Map<FoodGroup, Map<String, List<String>>> build(
             List<IngredientAmount> items) {
+        // Explicit types so both javac (Maven) and the Eclipse compiler accept this
+        Collector<IngredientAmount, ?, Map<String, List<String>>> byName = groupingBy(
+                (IngredientAmount item) -> item.getIngredient().getIngredientName().toLowerCase(),
+                () -> new TreeMap<String, List<String>>(),    // A to Z in a group
+                mapping(IngredientAmount::getMeasure, toList()));
         return items.stream().collect(groupingBy(
-                item -> item.getIngredient().getFoodGroup(),
-                () -> new EnumMap<>(FoodGroup.class),        // groups in fixed order
-                groupingBy(item -> item.getIngredient().getIngredientName().toLowerCase(),
-                        TreeMap::new,                         // A to Z in a group
-                        mapping(IngredientAmount::getMeasure, toList()))));
+                (IngredientAmount item) -> item.getIngredient().getFoodGroup(),
+                // groups in the fixed FoodGroup order
+                () -> new EnumMap<FoodGroup, Map<String, List<String>>>(FoodGroup.class),
+                byName));
     }
 
     /** The planned recipes that have no ingredients saved yet (sorted, no repeats). */
@@ -63,4 +68,4 @@ public final class ShoppingList {
     public static int count(Map<FoodGroup, Map<String, List<String>>> list) {
         return list.values().stream().mapToInt(Map::size).sum();
     }
-}
+}        
