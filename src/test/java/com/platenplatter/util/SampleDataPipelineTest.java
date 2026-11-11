@@ -47,8 +47,8 @@ class SampleDataPipelineTest {
     }
 
     @Test
-    void theWeekTenFileMinesToTheNumbersInTheDesignDocument() throws IOException {
-        List<PlannedMeal> meals = good(load("meal_history_week10.csv"));
+    void theDemoFileMinesToTheNumbersInTheDesignDocument() throws IOException {
+        List<PlannedMeal> meals = good(load("meal_history_demo.csv"));
         LocalDate monday = LocalDate.of(2026, 11, 2);
         List<PlannedMeal> week = meals.stream().filter(m -> !m.getPlanDate().isAfter(monday.plusDays(6))).toList();
         assertEquals(48, meals.size());
