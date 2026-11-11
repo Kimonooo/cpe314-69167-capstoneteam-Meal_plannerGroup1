@@ -13,4 +13,3 @@
 | 10 | Planned meals can be removed but not edited | MealPlanScreen | Remove it and add it again |
 | 11 | The streak counts days with a planned meal, not days when the meal was cooked | StreakCalculator | Future work: a "Mark as cooked" button |
 | 12 | The Sign up and Calendar tabs from Milestone 1 are in the old App.java, not in the new main window | PlateNPlatterApp | Run `com.platenplatter.App` for them, or add the one-line `Milestone2Tabs` call |
-| 13 | [FILL: real bugs found during QA] | | |
