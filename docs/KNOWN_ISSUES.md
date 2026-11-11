@@ -1,16 +1,19 @@
-# Known Issues / Limitations (Venice keeps this honest; show it on request at the demo)
-| # | Issue / limitation | Where | Workaround or plan |
-|---|---|---|---|
-| 1 | TheMealDB search and "Look up online" need internet; offline shows a friendly error | MealDbClient | Message tells the user to check the connection |
-| 2 | TheMealDB gives no prep time, so the user picks it with a spinner (default 30 min) | RecipesScreen | Documented limitation |
-| 3 | TheMealDB categories (Chicken, Beef...) are grouped into our 3 categories; everything that is not Breakfast or Dessert counts as MainCourse | CategoryMapper | The MainCourse bar can look large |
-| 4 | The shopping list shows WHAT to buy and for how many meals, but not amounts (grams, cups) | ShoppingListBuilder | Future work |
-| 5 | The aisle of an ingredient is chosen by keyword rules; an unusual ingredient can land in "Other" | IngredientCategorizer | Add a keyword to the rule list |
-| 6 | Meals imported from a CSV have no ingredients; the built-in list covers only our sample dishes | SampleIngredients | "Look up online" fills in dishes TheMealDB knows |
-| 7 | The import reads the whole CSV into memory (fine for tens of thousands of rows, not millions) | CsvImportTask | Could stream line by line |
-| 8 | Bad CSV rows are skipped and counted | CsvRecipeParser | The skipped count is shown on screen |
-| 9 | SQLite uses PRAGMA synchronous=OFF to speed up bulk import (small risk if the PC crashes mid-import) | MealPlanHistoryDao | Acceptable for course data |
-| 10 | Planned meals can be removed but not edited | MealPlanScreen | Remove it and add it again |
-| 11 | The streak counts days with a planned meal, not days when the meal was cooked | StreakCalculator | Future work: a "Mark as cooked" button |
-| 12 | The Sign up and Calendar tabs from Milestone 1 are in the old App.java, not in the new main window | PlateNPlatterApp | Run `com.platenplatter.App` for them, or add the one-line `Milestone2Tabs` call |
-| 13 | [FILL: real bugs found during QA] | | |
+# Known Issues and Limitations
+
+This list matches Appendix C of the Design Document.
+
+| # | Known issue or limit | Where |
+|---|---|---|
+| 1 | A planned meal cannot be edited. To change it, remove it and add it again. | `MealPlanScreen` |
+| 2 | Importing the same CSV file twice adds the meals twice (there is no duplicate check). | `CsvImportTask` |
+| 3 | TheMealDB gives no calories, so the user types them the first time a recipe is planned. The automatic Healthy Level is a simple budget rule, not nutrition advice. | `RecipesScreen`, `HealthClassifier` |
+| 4 | The prep time is an estimate from the text of the steps. Recipes that give no times only get the 2-minutes-per-ingredient part, and "1/2 hour" is read as 2 hours. The user can correct the minutes before saving. | `PrepTimeEstimator` |
+| 5 | Recipe search and today's recommendations need the internet. Offline, a red message is shown and saved meals keep working. | `RecipesScreen`, `MealDbClient` |
+| 6 | A security question is weaker than an e-mail reset, and there is no lock-out after many wrong answers. Answers are stored only as hashes and are not case-sensitive. | `AuthService` |
+| 7 | Nested recipes exist only in memory (shown by the tests); `saved_recipes` has no table for sub-recipes. | `RecipeCalculator` |
+| 8 | `UndoStack` and `CookingQueue` are shown by their tests; the pages use maps and lists. | `UndoStack`, `CookingQueue` |
+| 9 | Only TheMealDB's free test key `1` is used, which is allowed for development and class use only. | `MealDbClient` |
+| 10 | `plate_n_platter.db` is opened by a relative path, so it is created in the folder the app is started from. An older database file from before the 5-table model is not upgraded; import the CSV files again. | `DatabaseConnector` |
+| 11 | The streak counts days with a planned meal, not days the meal was actually eaten. | `StreakCalculator` |
+| 12 | The import reads the whole CSV file into memory (fine for tens of thousands of rows, not millions). | `CsvImportTask` |
+| 13 | The database runs in WAL mode with `synchronous = NORMAL`. A power cut can lose the last save, but it cannot corrupt the database file. | `DatabaseConnector` |
