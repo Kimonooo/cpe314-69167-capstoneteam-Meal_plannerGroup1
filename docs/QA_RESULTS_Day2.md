@@ -1,7 +1,4 @@
 # QA Results - Day 2 (Venice)
-You are the tester. Kimberly runs the app on her laptop and shares her screen. YOU read each test out loud, she clicks, you watch.
-Write Pass or Fail for every test. A Fail is not bad: a bug you find now saves points later. Put every Fail in `docs/KNOWN_ISSUES.md` too.
-Start the app: `mvn javafx:run`   (the safe practice version that saves nothing: `mvn javafx:run -Dapp.mainClass=com.platenplatter.ui.Milestone2Preview`)
 
 | # | Test | Steps (read these out loud) | You should see | Pass / Fail | Notes |
 |---|---|---|---|---|---|
