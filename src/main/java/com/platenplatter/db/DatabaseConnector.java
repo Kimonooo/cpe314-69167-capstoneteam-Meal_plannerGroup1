@@ -32,7 +32,9 @@ public final class DatabaseConnector {
         try (Statement st = connection.createStatement()) {
             st.execute("PRAGMA foreign_keys = ON");
             st.execute("PRAGMA busy_timeout = 5000");
-            st.execute("PRAGMA synchronous = OFF");     // faster imports; fine for class data
+            st.execute("PRAGMA journal_mode = WAL");      // writes go to a log first, so a crash cannot corrupt the file
+            st.execute("PRAGMA synchronous = NORMAL");    // safe together with WAL, and much faster than FULL
+
         } catch (SQLException e) {
             connection.close();
             throw e;

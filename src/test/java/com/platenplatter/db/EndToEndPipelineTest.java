@@ -57,8 +57,8 @@ class EndToEndPipelineTest {
     }
 
     @Test
-    void theWeekTenFileGivesTheNumbersOfTheDesignDocument() throws Exception {
-        assertEquals(0, importFile("meal_history_week10.csv"));
+    void theDemoFileGivesTheNumbersOfTheDesignDocument() throws Exception {
+        assertEquals(0, importFile("meal_history_demo.csv"));
         LocalDate monday = LocalDate.of(2026, 11, 2);
         List<PlannedMeal> week = dao.mealsBetween(monday, monday.plusDays(6));
         Map<String, Map<String, Long>> table = StatisticsService.countByDay(week, monday, Grouping.HEALTHY_LEVEL);

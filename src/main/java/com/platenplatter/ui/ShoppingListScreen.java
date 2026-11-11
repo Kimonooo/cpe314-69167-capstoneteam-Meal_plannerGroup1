@@ -46,7 +46,6 @@ public class ShoppingListScreen {
 
     private final PlanStore store;
     private final MealDbClient client;
-    private final Supplier<LocalDate> todayProvider;
     private final VBox root = new VBox(14);
     private final ScrollPane scroller = new ScrollPane(root);
     private final DatePicker fromPicker = new DatePicker();
@@ -68,7 +67,6 @@ public class ShoppingListScreen {
     public ShoppingListScreen(PlanStore store, MealDbClient client, Supplier<LocalDate> todayProvider) {
         this.store = store;
         this.client = client;
-        this.todayProvider = todayProvider;
         LocalDate monday = StatisticsService.mondayOf(todayProvider.get());
         fromPicker.setValue(monday);
         toPicker.setValue(monday.plusDays(6));
