@@ -22,6 +22,8 @@ import javafx.stage.FileChooser;
 /**
  * The Import page: pick or drop a CSV file and import it in the background with CsvImportTask.
  * The window stays responsive: the progress bar and the message follow the Task.
+ * A colored indicator in the drop zone always says where the file is: not chosen yet,
+ * uploaded and ready, importing, imported, cancelled or failed.
  */
 public class ImportScreen {
     private final PlanStore store;
@@ -31,6 +33,7 @@ public class ImportScreen {
     private final VBox dropZone = new VBox(10);
     private final Button chooseButton = new Button("Choose CSV...");
     private final Label fileLabel = new Label("No file chosen yet");
+    private final Label uploadIndicator = new Label();
     private final Button importButton = new Button("Import");
     private final Button cancelButton = new Button("Cancel");
     private final ProgressBar bar = new ProgressBar(0);
@@ -46,12 +49,15 @@ public class ImportScreen {
     public ImportScreen(PlanStore store) {
         this.store = store;
         chooseButton.setId("chooseButton");
-        chooseButton.getStyleClass().add("pnp-button-secondary");
+        chooseButton.getStyleClass().add("pnp-button");
         fileLabel.setId("fileLabel");
         fileLabel.getStyleClass().add("pnp-muted");
         Label dropText = new Label("Drop a .csv file here");
-        dropText.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        dropZone.getChildren().addAll(dropText, Theme.text("or", "pnp-muted"), chooseButton, fileLabel);
+        dropText.getStyleClass().add("pnp-drop-title");
+        uploadIndicator.setId("uploadIndicator");
+        uploadIndicator.getStyleClass().add("pnp-chip");
+        indicate("No CSV uploaded yet", "chip-neutral", false);
+        dropZone.getChildren().addAll(Theme.icon("dishes", 64), uploadIndicator, dropText, Theme.text("or", "pnp-muted"), chooseButton, fileLabel);
         dropZone.setAlignment(Pos.CENTER);
         dropZone.getStyleClass().add("pnp-drop");
 
@@ -73,9 +79,11 @@ public class ImportScreen {
         HBox progressRow = new HBox(10, bar, percent);
         progressRow.setAlignment(Pos.CENTER_LEFT);
         statusLabel.setId("importStatus");
-        resultsRow.getChildren().addAll(Theme.statCard("ROWS IMPORTED", importedValue, new Label("meals added to your plan")),
-                Theme.statCard("BAD ROWS SKIPPED", skippedValue, new Label("never stop the import")),
-                Theme.statCard("TIME TAKEN", timeValue, new Label("on a background thread")));
+        statusLabel.getStyleClass().add("pnp-status-banner");   // green when the import worked, red when it failed
+        statusLabel.setMaxWidth(Double.MAX_VALUE);
+        resultsRow.getChildren().addAll(Theme.statCard("ROWS IMPORTED", importedValue, new Label("meals added to your plan"), "dishes"),
+                Theme.statCard("BAD ROWS SKIPPED", skippedValue, new Label("never stop the import"), "food"),
+                Theme.statCard("TIME TAKEN", timeValue, new Label("on a background thread"), "streak"));
         Theme.show(resultsRow, false);
 
         Label example = Theme.text("date,recipe_name,category,prep_minutes,meal_slot,calories,healthy_level\n"
@@ -89,10 +97,8 @@ public class ImportScreen {
 
         root.setPadding(new Insets(22, 26, 26, 26));
         root.getChildren().addAll(
-                Theme.pageHeader("Import Meal History",
-                        "Load thousands of past meals from a CSV file. It runs in the background, so you can keep using the app."),
-                card(Theme.text("Step 1: Pick your file", "pnp-section"), dropZone),
-                card(Theme.text("Step 2: Import it", "pnp-section"), new HBox(10, importButton, cancelButton), progressRow,
+                card(stepTitle(1, "Pick your file"), dropZone),
+                card(stepTitle(2, "Import it"), new HBox(10, importButton, cancelButton), progressRow,
                         statusLabel),
                 resultsRow,
                 card(Theme.text("What the CSV must look like", "pnp-section"), example, note));
@@ -116,6 +122,13 @@ public class ImportScreen {
         if (currentTask != null) {
             currentTask.cancel();
         }
+    }
+
+    /** "1  Pick your file": the step number in a burgundy circle, then the step's name. */
+    private static HBox stepTitle(int number, String text) {
+        HBox title = new HBox(10, Theme.text(String.valueOf(number), "pnp-step-number"), Theme.text(text, "pnp-section"));
+        title.setAlignment(Pos.CENTER_LEFT);
+        return title;
     }
 
     private static VBox card(Node... children) {
@@ -163,8 +176,20 @@ public class ImportScreen {
         }
     }
 
+    /** Sets the indicator's text and color, and gives the drop zone a green edge while a file is loaded. */
+    private void indicate(String text, String chipClass, boolean hasFile) {
+        uploadIndicator.setText(text);
+        uploadIndicator.getStyleClass().removeAll("chip-neutral", "chip-healthy", "chip-moderate", "chip-indulgent");
+        uploadIndicator.getStyleClass().add(chipClass);
+        dropZone.getStyleClass().remove("has-file");
+        if (hasFile) {
+            dropZone.getStyleClass().add("has-file");
+        }
+    }
+
     private void pick(File file) {
         chosenFile = file;
+        indicate("\u2713 CSV uploaded: " + file.getName() + " is ready to import", "chip-healthy", true);
         fileLabel.setText(file.getName() + "   (" + String.format(Locale.ENGLISH, "%.1f KB", file.length() / 1024.0) + ")");
         importButton.setDisable(false);
         Theme.show(resultsRow, false);
@@ -180,11 +205,23 @@ public class ImportScreen {
         importButton.setDisable(true);
         cancelButton.setDisable(false);
         Theme.show(resultsRow, false);
+        indicate("Importing " + chosenFile.getName() + "...", "chip-moderate", true);
         bar.progressProperty().bind(task.progressProperty());     // the bar follows the Task
         statusLabel.textProperty().bind(task.messageProperty());
-        task.setOnSucceeded(e -> finish(task, "Done! The import finished.", 1.0, Theme.Kind.OK, true));
-        task.setOnFailed(e -> finish(task, "Import failed: " + task.getException().getMessage(), 0, Theme.Kind.ERROR, false));
-        task.setOnCancelled(e -> finish(task, "Import cancelled.", 0, Theme.Kind.INFO, true));
+        String name = chosenFile.getName();
+        task.setOnSucceeded(e -> {
+            finish(task, "Done! The import finished.", 1.0, Theme.Kind.OK, true);
+            indicate("\u2713 Imported " + String.format(Locale.ENGLISH, "%,d", task.getImported()) + " rows from " + name,
+                    "chip-healthy", true);
+        });
+        task.setOnFailed(e -> {
+            finish(task, "Import failed: " + task.getException().getMessage(), 0, Theme.Kind.ERROR, false);
+            indicate("Import failed for " + name, "chip-indulgent", false);
+        });
+        task.setOnCancelled(e -> {
+            finish(task, "Import cancelled.", 0, Theme.Kind.INFO, true);
+            indicate("Import cancelled: " + name + " is still loaded", "chip-neutral", true);
+        });
         AppShell.runInBackground(task);                             // BACKGROUND THREAD: the UI stays responsive
     }
 

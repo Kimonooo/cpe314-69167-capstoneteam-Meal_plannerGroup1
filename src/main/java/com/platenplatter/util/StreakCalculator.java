@@ -20,11 +20,18 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * The planning streak: how many days in a row have at least one planned meal, and the
- * prep-tier badge earned by the meals in the current streak. Worked out from the dates only.
+ * The planning streak: how many days in a row have at least one planned meal, the next
+ * streak goal, and the prep-tier badge earned by the meals in the current streak.
+ * Nothing here is stored: the streak is worked out again from the planned_meals dates
+ * every time, so it is always right after a restart, an import or a removed meal.
  */
 public final class StreakCalculator {
     private StreakCalculator() { }
+
+    /** The streak goals, in days. After the last one, the goals go on every 50 days. */
+    public static final List<Integer> MILESTONES = List.of(3, 7, 14, 30, 60, 100);
+    private static final int LAST_MILESTONE = 100;
+    private static final int STEP_AFTER_LAST = 50;
 
     /**
      * Days in a row with a meal, counting back from today. If today has no meal yet, the streak
@@ -96,16 +103,61 @@ public final class StreakCalculator {
                 .orElse(null);
     }
 
+    /** The next goal above the current streak: 0 -> 3, 3 -> 7, 7 -> 14 ... 100 -> 150, 150 -> 200. */
+    public static int nextMilestone(int current) {
+        int days = Math.max(current, 0);
+        return MILESTONES.stream()
+                .filter(goal -> goal > days)
+                .findFirst()
+                .orElse((days / STEP_AFTER_LAST + 1) * STEP_AFTER_LAST);
+    }
+
+    /** The last goal already reached (0 when none yet): 5 -> 3, 7 -> 7, 120 -> 100. */
+    public static int reachedMilestone(int current) {
+        int days = Math.max(current, 0);
+        if (days >= LAST_MILESTONE) {
+            return days / STEP_AFTER_LAST * STEP_AFTER_LAST;
+        }
+        return MILESTONES.stream()
+                .filter(goal -> goal <= days)
+                .reduce((first, second) -> second)          // the last one that fits
+                .orElse(0);
+    }
+
+    /** How far the streak is between the goal it reached and the next one, from 0.0 to 1.0. */
+    public static double milestoneProgress(int current) {
+        int from = reachedMilestone(current);
+        int to = nextMilestone(current);
+        return (Math.max(current, 0) - from) / (double) (to - from);
+    }
+
+    /** "2 more days to reach a 7-day streak" */
+    public static String goalLine(int current) {
+        int goal = nextMilestone(current);
+        int left = goal - Math.max(current, 0);
+        return left + (left == 1 ? " more day" : " more days") + " to reach a " + goal + "-day streak";
+    }
+
+    /**
+     * The badge is named after how long most meals in the streak take to prepare:
+     * Speedy Chef (15 min or less), Steady Chef (16 to 45 min), Patient Chef (more than 45 min).
+     */
     public static String badgeTitle(Map<PrepTier, Long> counts) {
         PrepTier main = mainTier(counts);
         if (main == null) {
             return "No badge yet";
         }
         return switch (main) {
-            case QUICK -> "Quick Cook";
-            case AVERAGE -> "Home Cook";
-            case SLOW -> "Slow-Food Chef";
+            case QUICK -> "Speedy Chef";
+            case AVERAGE -> "Steady Chef";
+            case SLOW -> "Patient Chef";
         };
+    }
+
+    /** Why the badge was given: "most meals in this streak take 16 to 45 min". Empty when there is no badge. */
+    public static String badgeReason(Map<PrepTier, Long> counts) {
+        PrepTier main = mainTier(counts);
+        return main == null ? "" : "most meals in this streak take " + main.getRange();
     }
 
     /** "2 quick · 1 average · 0 slow" */
