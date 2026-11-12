@@ -81,16 +81,15 @@ public class AnalyticsScreen {
         HBox.setHgrow(gap, Priority.ALWAYS);
         VBox right = new VBox(4, refreshButton, updatedLabel);
         right.setAlignment(Pos.CENTER_RIGHT);
-        HBox header = new HBox(Theme.pageHeader("Meal Plan Analytics",
-                "How healthy, how quick, and which meals? Counted straight from your meal plan."), gap, right);
+        HBox header = new HBox(gap, right);
         totalValue.setId("totalValue");
         healthyValue.setId("healthyValue");
         avgValue.setId("avgValue");
         caloriesValue.setId("caloriesValue");
-        HBox stats = new HBox(14, Theme.statCard("MEALS", totalValue, totalUnit),
-                Theme.statCard("HEALTHY SHARE", healthyValue, new Label("of meals are Healthy")),
-                Theme.statCard("AVERAGE PREP TIME", avgValue, new Label("per meal")),
-                Theme.statCard("AVERAGE CALORIES", caloriesValue, caloriesUnit));
+        HBox stats = new HBox(14, Theme.statCard("MEALS", totalValue, totalUnit, "dishes"),
+                Theme.statCard("HEALTHY SHARE", healthyValue, new Label("of meals are Healthy"), "food"),
+                Theme.statCard("AVERAGE PREP TIME", avgValue, new Label("per meal"), "hat"),
+                Theme.statCard("AVERAGE CALORIES", caloriesValue, caloriesUnit, "streak"));
         statusLabel.setId("analyticsStatus");
         VBox content = new VBox(14, header, buildControls(), stats, buildMainArea(), statusLabel);
         content.setPadding(new Insets(22, 26, 26, 26));
@@ -152,7 +151,7 @@ public class AnalyticsScreen {
         Button next = weekButton(">", "nextWeek", () -> monday = monday.plusWeeks(1));
         Button thisWeek = weekButton("This week", "thisWeek", () -> monday = StatisticsService.mondayOf(todayProvider.get()));
         weekLabel.setId("weekLabel");
-        weekLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #4E0920;");
+        weekLabel.getStyleClass().add("pnp-week-title");
         weekLabel.setMinWidth(150);
         weekLabel.setAlignment(Pos.CENTER);
         weekNav.getChildren().addAll(prev, weekLabel, next, thisWeek);
@@ -201,9 +200,9 @@ public class AnalyticsScreen {
         caloriesValue.setText(withCalories == 0 ? "-" : TextFormat.calories((int) Math.round(StatisticsService.averageCalories(meals))));
         caloriesUnit.setText(withCalories == 0 ? "no calories given yet" : "per meal (" + withCalories + " with calories)");
         if (meals.isEmpty()) {
-            Label empty = Theme.text(snap.weekScope()
+            VBox empty = Theme.emptyState(snap.weekScope()
                     ? "No meals planned in the week of " + snap.monday().format(WEEK) + ".\nAdd a meal on Recipes, or try another week."
-                    : "No meal data yet.\nImport a CSV or add a meal on Recipes.", "pnp-empty");
+                    : "No meal data yet.\nImport a CSV or add a meal on Recipes.", "dishes");
             chartHolder.getChildren().setAll(empty);
             breakdownRows.getChildren().setAll(Theme.text("Nothing to count yet.", "pnp-muted"));
         } else {
@@ -231,7 +230,7 @@ public class AnalyticsScreen {
     /** "By healthy level" with one small bar per group: its count and its share of all meals. */
     private static VBox breakdown(Grouping grouping, Map<String, Long> counts, int total) {
         Label title = new Label("By " + grouping.getLabel().toLowerCase());
-        title.setStyle("-fx-font-weight: bold; -fx-text-fill: #4E0920;");
+        title.getStyleClass().add("pnp-breakdown-title");
         VBox section = new VBox(8, title);
         counts.forEach((name, count) -> {
             double share = total == 0 ? 0 : (double) count / total;

@@ -3,8 +3,6 @@ package com.platenplatter.ui;
 import com.platenplatter.util.CsvRecipeParser;
 import com.platenplatter.util.PlanStore;
 import java.io.File;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.util.List;
 import java.util.stream.IntStream;
 import javafx.concurrent.Task;
@@ -36,7 +34,7 @@ public class CsvImportTask extends Task<Integer> {
     @Override
     protected Integer call() throws Exception {
         updateMessage("Reading file...");
-        List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
+        List<String> lines = CsvRecipeParser.readLines(file.toPath());
         int total = lines.size() - 1;                      // line 0 is the header
         try {
             IntStream.rangeClosed(1, total)

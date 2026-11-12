@@ -39,18 +39,26 @@ public class AppShell {
     private final ImportScreen importScreen;
     private final User user;
 
-    public AppShell(PlanStore store, MealDbClient client, User user, AuthService auth, Runnable onLogout) {
+    public AppShell(PlanStore store, MealDbClient client, User user, AuthService auth, Runnable onLogout,
+                    Runnable onAccountDeleted) {
         this.user = user;
         DataChangeNotifier notifier = new DataChangeNotifier();
         header = new HeaderBar(store, PAGES, this::open, onLogout);
         header.setUserName(user.getDisplayName());
 
+        MealPhotos.useClient(client);                     // the photos use the same TheMealDB client
         RecipesScreen recipes = new RecipesScreen(client, new RecommendationService(client), store);
         TodayScreen today = new TodayScreen(store, slot -> {
             recipes.setDate(LocalDate.now());
             recipes.setSlot(slot);
             open("Recipes");
         }, () -> open("Shopping List"));
+        recipes.setOnPicksLoaded(today::showFeatured);    // Today's featured meal reuses the picks Recipes loaded
+        today.setOnPlanFeatured(meal -> {
+            recipes.setDate(LocalDate.now());
+            open("Recipes");
+            recipes.openMeal(meal);
+        });
         MealPlanScreen plan = new MealPlanScreen(store, date -> {
             recipes.setDate(date);
             open("Recipes");
@@ -60,6 +68,7 @@ public class AppShell {
         AnalyticsScreen analytics = new AnalyticsScreen(store);
         AccountScreen account = new AccountScreen(auth, user,
                 renamed -> header.setUserName(renamed.getDisplayName()), onLogout);
+        account.setOnDeleted(onAccountDeleted);
 
         pages.put("Today", today.getView());
         pages.put("Meal Plan", plan.getView());

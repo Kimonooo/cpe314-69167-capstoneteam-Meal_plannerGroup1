@@ -78,7 +78,8 @@ public class PlateNPlatterApp extends Application {
     /** One MealPlanDao per logged-in user, so every query only sees that user's meals. */
     private void openAppFor(User user) {
         closeShell();
-        shell = new AppShell(new MealPlanDao(connection, user.getUserId()), client, user, auth, this::logout);
+        shell = new AppShell(new MealPlanDao(connection, user.getUserId()), client, user, auth, this::logout,
+                this::accountDeleted);
         setPage(shell.getView());
     }
 
@@ -86,6 +87,12 @@ public class PlateNPlatterApp extends Application {
         String username = shell == null ? null : shell.getUser().getUsername();
         closeShell();
         showLogin(username, "You are logged out.");
+    }
+
+    /** After "Delete my account": stop the pages of the deleted user and go back to Log in. */
+    private void accountDeleted() {
+        closeShell();
+        showLogin(null, "Your account and all its data were deleted.");
     }
 
     private void closeShell() {
