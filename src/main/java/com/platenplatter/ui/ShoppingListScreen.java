@@ -26,6 +26,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -37,9 +38,10 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 
 /**
- * The Shopping List page: every ingredient of the meals planned between two days, grouped by
- * food group. Tick what is already in the basket; copy or save the list. Recipes planned without
- * ingredients (from a CSV import) can be looked up online on TheMealDB.
+ * The Shopping List page. The user picks the days and then chooses ONE planned recipe: the list
+ * shows only that recipe's ingredients, grouped by food group. "All planned recipes" is the other
+ * choice and puts everything on one list. Tick what is already in the basket; copy or save the
+ * list. Recipes planned without ingredients (from a CSV import) can be looked up online on TheMealDB.
  */
 public class ShoppingListScreen {
     private record ListData(List<PlannedMeal> meals, List<IngredientAmount> items) { }
@@ -50,6 +52,9 @@ public class ShoppingListScreen {
     private final ScrollPane scroller = new ScrollPane(root);
     private final DatePicker fromPicker = new DatePicker();
     private final DatePicker toPicker = new DatePicker();
+    private final ComboBox<ShoppingList.RecipeChoice> recipeBox = new ComboBox<>();
+    private boolean fillingChoices;
+    private ListData data = new ListData(List.of(), List.of());
     private final Label summary = new Label();
     private final VBox groupsBox = new VBox(6);
     private final HBox missingBox = new HBox(10);
@@ -82,6 +87,19 @@ public class ShoppingListScreen {
         HBox range = new HBox(10, Theme.text("From", "pnp-muted"), fromPicker, Theme.text("To", "pnp-muted"), toPicker, thisWeek);
         range.setAlignment(Pos.CENTER_LEFT);
 
+        recipeBox.setId("shopRecipe");
+        recipeBox.setPromptText("No planned recipes on these days");
+        recipeBox.setPrefWidth(320);
+        recipeBox.valueProperty().addListener((obs, old, now) -> {
+            if (!fillingChoices) {
+                ticked.clear();                            // the user picked another recipe: it starts unticked
+                showChoice();
+            }
+        });
+        HBox recipeRow = new HBox(10, Theme.text("Recipe", "pnp-muted"), recipeBox,
+                Theme.text("Choose one recipe, or \"All planned recipes\" for everything.", "pnp-muted"));
+        recipeRow.setAlignment(Pos.CENTER_LEFT);
+
         Button copy = button("Copy list", "pnp-button-secondary", this::copyList);
         Button save = button("Save as text file...", "pnp-button-secondary", this::saveList);
         Button untick = button("Untick all", "pnp-button-secondary", () -> {
@@ -104,9 +122,8 @@ public class ShoppingListScreen {
 
         root.setPadding(new Insets(22, 26, 26, 26));
         root.getChildren().addAll(
-                Theme.pageHeader("Shopping List", "Everything to buy for the meals you planned, grouped by food group."),
-                card(Theme.text("Which days?", "pnp-section"), range),
-                card(Theme.text("Your list", "pnp-section"), summary, new HBox(10, copy, save, untick), missingBox, groupsBox),
+                card(Theme.sectionTitle("Which days and which recipe?", "food"), range, recipeRow),
+                card(Theme.sectionTitle("Your list", "dishes"), summary, new HBox(10, copy, save, untick), missingBox, groupsBox),
                 status);
         scroller.setFitToWidth(true);
         scroller.getStyleClass().add("pnp-scroll");
@@ -133,22 +150,63 @@ public class ShoppingListScreen {
             }
         };
         task.setOnSucceeded(e -> {
-            ListData data = task.getValue();
-            list = ShoppingList.build(data.items());
-            missing = ShoppingList.missingRecipes(data.meals(), data.items());
-            summary.setText(ShoppingList.count(list) + " ingredients for " + data.meals().size() + " planned meals.");
-            drawList();
+            data = task.getValue();
+            fillChoices(ShoppingList.recipeChoices(data.meals()));
+            showChoice();
             Theme.status(status, "", Theme.Kind.INFO);
         });
         task.setOnFailed(e -> Theme.status(status, "Could not read the meal plan.", Theme.Kind.ERROR));
         AppShell.runInBackground(task);
     }
 
+    /**
+     * Puts the planned recipes in the box, with "All planned recipes" last. The recipe that was
+     * chosen stays chosen when it is still planned; otherwise the first recipe is chosen.
+     */
+    private void fillChoices(List<ShoppingList.RecipeChoice> recipes) {
+        ShoppingList.RecipeChoice before = recipeBox.getValue();
+        fillingChoices = true;                             // setting the items must not redraw the list yet
+        recipeBox.getItems().setAll(recipes);
+        if (recipes.isEmpty()) {
+            recipeBox.setValue(null);
+        } else {
+            recipeBox.getItems().add(ShoppingList.ALL_RECIPES);
+            recipeBox.setValue(recipeBox.getItems().contains(before) ? before : recipes.get(0));
+        }
+        recipeBox.setDisable(recipes.isEmpty());
+        fillingChoices = false;
+    }
+
+    /** Builds the list for the chosen recipe (or for all of them) and draws it. */
+    private void showChoice() {
+        ShoppingList.RecipeChoice choice = recipeBox.getValue();
+        if (choice == null || ShoppingList.ALL_RECIPES.equals(choice)) {
+            list = ShoppingList.build(ShoppingList.distinct(data.items()));
+            missing = ShoppingList.missingRecipes(data.meals(), data.items());
+            summary.setText(ShoppingList.count(list) + " ingredients for all " + data.meals().size() + " planned meals.");
+        } else {
+            List<IngredientAmount> items = ShoppingList.forRecipe(data.items(), choice.savedRecipeId());
+            List<PlannedMeal> meals = ShoppingList.mealsOf(data.meals(), choice.savedRecipeId());
+            list = ShoppingList.build(items);
+            missing = ShoppingList.missingRecipes(meals, items);
+            summary.setText(ShoppingList.count(list) + " ingredients for " + choice.name()
+                    + " (planned " + meals.size() + (meals.size() == 1 ? " time)." : " times)."));
+        }
+        drawList();
+    }
+
+    /** The first line of a copied or saved list: which recipe it is for. */
+    private String listTitle() {
+        ShoppingList.RecipeChoice choice = recipeBox.getValue();
+        return "Shopping list: " + (choice == null ? ShoppingList.ALL_RECIPES.name() : choice.name());
+    }
+
     private void drawList() {
         missingText.setText("No ingredient list yet for: " + String.join(", ", missing));
         Theme.show(missingBox, !missing.isEmpty());
         groupsBox.getChildren().setAll(list.isEmpty()
-                ? List.of(Theme.text("Nothing to buy yet. Plan a meal on the Recipes page.", "pnp-empty"))
+                ? List.<Node>of(Theme.emptyState(data.meals().isEmpty() ? "Nothing to buy yet. Plan a meal on the Recipes page."
+                        : "No ingredients are saved for this choice yet.", "meal"))
                 : list.entrySet().stream().flatMap(group -> Stream.concat(
                         Stream.of(Theme.text(group.getKey().getLabel()
                                 + " (" + group.getValue().size() + ")", "pnp-group-header")),
@@ -177,7 +235,7 @@ public class ShoppingListScreen {
 
     private void copyList() {
         ClipboardContent content = new ClipboardContent();
-        content.putString(ShoppingList.asText(list));
+        content.putString(listTitle() + "\n\n" + ShoppingList.asText(list));
         Clipboard.getSystemClipboard().setContent(content);
         Theme.status(status, "Copied! Paste it in a chat or a note.", Theme.Kind.OK);
     }
@@ -191,7 +249,7 @@ public class ShoppingListScreen {
             return;
         }
         try {
-            Files.writeString(file.toPath(), ShoppingList.asText(list));
+            Files.writeString(file.toPath(), listTitle() + "\n\n" + ShoppingList.asText(list));
             Theme.status(status, "Saved to " + file.getName() + ".", Theme.Kind.OK);
         } catch (IOException e) {
             Theme.status(status, "Could not save the file: " + e.getMessage(), Theme.Kind.ERROR);
