@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Every rule for accounts: sign up, log in, change the display name, and reset a forgotten
- * password with the security question. The screens only show what this class decides.
+ * Every rule for accounts: sign up, log in, change the display name, reset a forgotten
+ * password with the security question, and delete the account. The screens only show what this class decides.
  */
 public class AuthService {
     public static final int MIN_PASSWORD_LENGTH = 6;
@@ -73,6 +73,23 @@ public class AuthService {
             throw new AuthException("Your account was not found. Please log in again.");
         }
         return user.withDisplayName(clean);
+    }
+
+    /**
+     * Deletes the user's own account and everything saved for it (saved recipes, their ingredient
+     * amounts and planned meals). The password must be typed again, so nobody else at the
+     * keyboard can delete it. It cannot be undone.
+     */
+    public void deleteAccount(User user, String password) throws AuthException, SQLException {
+        if (password == null || password.isEmpty()) {
+            throw new AuthException("Type your password to delete your account.");
+        }
+        if (!users.passwordMatches(user.getUserId(), password)) {
+            throw new AuthException("That password is not correct. Nothing was deleted.");
+        }
+        if (!users.deleteUser(user.getUserId())) {
+            throw new AuthException("Your account was not found. Please log in again.");
+        }
     }
 
     /** Step 1 of Forgot password: the question this username chose when signing up. */

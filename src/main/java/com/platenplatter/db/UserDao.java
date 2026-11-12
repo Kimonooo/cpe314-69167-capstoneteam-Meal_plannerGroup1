@@ -26,7 +26,8 @@ public class UserDao {
     /** Saves a new account and returns it with its new user_id. The answer must already be normalized. */
     public synchronized User insertUser(User user, String password, String securityAnswer) throws SQLException {
         String sql = "INSERT INTO users (username, display_name, age, gender, password_hash, salt, "
-                + "security_question, security_answer_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                + "security_question, security_answer_hash, created_at, updated_at) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
         String salt = PasswordHasher.generateSalt();
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, user.getUsername());
@@ -72,7 +73,7 @@ public class UserDao {
     /** Saves the PBKDF2 hash of a new password, with the user's own salt. */
     public synchronized void updatePassword(long userId, String newPassword) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(
-                "UPDATE users SET password_hash = ? WHERE user_id = ?")) {
+                "UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?")) {
             ps.setString(1, PasswordHasher.hash(newPassword, saltOf(userId)));
             ps.setLong(2, userId);
             ps.executeUpdate();
@@ -80,9 +81,22 @@ public class UserDao {
     }
 
     public synchronized boolean updateDisplayName(long userId, String displayName) throws SQLException {
-        try (PreparedStatement ps = conn.prepareStatement("UPDATE users SET display_name = ? WHERE user_id = ?")) {
+        try (PreparedStatement ps = conn.prepareStatement(
+                "UPDATE users SET display_name = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?")) {
             ps.setString(1, displayName);
             ps.setLong(2, userId);
+            return ps.executeUpdate() == 1;
+        }
+    }
+
+    /**
+     * Deletes the account. ON DELETE CASCADE in schema.sql removes the user's saved recipes
+     * (with their ingredient amounts) and planned meals in the same statement. The shared
+     * ingredients list has no user data and is kept. True when an account was deleted.
+     */
+    public synchronized boolean deleteUser(long userId) throws SQLException {
+        try (PreparedStatement ps = conn.prepareStatement("DELETE FROM users WHERE user_id = ?")) {
+            ps.setLong(1, userId);
             return ps.executeUpdate() == 1;
         }
     }

@@ -77,8 +77,8 @@ public class MealPlanDao implements PlanStore {
 
     private static final String INSERT_MEAL = """
             INSERT INTO planned_meals (user_id, saved_recipe_id, plan_date, meal_slot,
-                                       prep_minutes, calories, healthy_level)
-            VALUES (?, ?, ?, ?, ?, ?, ?)""";
+                                       prep_minutes, calories, healthy_level, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)""";
 
     /** Reads one row of a ResultSet into an object. */
     @FunctionalInterface

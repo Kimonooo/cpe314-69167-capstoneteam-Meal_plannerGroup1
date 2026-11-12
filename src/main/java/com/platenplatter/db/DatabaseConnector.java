@@ -42,10 +42,45 @@ public final class DatabaseConnector {
         return connection;
     }
 
-    /** Runs schema.sql. Safe every time the app starts, because each table is CREATE ... IF NOT EXISTS. */
+    /**
+     * Runs schema.sql. Safe every time the app starts, because each table is CREATE ... IF NOT EXISTS.
+     * A database file made before created_at and updated_at existed gets those columns added,
+     * so nobody has to delete their plate_n_platter.db.
+     */
     public static void createTables(Connection connection) throws SQLException {
         try (Statement st = connection.createStatement()) {
             st.executeUpdate(readSchema());   // SQLite runs every statement in the script
+        }
+        addTimestampIfMissing(connection, "users", "created_at");
+        addTimestampIfMissing(connection, "users", "updated_at");
+        addTimestampIfMissing(connection, "planned_meals", "created_at");
+        addTimestampIfMissing(connection, "planned_meals", "updated_at");
+    }
+
+    /** True when the table has a column with this name. */
+    public static boolean hasColumn(Connection connection, String table, String column) throws SQLException {
+        String sql = "SELECT count(*) FROM pragma_table_info(?) WHERE name = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, table);
+            ps.setString(2, column);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        }
+    }
+
+    /**
+     * Adds a date-and-time column to a table of an older database file and fills the rows already there.
+     * SQLite cannot add a column whose default is CURRENT_TIMESTAMP, so the column is added empty
+     * and then filled. The table and column names are our own constants, never user text.
+     */
+    private static void addTimestampIfMissing(Connection connection, String table, String column) throws SQLException {
+        if (hasColumn(connection, table, column)) {
+            return;
+        }
+        try (Statement st = connection.createStatement()) {
+            st.executeUpdate("ALTER TABLE " + table + " ADD COLUMN " + column + " TEXT NOT NULL DEFAULT ''");
+            st.executeUpdate("UPDATE " + table + " SET " + column + " = CURRENT_TIMESTAMP WHERE " + column + " = ''");
         }
     }
 
