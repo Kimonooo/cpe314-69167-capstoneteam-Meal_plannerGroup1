@@ -10,19 +10,30 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.PasswordField;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
-/** The Account page: change the display name, see the account details, log out. */
+/**
+ * The Account page: change the display name, see the account details, log out, or delete the
+ * account. Deleting asks for the password and a tick first, because it cannot be undone.
+ */
 public class AccountScreen {
     private final AuthService auth;
     private final Consumer<User> onRenamed;
+    private Runnable onDeleted = () -> { };
     private User user;
     private final VBox root = new VBox(14);
+    private final ScrollPane scroller = new ScrollPane(root);
+    private final PasswordField deletePassword = new PasswordField();
+    private final CheckBox deleteConfirm = new CheckBox("I understand that this cannot be undone.");
+    private final Button deleteButton = new Button("Delete my account");
     private final TextField nameField = new TextField();
     private final Button saveButton = new Button("Save name");
     private final Label statusLabel = new Label();
@@ -34,16 +45,21 @@ public class AccountScreen {
         this.onRenamed = onRenamed;
         root.setPadding(new Insets(22, 26, 26, 26));
         root.getChildren().addAll(
-                new VBox(2, Theme.text("My Account", "pnp-title"),
-                        Theme.text("Change the name the app calls you, or log out.", "pnp-subtitle")),
-                buildNameCard(), buildDetailsCard(onLogout), statusLabel);
+                buildNameCard(), buildDetailsCard(onLogout), buildDeleteCard(), statusLabel);
         statusLabel.setId("accountStatus");
-        Theme.apply(root);
+        scroller.setFitToWidth(true);
+        scroller.getStyleClass().add("pnp-scroll");
+        Theme.apply(scroller);
         Theme.status(statusLabel, "Your display name is the name in the greeting at the top.", Theme.Kind.INFO);
     }
 
     public Parent getView() {
-        return root;
+        return scroller;
+    }
+
+    /** What to do after the account was deleted (the app goes back to Log in). */
+    public void setOnDeleted(Runnable onDeleted) {
+        this.onDeleted = onDeleted;
     }
 
     private VBox buildNameCard() {
@@ -60,7 +76,7 @@ public class AccountScreen {
         saveButton.setOnAction(e -> saveName());
         HBox row = new HBox(10, nameField, saveButton);
         row.setAlignment(Pos.CENTER_LEFT);
-        VBox card = new VBox(10, Theme.text("Display name", "pnp-section"), row,
+        VBox card = new VBox(10, Theme.sectionTitle("Display name", "hat"), row,
                 Theme.text("1 to " + AuthService.MAX_NAME_LENGTH + " characters. Your username does not change.", "pnp-muted"));
         card.getStyleClass().add("pnp-card");
         return card;
@@ -81,9 +97,55 @@ public class AccountScreen {
         logout.getStyleClass().add("pnp-button-secondary");
         logout.disableProperty().bind(working);
         logout.setOnAction(e -> onLogout.run());
-        VBox card = new VBox(12, Theme.text("Account details", "pnp-section"), grid, logout);
+        VBox card = new VBox(12, Theme.sectionTitle("Account details", "chef_hat"), grid, logout);
         card.getStyleClass().add("pnp-card");
         return card;
+    }
+
+    /** The red card at the bottom: what is removed, the password box, the tick and the button. */
+    private VBox buildDeleteCard() {
+        Label what = Theme.text("This permanently removes your account, your saved recipes with their ingredient lists, "
+                + "and every meal you planned or imported. The streak and the charts are made from those meals, so they "
+                + "go too. Other users are not touched.", "pnp-muted");
+        what.setWrapText(true);
+        deletePassword.setId("deletePasswordField");
+        deletePassword.setPromptText("Type your password to confirm");
+        deletePassword.getStyleClass().add("pnp-field");
+        deletePassword.setMaxWidth(360);
+        deleteConfirm.setId("deleteConfirmBox");
+        deleteConfirm.getStyleClass().add("pnp-check");
+        deleteButton.setId("deleteAccountButton");
+        deleteButton.getStyleClass().add("pnp-button-danger");
+        deleteButton.disableProperty().bind(working.or(deleteConfirm.selectedProperty().not()));
+        deleteButton.setOnAction(e -> deleteAccount());
+        VBox card = new VBox(10, Theme.text("Delete my account", "pnp-section"), what, deletePassword, deleteConfirm,
+                deleteButton);
+        card.getStyleClass().addAll("pnp-card", "pnp-danger-card");
+        return card;
+    }
+
+    private void deleteAccount() {
+        String password = deletePassword.getText();
+        User current = user;
+        working.set(true);
+        Theme.status(statusLabel, "Deleting your account...", Theme.Kind.INFO);
+        Task<Void> task = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                auth.deleteAccount(current, password);
+                return null;
+            }
+        };
+        task.setOnSucceeded(e -> {
+            working.set(false);
+            onDeleted.run();                              // back to Log in
+        });
+        task.setOnFailed(e -> {
+            working.set(false);
+            deletePassword.clear();
+            Theme.status(statusLabel, AuthLayout.errorText(task.getException()), Theme.Kind.ERROR);
+        });
+        AppShell.runInBackground(task);
     }
 
     private static Label label(String text) {

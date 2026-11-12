@@ -21,6 +21,7 @@ import javafx.concurrent.Task;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -69,8 +70,7 @@ public class MealPlanScreen {
         HBox main = new HBox(16, calendar, day);
         VBox.setVgrow(main, Priority.ALWAYS);
         root.setPadding(new Insets(22, 26, 26, 26));
-        root.getChildren().addAll(Theme.pageHeader("Meal Plan",
-                "Pick a day to see what is planned. Days are colored by how healthy their meals are."), main, status);
+        root.getChildren().addAll(main, status);
         status.setId("planStatus");
         Theme.apply(root);
         refresh();
@@ -150,6 +150,8 @@ public class MealPlanScreen {
 
     private VBox buildDayCard() {
         dayTitle.getStyleClass().add("pnp-section");
+        dayTitle.setGraphic(Theme.icon("meal", 24));
+        dayTitle.setGraphicTextGap(10);
         dayTitle.setId("dayTitle");
         ScrollPane scroll = new ScrollPane(dayMeals);
         scroll.setFitToWidth(true);
@@ -218,7 +220,7 @@ public class MealPlanScreen {
             if (day.equals(selected)) {          // the user may have clicked another day already
                 List<PlannedMeal> meals = task.getValue();
                 dayMeals.getChildren().setAll(meals.isEmpty()
-                        ? List.of(Theme.text("No meals planned.", "pnp-empty"))
+                        ? List.<Node>of(Theme.emptyState("No meals planned.", "dishes"))
                         : meals.stream().map(meal -> MealRows.row(meal, () -> remove(meal), true)).toList());
             }
         });

@@ -1,239 +1,415 @@
 /*
- * Plate N Platter: one stylesheet for the whole app, in a web-page style.
- * Colors come from the team logo: maroon for buttons and the active page, cream for the
- * page background, brown for small labels. Healthy, Moderate and Indulgent keep the same
- * green, amber and red everywhere.
+ * Plate N Platter: one stylesheet for the whole app (the design system). Dark burgundy theme.
+ *
+ * Every color is written once, as a "looked-up color" at the top of .pnp-root (the names that start
+ * with -pnp-). Change a color there and the whole app follows.
+ *
+ *   #1A0F14  -pnp-bg       page background             #24141D  -pnp-bg2     navigation bar, input boxes
+ *   #311B24  -pnp-card     cards                       #3D212E  -pnp-card2   raised and hovered cards
+ *   #4A2A38  -pnp-line     card edges and dividers     #6B3A4E  -pnp-line2   edges of buttons and boxes
+ *   #B85C7D  -pnp-accent   active pills, buttons, progress bars (warm rose)
+ *   #D97A9C  -pnp-accent-hi  glow, hover       #8E3F5C  -pnp-accent-lo  pressed, the start of a gradient
+ *   #F6EDE6  -pnp-text     main text (off-white)       #EAD9B8  -pnp-cream   titles and big numbers (soft gold)
+ *   #BFA9B1  -pnp-muted    descriptions and hints      #8F7A84  -pnp-faint   prompt text only
+ *   #5CC38F  -pnp-ok  Healthy and success;  #E3B341  -pnp-warn  Moderate;  #F0766E  -pnp-bad  Indulgent and errors
+ *
+ * Shapes: cards 16 px corners, buttons and inputs 10 px, pills and chips fully round.
+ * Glow: active pills, the streak and badge chips and the focused input box have a soft rose shadow.
+ * States: every button has hover, pressed, focused and disabled looks.
+ *
+ * The first block also re-colors JavaFX's own controls (scroll bars, date picker, tooltips, pop-up
+ * lists) by changing -fx-base, so nothing in the app is left light by accident.
  */
 
 /* ------------------------------------------------------------------ page */
 .pnp-root {
-    -fx-background-color: #F6F0E4;
+    -pnp-bg: #1A0F14;
+    -pnp-bg2: #24141D;
+    -pnp-card: #311B24;
+    -pnp-card2: #3D212E;
+    -pnp-line: #4A2A38;
+    -pnp-line2: #6B3A4E;
+    -pnp-accent: #B85C7D;
+    -pnp-accent-hi: #D97A9C;
+    -pnp-accent-lo: #8E3F5C;
+    -pnp-text: #F6EDE6;
+    -pnp-cream: #EAD9B8;
+    -pnp-muted: #BFA9B1;
+    -pnp-faint: #8F7A84;
+    -pnp-ok: #5CC38F;
+    -pnp-warn: #E3B341;
+    -pnp-bad: #F0766E;
+
+    -fx-base: #311B24;
+    -fx-background: #1A0F14;
+    -fx-control-inner-background: #24141D;
+    -fx-accent: #B85C7D;
+    -fx-focus-color: #D97A9C;
+    -fx-faint-focus-color: #D97A9C33;
+    -fx-text-background-color: #F6EDE6;
+    -fx-text-base-color: #F6EDE6;
+    -fx-text-inner-color: #F6EDE6;
+    -fx-background-color: #1A0F14;
     -fx-font-family: "Segoe UI";
     -fx-font-size: 13px;
-    -fx-text-fill: #2A1B1E;
-    /* The default text color of every label, check box and chart label. JavaFX would otherwise
-       choose black or white from the background behind the text, and pick white on a see-through one. */
-    -fx-text-background-color: #2A1B1E;
+    -fx-text-fill: #F6EDE6;
 }
-.pnp-page { -fx-background-color: #F6F0E4; }
-.pnp-scroll, .pnp-scroll > .viewport { -fx-background-color: transparent; -fx-background: #F6F0E4; }
+.pnp-scroll, .pnp-scroll > .viewport { -fx-background-color: transparent; -fx-background: #1A0F14; }
 .pnp-scroll { -fx-padding: 0; }
+.pnp-scroll > .corner { -fx-background-color: transparent; }
 
-.pnp-title { -fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #4E0920; }
-.pnp-subtitle { -fx-font-size: 13px; -fx-text-fill: #7A6A6C; }
-.pnp-section { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2A1B1E; }
-.pnp-muted { -fx-text-fill: #7A6A6C; }
-.pnp-empty { -fx-text-fill: #9B8F8A; -fx-font-style: italic; }
-.pnp-mono { -fx-font-family: "Consolas"; -fx-font-size: 12px; -fx-background-color: #F6F0E4;
-            -fx-background-radius: 8; -fx-padding: 10; }
-.pnp-overline { -fx-font-size: 10.5px; -fx-font-weight: bold; -fx-text-fill: #764640; }
-.pnp-card-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #2A1B1E; }
-.pnp-note { -fx-background-color: #F6F0E4; -fx-background-radius: 9; -fx-padding: 9 11 9 11;
-            -fx-text-fill: #7A6A6C; -fx-font-size: 12px; }
+.pnp-title { -fx-font-family: "Georgia"; -fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
+.pnp-subtitle { -fx-font-size: 13.5px; -fx-text-fill: -pnp-muted; }
+.pnp-section { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -pnp-text; }
+.pnp-muted { -fx-text-fill: -pnp-muted; }
+.pnp-empty { -fx-text-fill: -pnp-muted; -fx-font-style: italic; }
+.pnp-field-label { -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: -pnp-text; }
+.pnp-mono { -fx-font-family: "Consolas"; -fx-font-size: 12px; -fx-background-color: -pnp-bg2;
+            -fx-background-radius: 10; -fx-padding: 12; -fx-text-fill: -pnp-cream; }
+.pnp-overline { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -pnp-accent-hi; }
+.pnp-card-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: -pnp-text; }
+.pnp-note { -fx-background-color: -pnp-bg2; -fx-background-radius: 10; -fx-padding: 10 12 10 12;
+            -fx-text-fill: -pnp-muted; -fx-font-size: 12px; }
+.pnp-question { -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
+.pnp-week-title { -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
+.pnp-breakdown-title { -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
+.pnp-bold { -fx-font-weight: bold; }
 
 /* ------------------------------------------------------------------ top navigation bar */
 .pnp-nav {
-    -fx-background-color: white;
-    -fx-border-color: transparent transparent #E7DFD2 transparent;
-    -fx-padding: 8 22 8 22;
-    -fx-spacing: 18;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #2A1621 0%, #24141D 100%);
+    -fx-border-color: transparent transparent #4A2A38 transparent;
+    -fx-padding: 10 26 10 26;
+    -fx-spacing: 20;
 }
 .pnp-nav-pill {
     -fx-background-color: transparent;
     -fx-background-radius: 999;
-    -fx-padding: 8 13 8 13;
-    -fx-text-fill: #5B4A4D;
+    -fx-padding: 9 17 9 17;
+    -fx-text-fill: -pnp-text;
     -fx-font-size: 13.5px;
+    -fx-font-weight: bold;
     -fx-cursor: hand;
 }
-.pnp-nav-pill:hover { -fx-background-color: #F3E9EC; }
-.pnp-nav-pill:selected { -fx-background-color: #6B0E2D; -fx-text-fill: white; -fx-font-weight: bold; }
+.pnp-nav-pill:hover { -fx-background-color: #B85C7D33; -fx-text-fill: white; }
+.pnp-nav-pill:focused { -fx-background-color: #B85C7D33; }
+.pnp-nav-pill:selected, .pnp-nav-pill:selected:focused {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #A94B70 0%, #7E2C4C 100%);
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.45), 14, 0.1, 0, 0);
+}
 .pnp-avatar {
-    -fx-background-color: #E2DBC9; -fx-background-radius: 999; -fx-text-fill: #6B0E2D;
-    -fx-font-weight: bold; -fx-min-width: 32; -fx-min-height: 32; -fx-alignment: center;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #A94B70 0%, #7E2C4C 100%);
+    -fx-background-radius: 999; -fx-text-fill: white;
+    -fx-font-weight: bold; -fx-font-size: 14px; -fx-min-width: 38; -fx-min-height: 38; -fx-alignment: center;
+    -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.40), 10, 0.1, 0, 0);
 }
-.pnp-hello { -fx-padding: 18 26 0 26; }
+.pnp-logout {
+    -fx-background-color: transparent; -fx-background-radius: 999; -fx-border-color: -pnp-line2; -fx-border-radius: 999;
+    -fx-text-fill: -pnp-text; -fx-font-weight: bold; -fx-font-size: 12.5px; -fx-padding: 8 16 8 16; -fx-cursor: hand;
+}
+.pnp-logout:hover { -fx-border-color: -pnp-accent-hi; -fx-text-fill: white; -fx-background-color: #B85C7D26; }
+.pnp-logout:focused { -fx-border-color: -pnp-accent-hi; }
+
+/* The banner under the navigation bar: a gradient with the wave picture along its bottom edge (put there by
+   Theme.waves), and on top of it the greeting, page title, subtitle and the two pills. The gradient is on the
+   banner itself so the waves show; .pnp-hero-body is the transparent text row with the padding. */
+.pnp-hero {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #4B1F34 0%, #2E1722 55%, #24141D 100%);
+    -fx-border-color: transparent transparent #4A2A38 transparent;
+}
+.pnp-hero-body { -fx-padding: 18 26 34 26; }
+.pnp-hero-greeting { -fx-font-size: 13.5px; -fx-text-fill: -pnp-text; }
+.pnp-hero-title { -fx-font-family: "Georgia"; -fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
+.pnp-hero-subtitle { -fx-font-size: 13.5px; -fx-text-fill: -pnp-muted; }
 .pnp-streak-chip {
-    -fx-background-color: white; -fx-background-radius: 999; -fx-border-color: #E7DFD2;
-    -fx-border-radius: 999; -fx-padding: 4 10 4 10; -fx-text-fill: #764640;
-    -fx-font-size: 11.5px; -fx-font-weight: bold;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #6A2B45 0%, #4A2034 100%);
+    -fx-background-radius: 999; -fx-border-color: #B85C7D; -fx-border-radius: 999;
+    -fx-padding: 8 16 8 16; -fx-text-fill: -pnp-text; -fx-font-size: 12.5px; -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.40), 14, 0.1, 0, 0);
 }
-.pnp-streak-chip.at-risk { -fx-border-color: #C98A00; -fx-background-color: #FFF1CF; -fx-text-fill: #9A6A00; }
+.pnp-streak-chip.at-risk { -fx-border-color: -pnp-warn; -fx-text-fill: -pnp-warn;
+    -fx-effect: dropshadow(gaussian, rgba(227, 179, 65, 0.40), 14, 0.1, 0, 0); }
 
 /* ------------------------------------------------------------------ cards */
 .pnp-card {
-    -fx-background-color: white;
-    -fx-background-radius: 14;
-    -fx-border-color: #E7DFD2;
-    -fx-border-radius: 14;
-    -fx-padding: 16;
-    -fx-effect: dropshadow(gaussian, rgba(60, 20, 30, 0.07), 10, 0, 0, 2);
+    -fx-background-color: -pnp-card;
+    -fx-background-radius: 16;
+    -fx-border-color: -pnp-line;
+    -fx-border-radius: 16;
+    -fx-padding: 18;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.35), 18, 0, 0, 4);
 }
-.pnp-recipe-card { -fx-cursor: hand; -fx-padding: 14 14 12 14; }
-.pnp-recipe-card:hover { -fx-border-color: #6B0E2D; -fx-effect: dropshadow(gaussian, rgba(107, 14, 45, 0.15), 14, 0, 0, 4); }
-.pnp-recipe-card.selected { -fx-border-color: #6B0E2D; -fx-border-width: 2; -fx-background-color: #FFF9F6; }
+/* A recipe card: the meal's photo on top, then its type, its name and "View recipe". */
+.pnp-recipe-card { -fx-cursor: hand; -fx-padding: 10 10 12 10; }
+.pnp-recipe-card:hover {
+    -fx-background-color: -pnp-card2;
+    -fx-border-color: -pnp-accent;
+    -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.35), 20, 0.05, 0, 4);
+}
+.pnp-recipe-card.selected { -fx-border-color: -pnp-accent-hi; -fx-border-width: 2; -fx-background-color: -pnp-card2; }
+.pnp-photo-letter { -fx-font-size: 30px; -fx-font-weight: bold; -fx-text-fill: -pnp-accent-hi; }
+.pnp-photo-letter-small { -fx-font-size: 15px; }
+/* The featured meal on Today: a large photo beside the name and the Plan button. */
+.pnp-featured { -fx-padding: 14; -fx-spacing: 18; -fx-alignment: center-left; }
+.pnp-featured-name { -fx-font-family: "Georgia"; -fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
 
 /* ------------------------------------------------------------------ buttons and fields */
 .pnp-button {
-    -fx-background-color: #6B0E2D; -fx-background-radius: 10; -fx-text-fill: white;
-    -fx-font-weight: bold; -fx-font-size: 13.5px; -fx-padding: 9 18 9 18; -fx-cursor: hand;
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #B85C7D 0%, #8E3F5C 100%);
+    -fx-background-radius: 999; -fx-text-fill: white;
+    -fx-font-weight: bold; -fx-font-size: 13.5px; -fx-padding: 10 22 10 22; -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.30), 12, 0.05, 0, 2);
 }
-.pnp-button:hover { -fx-background-color: #4E0920; }
-.pnp-button:pressed { -fx-background-color: #3A0718; }
-.pnp-button:disabled { -fx-opacity: 0.45; }
+.pnp-button:hover {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #D97A9C 0%, #A94B70 100%);
+    -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.55), 16, 0.1, 0, 0);
+}
+.pnp-button:focused { -fx-background-color: #D97A9C66, #B85C7D; -fx-background-insets: -3, 0; -fx-background-radius: 999, 999; }
+.pnp-button:pressed { -fx-background-color: #7E2C4C; -fx-background-insets: 0; }
+.pnp-button:disabled { -fx-background-color: #4A2A38; -fx-text-fill: #8F7A84; -fx-opacity: 1; -fx-effect: null; }
 .pnp-button-secondary {
-    -fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #6B0E2D;
-    -fx-border-radius: 10; -fx-border-width: 1.5; -fx-text-fill: #6B0E2D; -fx-font-weight: bold;
-    -fx-padding: 8 16 8 16; -fx-cursor: hand;
+    -fx-background-color: transparent; -fx-background-radius: 999; -fx-border-color: -pnp-accent;
+    -fx-border-radius: 999; -fx-border-width: 1.5; -fx-text-fill: -pnp-text; -fx-font-weight: bold;
+    -fx-font-size: 13.5px; -fx-padding: 8.5 20 8.5 20; -fx-cursor: hand;
 }
-.pnp-button-secondary:hover { -fx-background-color: #F3E9EC; }
-.pnp-button-secondary:disabled { -fx-opacity: 0.45; }
+.pnp-button-secondary:hover { -fx-background-color: #B85C7D33; -fx-text-fill: white; }
+.pnp-button-secondary:focused { -fx-background-color: #B85C7D33; }
+.pnp-button-secondary:pressed { -fx-background-color: #B85C7D55; }
+.pnp-button-secondary:disabled { -fx-border-color: -pnp-line2; -fx-text-fill: -pnp-faint; -fx-opacity: 0.7; }
 .pnp-small-button {
-    -fx-background-color: transparent; -fx-text-fill: #B3261E; -fx-font-size: 12px;
-    -fx-background-radius: 8; -fx-padding: 3 8 3 8; -fx-cursor: hand;
+    -fx-background-color: transparent; -fx-text-fill: -pnp-bad; -fx-font-size: 12px;
+    -fx-background-radius: 999; -fx-padding: 4 10 4 10; -fx-cursor: hand;
 }
-.pnp-small-button:hover { -fx-background-color: #FDE7E5; }
+.pnp-small-button:hover { -fx-background-color: #F0766E26; }
 .pnp-small-add {
-    -fx-background-color: #F3E9EC; -fx-text-fill: #6B0E2D; -fx-font-weight: bold; -fx-font-size: 12px;
-    -fx-background-radius: 999; -fx-padding: 3 10 3 10; -fx-cursor: hand;
+    -fx-background-color: #B85C7D33; -fx-text-fill: -pnp-accent-hi; -fx-font-weight: bold; -fx-font-size: 12px;
+    -fx-background-radius: 999; -fx-padding: 4 12 4 12; -fx-cursor: hand;
 }
-.pnp-small-add:hover { -fx-background-color: #E8D4DA; }
+.pnp-small-add:hover { -fx-background-color: #B85C7D66; -fx-text-fill: white; }
+.pnp-button-danger {
+    -fx-background-color: #C0392F; -fx-background-radius: 999; -fx-text-fill: white;
+    -fx-font-weight: bold; -fx-font-size: 13.5px; -fx-padding: 10 22 10 22; -fx-cursor: hand;
+}
+.pnp-button-danger:hover { -fx-background-color: #D9483D; }
+.pnp-button-danger:focused { -fx-background-color: #F0766E66, #C0392F; -fx-background-insets: -3, 0; -fx-background-radius: 999, 999; }
+.pnp-button-danger:disabled { -fx-background-color: #4A2A38; -fx-text-fill: #8F7A84; -fx-opacity: 1; }
+.pnp-danger-card { -fx-border-color: #8C3B36; }
 .pnp-link {
-    -fx-background-color: transparent; -fx-text-fill: #6B0E2D; -fx-font-weight: bold;
+    -fx-background-color: transparent; -fx-text-fill: -pnp-accent-hi; -fx-font-weight: bold;
     -fx-padding: 0; -fx-cursor: hand; -fx-underline: false;
 }
-.pnp-link:hover { -fx-underline: true; }
+.pnp-link:hover { -fx-underline: true; -fx-text-fill: white; }
+.pnp-link:focused { -fx-underline: true; }
 .pnp-link:disabled { -fx-opacity: 0.45; }
 
 .pnp-field, .pnp-root .combo-box, .pnp-root .date-picker, .pnp-root .spinner {
-    -fx-background-color: #FCFAF6; -fx-background-radius: 9; -fx-border-color: #D9CFC0;
-    -fx-border-radius: 9; -fx-border-width: 1.5; -fx-padding: 6 10 6 10;
+    -fx-background-color: -pnp-bg2; -fx-background-radius: 10; -fx-border-color: -pnp-line2;
+    -fx-border-radius: 10; -fx-border-width: 1.5; -fx-padding: 9 12 9 12;
+    -fx-text-fill: -pnp-text; -fx-prompt-text-fill: -pnp-faint;
 }
 .pnp-root .date-picker, .pnp-root .spinner, .pnp-root .combo-box { -fx-padding: 1 2 1 2; }
-.pnp-root .date-picker > .text-field, .pnp-root .spinner > .text-field { -fx-background-color: transparent; }
-.pnp-field:focused { -fx-border-color: #6B0E2D; }
-.pnp-search { -fx-font-size: 14px; -fx-padding: 10 12 10 12; }
+.pnp-root .date-picker > .text-field, .pnp-root .spinner > .text-field { -fx-background-color: transparent; -fx-text-fill: -pnp-text; }
+.pnp-root .combo-box .list-cell { -fx-background-color: transparent; -fx-text-fill: -pnp-text; }
+.pnp-root .combo-box > .arrow-button, .pnp-root .date-picker > .arrow-button { -fx-background-color: transparent; }
+.pnp-root .combo-box > .arrow-button > .arrow, .pnp-root .date-picker > .arrow-button > .calendar-button { -fx-background-color: -pnp-muted; }
+.pnp-field:hover, .pnp-root .combo-box:hover, .pnp-root .date-picker:hover { -fx-border-color: -pnp-accent; }
+.pnp-field:focused, .pnp-root .combo-box:focused, .pnp-root .date-picker:focused, .pnp-root .spinner:focused {
+    -fx-border-color: -pnp-accent-hi; -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.40), 9, 0.1, 0, 0);
+}
+.pnp-field:disabled { -fx-opacity: 0.6; }
+.pnp-search { -fx-font-size: 14px; -fx-padding: 11 14 11 14; -fx-background-radius: 999; -fx-border-radius: 999; }
+
+/* Pop-up lists and the calendar of the date picker (they open in their own small window). */
+.combo-box-popup > .list-view { -fx-background-color: #24141D; -fx-border-color: #6B3A4E; }
+.combo-box-popup .list-cell { -fx-background-color: #24141D; -fx-text-fill: #F6EDE6; -fx-padding: 7 12 7 12; }
+.combo-box-popup .list-cell:filled:hover, .combo-box-popup .list-cell:filled:selected { -fx-background-color: #8E3F5C; -fx-text-fill: white; }
+.date-picker-popup { -fx-background-color: #311B24; -fx-border-color: #6B3A4E; }
+.date-picker-popup > .month-year-pane { -fx-background-color: #3D212E; }
+.date-picker-popup .label { -fx-text-fill: #F6EDE6; }
+.date-picker-popup .day-cell { -fx-background-color: transparent; -fx-text-fill: #F6EDE6; }
+.date-picker-popup .day-cell:hover { -fx-background-color: #8E3F5C; }
+.date-picker-popup .day-cell:selected { -fx-background-color: #B85C7D; -fx-text-fill: white; }
+.date-picker-popup .day-cell:today { -fx-border-color: #D97A9C; }
+.date-picker-popup .day-name-cell, .date-picker-popup .week-number-cell { -fx-text-fill: #BFA9B1; }
+.tooltip { -fx-background-color: #3D212E; -fx-text-fill: #F6EDE6; -fx-border-color: #6B3A4E; -fx-background-radius: 8; -fx-border-radius: 8; -fx-font-size: 12px; }
 
 /* ------------------------------------------------------------------ offline banner */
 .pnp-banner {
-    -fx-background-color: #FDE7E5; -fx-background-radius: 10; -fx-border-color: #F3BDB8;
-    -fx-border-radius: 10; -fx-padding: 9 12 9 12; -fx-spacing: 10; -fx-alignment: center-left;
+    -fx-background-color: #F0766E26; -fx-background-radius: 12; -fx-border-color: #8C3B36;
+    -fx-border-radius: 12; -fx-padding: 10 14 10 14; -fx-spacing: 10; -fx-alignment: center-left;
 }
-.pnp-banner-text { -fx-text-fill: #7C1B14; -fx-font-size: 13px; }
-.pnp-banner .pnp-button { -fx-background-color: #B3261E; -fx-padding: 6 14 6 14; }
+.pnp-banner-text { -fx-text-fill: #FFC9C4; -fx-font-size: 13px; }
+.pnp-banner .pnp-button { -fx-background-color: #C0392F; -fx-effect: null; -fx-padding: 6 16 6 16; }
 
 /* ------------------------------------------------------------------ chips */
 .pnp-chip {
-    -fx-background-radius: 999; -fx-padding: 3 9 3 9; -fx-font-size: 11.5px; -fx-font-weight: bold;
+    -fx-background-radius: 999; -fx-padding: 4 11 4 11; -fx-font-size: 11.5px; -fx-font-weight: bold;
 }
-.pnp-root .chip-neutral, .pnp-root .chip-slot { -fx-background-color: #EFE8DB; -fx-text-fill: #5B4A4D; }
-.pnp-root .chip-tag { -fx-background-color: #E2DBC9; -fx-text-fill: #4E0920; }
-.pnp-root .chip-healthy { -fx-background-color: #E3F2E8; -fx-text-fill: #2E7D4F; }
-.pnp-root .chip-moderate { -fx-background-color: #FFF1CF; -fx-text-fill: #9A6A00; }
-.pnp-root .chip-indulgent { -fx-background-color: #FDE7E5; -fx-text-fill: #B3261E; }
-.pnp-root .chip-quick { -fx-background-color: #E3F2E8; -fx-text-fill: #2E7D4F; }
-.pnp-root .chip-average { -fx-background-color: #FFF1CF; -fx-text-fill: #9A6A00; }
-.pnp-root .chip-slow { -fx-background-color: #FDE7E5; -fx-text-fill: #B3261E; }
+.pnp-root .chip-neutral, .pnp-root .chip-slot { -fx-background-color: #FFFFFF1F; -fx-text-fill: -pnp-text; }
+.pnp-root .chip-tag { -fx-background-color: #B85C7D40; -fx-text-fill: -pnp-cream; }
+.pnp-root .chip-healthy { -fx-background-color: #5CC38F2E; -fx-text-fill: #8FE3B8; }
+.pnp-root .chip-moderate { -fx-background-color: #E3B3412E; -fx-text-fill: #F2CE73; }
+.pnp-root .chip-indulgent { -fx-background-color: #F0766E2E; -fx-text-fill: #FF9D96; }
+.pnp-root .chip-quick { -fx-background-color: #5CC38F2E; -fx-text-fill: #8FE3B8; }
+.pnp-root .chip-average { -fx-background-color: #E3B3412E; -fx-text-fill: #F2CE73; }
+.pnp-root .chip-slow { -fx-background-color: #F0766E2E; -fx-text-fill: #FF9D96; }
 .pnp-ingredient {
-    -fx-background-color: #F6F0E4; -fx-background-radius: 7; -fx-border-color: #E7DFD2;
-    -fx-border-radius: 7; -fx-padding: 3 7 3 7; -fx-font-size: 11.5px; -fx-text-fill: #4B3B3E;
+    -fx-background-color: -pnp-bg2; -fx-background-radius: 8; -fx-border-color: -pnp-line;
+    -fx-border-radius: 8; -fx-padding: 3 8 3 8; -fx-font-size: 11.5px; -fx-text-fill: -pnp-text;
+}
+
+/* ------------------------------------------------------------------ recipe steps (always shown, numbered) */
+.pnp-steps { -fx-background-color: -pnp-bg2; -fx-background-radius: 12; -fx-border-color: -pnp-line;
+             -fx-border-radius: 12; -fx-padding: 12; }
+.pnp-step-number {
+    -fx-min-width: 22; -fx-min-height: 22; -fx-alignment: center; -fx-background-radius: 999;
+    -fx-background-color: -pnp-accent; -fx-text-fill: white; -fx-font-size: 11px; -fx-font-weight: bold;
 }
 
 /* ------------------------------------------------------------------ status lines */
 .pnp-status { -fx-font-size: 12.5px; }
-.pnp-status.ok { -fx-text-fill: #2E7D4F; }
-.pnp-status.error { -fx-text-fill: #B3261E; }
-.pnp-status.info { -fx-text-fill: #7A6A6C; }
+.pnp-status.ok { -fx-text-fill: -pnp-ok; -fx-font-weight: bold; }
+.pnp-status.error { -fx-text-fill: -pnp-bad; -fx-font-weight: bold; }
+.pnp-status.info { -fx-text-fill: -pnp-muted; }
+/* A status line shown as a banner (Import): green when it worked, red when it failed. */
+.pnp-status-banner { -fx-font-size: 13px; -fx-background-radius: 10; -fx-border-radius: 10; -fx-padding: 10 14 10 14; }
+.pnp-status-banner.info { -fx-background-color: -pnp-bg2; -fx-border-color: -pnp-line; -fx-text-fill: -pnp-muted; }
+.pnp-status-banner.ok { -fx-background-color: #5CC38F26; -fx-border-color: #3E9A6D; -fx-text-fill: #A8EBC9; }
+.pnp-status-banner.error { -fx-background-color: #F0766E26; -fx-border-color: #8C3B36; -fx-text-fill: #FFC9C4; }
 
 /* ------------------------------------------------------------------ stat cards */
-.pnp-stat-value { -fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: #4E0920; }
-.pnp-stat-label { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #764640; }
-.pnp-badge { -fx-text-fill: #764640; -fx-font-weight: bold; -fx-font-size: 12px; }
+.pnp-stat-card { -fx-padding: 14 18 16 18; }
+.pnp-stat-value { -fx-font-family: "Georgia"; -fx-font-size: 34px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
+.pnp-stat-label { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -pnp-text; }
+.pnp-badge { -fx-text-fill: -pnp-cream; -fx-font-weight: bold; -fx-font-size: 12px; }
 
-/* ------------------------------------------------------------------ Today: week strip and slots */
-.pnp-week-label { -fx-font-size: 10.5px; -fx-text-fill: #7A6A6C; -fx-font-weight: bold; }
+/* ------------------------------------------------------------------ Today: streak card, week strip and slots */
+.pnp-streak-card {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #3D212E 0%, #311B24 70%);
+    -fx-border-color: #6B3A4E;
+}
+.pnp-streak-number { -fx-font-family: "Georgia"; -fx-font-size: 56px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
+.pnp-streak-card.at-risk { -fx-border-color: -pnp-warn; -fx-border-width: 2; }
+.pnp-week-label { -fx-font-size: 10.5px; -fx-text-fill: -pnp-muted; -fx-font-weight: bold; }
 .pnp-weekday {
     -fx-min-width: 38; -fx-min-height: 38; -fx-alignment: center; -fx-background-radius: 999;
-    -fx-background-color: #F6F0E4; -fx-text-fill: #5B4A4D; -fx-font-weight: bold;
+    -fx-background-color: #FFFFFF14; -fx-text-fill: -pnp-muted; -fx-font-weight: bold;
 }
-.pnp-weekday.has-meals { -fx-background-color: #6B0E2D; -fx-text-fill: white; }
-.pnp-weekday.is-today { -fx-border-color: #C98A00; -fx-border-width: 2; -fx-border-radius: 999; }
-.pnp-slot-heading { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #764640; }
-.pnp-slot-section { -fx-padding: 8 0 8 0; -fx-border-color: transparent transparent #F0E9DD transparent; }
+.pnp-weekday.has-meals {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #A94B70 0%, #7E2C4C 100%);
+    -fx-text-fill: white;
+}
+.pnp-weekday.is-today { -fx-border-color: -pnp-text; -fx-border-width: 2; -fx-border-radius: 999; }
+.pnp-slot-heading { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: -pnp-accent-hi; }
+.pnp-slot-section { -fx-padding: 8 0 8 0; -fx-border-color: transparent transparent #4A2A38 transparent; }
 
 /* ------------------------------------------------------------------ Meal Plan calendar */
-.pnp-month-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #4E0920; }
-.pnp-weekday-head { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #7A6A6C; }
+.pnp-month-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
+.pnp-weekday-head { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -pnp-muted; }
 .pnp-nav-button {
-    -fx-background-color: #F6F0E4; -fx-background-radius: 999; -fx-text-fill: #6B0E2D;
-    -fx-font-weight: bold; -fx-padding: 5 12 5 12; -fx-cursor: hand;
+    -fx-background-color: #B85C7D33; -fx-background-radius: 999; -fx-text-fill: -pnp-text;
+    -fx-font-weight: bold; -fx-padding: 6 14 6 14; -fx-cursor: hand;
 }
-.pnp-nav-button:hover { -fx-background-color: #E8DCCB; }
+.pnp-nav-button:hover { -fx-background-color: #B85C7D66; -fx-text-fill: white; }
 .pnp-day {
-    -fx-background-color: #FCFAF6; -fx-background-radius: 10; -fx-border-color: #EFE8DB;
-    -fx-border-radius: 10; -fx-text-fill: #2A1B1E; -fx-cursor: hand;
+    -fx-background-color: -pnp-bg2; -fx-background-radius: 12; -fx-border-color: -pnp-line;
+    -fx-border-radius: 12; -fx-text-fill: -pnp-text; -fx-cursor: hand;
 }
-.pnp-day:hover { -fx-border-color: #6B0E2D; }
-.pnp-day.day-healthy { -fx-background-color: #E3F2E8; }
-.pnp-day.day-moderate { -fx-background-color: #FFF1CF; }
-.pnp-day.day-indulgent { -fx-background-color: #FDE7E5; }
-.pnp-day.day-today { -fx-border-color: #C98A00; -fx-border-width: 2; }
-.pnp-day.day-selected { -fx-border-color: #6B0E2D; -fx-border-width: 2.5; -fx-font-weight: bold; }
+.pnp-day:hover { -fx-border-color: -pnp-accent; }
+.pnp-day.day-healthy { -fx-background-color: #5CC38F33; -fx-border-color: #3E9A6D; }
+.pnp-day.day-moderate { -fx-background-color: #E3B34133; -fx-border-color: #B58B22; }
+.pnp-day.day-indulgent { -fx-background-color: #F0766E33; -fx-border-color: #B5504A; }
+.pnp-day.day-today { -fx-border-color: -pnp-text; -fx-border-width: 2; }
+.pnp-day.day-selected { -fx-border-color: -pnp-accent-hi; -fx-border-width: 2.5; -fx-font-weight: bold;
+    -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.45), 10, 0.1, 0, 0); }
 .pnp-legend-swatch { -fx-min-width: 14; -fx-min-height: 14; -fx-background-radius: 4; }
-.legend-healthy { -fx-background-color: #E3F2E8; -fx-border-color: #2E7D4F; -fx-border-radius: 4; }
-.legend-moderate { -fx-background-color: #FFF1CF; -fx-border-color: #C98A00; -fx-border-radius: 4; }
-.legend-indulgent { -fx-background-color: #FDE7E5; -fx-border-color: #B3261E; -fx-border-radius: 4; }
-.pnp-legend-ring { -fx-min-width: 14; -fx-min-height: 14; -fx-border-color: #C98A00; -fx-border-width: 2; -fx-border-radius: 4; }
+.legend-healthy { -fx-background-color: #5CC38F55; -fx-border-color: #5CC38F; -fx-border-radius: 4; }
+.legend-moderate { -fx-background-color: #E3B34155; -fx-border-color: #E3B341; -fx-border-radius: 4; }
+.legend-indulgent { -fx-background-color: #F0766E55; -fx-border-color: #F0766E; -fx-border-radius: 4; }
+.pnp-legend-ring { -fx-min-width: 14; -fx-min-height: 14; -fx-border-color: -pnp-text; -fx-border-width: 2; -fx-border-radius: 4; }
 
 /* ------------------------------------------------------------------ toggles, progress, drop zone */
 .pnp-toggle {
-    -fx-background-color: white; -fx-border-color: #D9CFC0; -fx-background-radius: 999;
-    -fx-border-radius: 999; -fx-padding: 6 14 6 14; -fx-text-fill: #5B4A4D; -fx-cursor: hand;
+    -fx-background-color: transparent; -fx-border-color: -pnp-line2; -fx-background-radius: 999;
+    -fx-border-radius: 999; -fx-padding: 7 16 7 16; -fx-text-fill: -pnp-text; -fx-cursor: hand;
 }
-.pnp-toggle:hover { -fx-background-color: #F3E9EC; }
-.pnp-toggle:selected { -fx-background-color: #6B0E2D; -fx-border-color: #6B0E2D; -fx-text-fill: white; -fx-font-weight: bold; }
-.pnp-progress > .track { -fx-background-color: #EFE8DB; -fx-background-radius: 999; }
-.pnp-progress > .bar { -fx-background-color: #6B0E2D; -fx-background-radius: 999; -fx-background-insets: 0; }
-.pnp-mini-bar > .track { -fx-background-color: #F0E9DD; -fx-background-radius: 999; }
-.pnp-mini-bar > .bar { -fx-background-radius: 999; -fx-background-insets: 0; -fx-background-color: #764640; }
-.pnp-mini-bar.bar-healthy > .bar, .pnp-mini-bar.bar-quick > .bar { -fx-background-color: #2E7D4F; }
-.pnp-mini-bar.bar-moderate > .bar, .pnp-mini-bar.bar-average > .bar { -fx-background-color: #C98A00; }
-.pnp-mini-bar.bar-indulgent > .bar, .pnp-mini-bar.bar-slow > .bar { -fx-background-color: #B3261E; }
-.pnp-mini-bar.bar-breakfast > .bar { -fx-background-color: #C98A00; }
-.pnp-mini-bar.bar-lunch > .bar { -fx-background-color: #2E7D4F; }
-.pnp-mini-bar.bar-dinner > .bar { -fx-background-color: #6B0E2D; }
-.pnp-mini-bar.bar-snack > .bar { -fx-background-color: #764640; }
+.pnp-toggle:hover { -fx-background-color: #B85C7D33; }
+.pnp-toggle:selected {
+    -fx-background-color: -pnp-text; -fx-border-color: -pnp-text; -fx-text-fill: #311B24; -fx-font-weight: bold;
+}
+.pnp-progress > .track { -fx-background-color: #FFFFFF1F; -fx-background-radius: 999; }
+.pnp-progress > .bar {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 0%, #8E3F5C 0%, #D97A9C 100%);
+    -fx-background-radius: 999; -fx-background-insets: 0; -fx-padding: 0.4em;
+}
+.pnp-mini-bar > .track { -fx-background-color: #FFFFFF1F; -fx-background-radius: 999; }
+.pnp-mini-bar > .bar { -fx-background-radius: 999; -fx-background-insets: 0; -fx-background-color: -pnp-accent; }
+.pnp-mini-bar.bar-healthy > .bar, .pnp-mini-bar.bar-quick > .bar { -fx-background-color: #4CB782; }
+.pnp-mini-bar.bar-moderate > .bar, .pnp-mini-bar.bar-average > .bar { -fx-background-color: #E3B341; }
+.pnp-mini-bar.bar-indulgent > .bar, .pnp-mini-bar.bar-slow > .bar { -fx-background-color: #E5655C; }
+.pnp-mini-bar.bar-breakfast > .bar { -fx-background-color: #E3B341; }
+.pnp-mini-bar.bar-lunch > .bar { -fx-background-color: #4CB782; }
+.pnp-mini-bar.bar-dinner > .bar { -fx-background-color: #B85C7D; }
+.pnp-mini-bar.bar-snack > .bar { -fx-background-color: #D9A0B8; }
+.pnp-progress { -fx-pref-height: 12; }
 .pnp-drop {
-    -fx-background-color: #FCFAF6; -fx-border-color: #D9CFC0; -fx-border-style: segments(8, 6);
-    -fx-border-width: 2; -fx-border-radius: 12; -fx-background-radius: 12; -fx-padding: 22;
+    -fx-background-color: #B85C7D14; -fx-border-color: -pnp-accent; -fx-border-style: segments(9, 7);
+    -fx-border-width: 2; -fx-border-radius: 16; -fx-background-radius: 16; -fx-padding: 28 22 28 22;
+    -fx-spacing: 8;
 }
-.pnp-drop.drag-over { -fx-border-color: #6B0E2D; -fx-background-color: #FFF9F6; }
+.pnp-drop:hover { -fx-background-color: #B85C7D2E; }
+.pnp-drop-title { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
+.pnp-drop.drag-over { -fx-border-style: solid; -fx-border-width: 3; -fx-background-color: #B85C7D40; }
+.pnp-drop.has-file, .pnp-drop.has-file:hover { -fx-border-color: #4CB782; -fx-border-style: solid; -fx-background-color: #5CC38F1A; }
 
 /* ------------------------------------------------------------------ shopping list */
-.pnp-group-header { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #764640; -fx-padding: 6 0 2 0; }
-.pnp-check { -fx-cursor: hand; }
-.pnp-check:selected > .box { -fx-background-color: #6B0E2D; }
+.pnp-group-header { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: -pnp-accent-hi; -fx-padding: 6 0 2 0; }
+.pnp-check { -fx-cursor: hand; -fx-text-fill: -pnp-text; }
+.pnp-check > .box { -fx-background-color: -pnp-line2, -pnp-bg2; -fx-background-insets: 0, 1.5; -fx-background-radius: 5, 4; }
+.pnp-check:selected > .box { -fx-background-color: -pnp-accent-hi, -pnp-accent; }
 .pnp-check:selected > .box > .mark { -fx-background-color: white; }
-.pnp-check-done .text { -fx-strikethrough: true; -fx-fill: #9B8F8A; }
+.pnp-check-done .text { -fx-strikethrough: true; -fx-fill: #8F7A84; }
 
 /* ------------------------------------------------------------------ chart */
-.pnp-chart .chart-title { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #4E0920; }
-.pnp-chart .chart-plot-background { -fx-background-color: white; }
-.pnp-chart .chart-horizontal-grid-lines { -fx-stroke: #F0E9DD; }
-.pnp-chart .axis-label { -fx-font-weight: bold; -fx-text-fill: #764640; }
+.pnp-chart { -fx-background-color: transparent; }
+.pnp-chart .chart-title { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
+.pnp-chart .chart-content { -fx-background-color: transparent; }
+.pnp-chart .chart-plot-background { -fx-background-color: transparent; }
+.pnp-chart .chart-horizontal-grid-lines { -fx-stroke: #FFFFFF1A; }
+.pnp-chart .chart-horizontal-zero-line, .pnp-chart .chart-vertical-zero-line { -fx-stroke: #FFFFFF33; }
+.pnp-chart .axis { -fx-tick-label-fill: #BFA9B1; }
+.pnp-chart .axis-label { -fx-font-weight: bold; -fx-text-fill: -pnp-accent-hi; }
 .pnp-chart .chart-legend { -fx-background-color: transparent; }
+.pnp-chart .chart-legend-item { -fx-text-fill: -pnp-text; }
 .pnp-chart .chart-bar:hover { -fx-opacity: 0.8; }
-.group-healthy_level .default-color0.chart-bar, .group-healthy_level .chart-legend-item-symbol.default-color0 { -fx-bar-fill: #2E7D4F; -fx-background-color: #2E7D4F; }
-.group-healthy_level .default-color1.chart-bar, .group-healthy_level .chart-legend-item-symbol.default-color1 { -fx-bar-fill: #C98A00; -fx-background-color: #C98A00; }
-.group-healthy_level .default-color2.chart-bar, .group-healthy_level .chart-legend-item-symbol.default-color2 { -fx-bar-fill: #B3261E; -fx-background-color: #B3261E; }
-.group-prep_time .default-color0.chart-bar, .group-prep_time .chart-legend-item-symbol.default-color0 { -fx-bar-fill: #2E7D4F; -fx-background-color: #2E7D4F; }
-.group-prep_time .default-color1.chart-bar, .group-prep_time .chart-legend-item-symbol.default-color1 { -fx-bar-fill: #C98A00; -fx-background-color: #C98A00; }
-.group-prep_time .default-color2.chart-bar, .group-prep_time .chart-legend-item-symbol.default-color2 { -fx-bar-fill: #B3261E; -fx-background-color: #B3261E; }
-.group-meal_slot .default-color0.chart-bar, .group-meal_slot .chart-legend-item-symbol.default-color0 { -fx-bar-fill: #C98A00; -fx-background-color: #C98A00; }
-.group-meal_slot .default-color1.chart-bar, .group-meal_slot .chart-legend-item-symbol.default-color1 { -fx-bar-fill: #2E7D4F; -fx-background-color: #2E7D4F; }
-.group-meal_slot .default-color2.chart-bar, .group-meal_slot .chart-legend-item-symbol.default-color2 { -fx-bar-fill: #6B0E2D; -fx-background-color: #6B0E2D; }
-.group-meal_slot .default-color3.chart-bar, .group-meal_slot .chart-legend-item-symbol.default-color3 { -fx-bar-fill: #764640; -fx-background-color: #764640; }
+.group-healthy_level .default-color0.chart-bar, .group-healthy_level .chart-legend-item-symbol.default-color0 { -fx-bar-fill: #4CB782; -fx-background-color: #4CB782; }
+.group-healthy_level .default-color1.chart-bar, .group-healthy_level .chart-legend-item-symbol.default-color1 { -fx-bar-fill: #E3B341; -fx-background-color: #E3B341; }
+.group-healthy_level .default-color2.chart-bar, .group-healthy_level .chart-legend-item-symbol.default-color2 { -fx-bar-fill: #E5655C; -fx-background-color: #E5655C; }
+.group-prep_time .default-color0.chart-bar, .group-prep_time .chart-legend-item-symbol.default-color0 { -fx-bar-fill: #4CB782; -fx-background-color: #4CB782; }
+.group-prep_time .default-color1.chart-bar, .group-prep_time .chart-legend-item-symbol.default-color1 { -fx-bar-fill: #E3B341; -fx-background-color: #E3B341; }
+.group-prep_time .default-color2.chart-bar, .group-prep_time .chart-legend-item-symbol.default-color2 { -fx-bar-fill: #E5655C; -fx-background-color: #E5655C; }
+.group-meal_slot .default-color0.chart-bar, .group-meal_slot .chart-legend-item-symbol.default-color0 { -fx-bar-fill: #E3B341; -fx-background-color: #E3B341; }
+.group-meal_slot .default-color1.chart-bar, .group-meal_slot .chart-legend-item-symbol.default-color1 { -fx-bar-fill: #4CB782; -fx-background-color: #4CB782; }
+.group-meal_slot .default-color2.chart-bar, .group-meal_slot .chart-legend-item-symbol.default-color2 { -fx-bar-fill: #B85C7D; -fx-background-color: #B85C7D; }
+.group-meal_slot .default-color3.chart-bar, .group-meal_slot .chart-legend-item-symbol.default-color3 { -fx-bar-fill: #D9A0B8; -fx-background-color: #D9A0B8; }
 
 /* ------------------------------------------------------------------ log in, sign up, forgot password */
-.pnp-auth { -fx-background-color: linear-gradient(to bottom right, #F6F0E4, #EADFCC); }
-.pnp-auth-card { -fx-padding: 28; }
+.pnp-auth { -fx-background-color: radial-gradient(center 50% 35%, radius 75%, #4B1F34 0%, #1A0F14 100%); }
+.pnp-auth-card {
+    -fx-padding: 34 36 30 36; -fx-background-radius: 20; -fx-border-radius: 20;
+    -fx-border-color: -pnp-line2; -fx-border-width: 1;
+    -fx-background-color: -pnp-card;
+    -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.30), 36, 0.05, 0, 8);
+}
+.pnp-auth-card .pnp-field { -fx-padding: 10 14 10 14; -fx-font-size: 14px; }
+.pnp-auth-card .pnp-button { -fx-padding: 12 20 12 20; -fx-font-size: 14.5px; }
+
+/* ------------------------------------------------------------------ scroll bars */
+.pnp-scroll .scroll-bar { -fx-background-color: transparent; }
+.pnp-scroll .scroll-bar .track { -fx-background-color: transparent; }
+.pnp-scroll .scroll-bar .thumb { -fx-background-color: #6B3A4E; -fx-background-radius: 999; }
+.pnp-scroll .scroll-bar .thumb:hover { -fx-background-color: #B85C7D; }
+.pnp-scroll .scroll-bar .increment-button, .pnp-scroll .scroll-bar .decrement-button { -fx-padding: 0; -fx-background-color: transparent; }
+.pnp-scroll .scroll-bar .increment-arrow, .pnp-scroll .scroll-bar .decrement-arrow { -fx-padding: 0; -fx-shape: " "; }

@@ -56,7 +56,7 @@ public class ForgotPasswordScreen {
         usernameField.setOnAction(e -> findQuestion());
         questionLabel.setId("forgotQuestion");
         questionLabel.setWrapText(true);
-        questionLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #4E0920;");
+        questionLabel.getStyleClass().add("pnp-question");
         resetButton.setId("resetPasswordButton");
         resetButton.getStyleClass().add("pnp-button");
         resetButton.setMaxWidth(Double.MAX_VALUE);

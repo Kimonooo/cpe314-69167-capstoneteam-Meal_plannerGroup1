@@ -11,7 +11,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
-/** The shared look of the Log in, Sign up and Forgot Password pages: the logo on a white card. */
+/** The shared look of the Log in, Sign up and Forgot Password pages: the logo on a dark card. */
 final class AuthLayout {
     private AuthLayout() { }
 
@@ -19,7 +19,10 @@ final class AuthLayout {
         Label head = Theme.text(heading, "pnp-title");
         Label sub = Theme.text(subheading, "pnp-subtitle");
         sub.setWrapText(true);
-        VBox card = new VBox(12, Theme.logo(64), head, sub);
+        VBox brand = new VBox(Theme.logo(92));
+        brand.setAlignment(Pos.CENTER);
+        VBox titles = new VBox(4, head, sub);
+        VBox card = new VBox(16, brand, titles);
         card.getChildren().addAll(body);
         card.getStyleClass().addAll("pnp-card", "pnp-auth-card");
         card.setMaxWidth(440);
@@ -34,7 +37,7 @@ final class AuthLayout {
 
     static VBox labeled(String text, Node field) {
         Label label = Theme.text(text, "pnp-muted");
-        label.setStyle("-fx-font-weight: bold; -fx-font-size: 12px;");
+        label.getStyleClass().add("pnp-field-label");
         return new VBox(4, label, field);
     }
 
