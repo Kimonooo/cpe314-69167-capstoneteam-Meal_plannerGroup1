@@ -27,7 +27,7 @@ public class RecommendationService {
     /** The meal slot and the TheMealDB category for a time of day. */
     public record Pick(MealSlot slot, String category) {
         public String title() {
-            return slot.getLabel() + " · " + category;
+            return slot.getLabel().equalsIgnoreCase(category) ? slot.getLabel() : slot.getLabel() + " · " + category;
         }
     }
 

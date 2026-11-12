@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 /**
  * Talks to TheMealDB (https://www.themealdb.com/api.php) with the free test key "1".
  *   searchByName   search.php?s=   the search bar on Recipes
- *   listByCategory filter.php?c=   Today's recommendations (gives only the id and the name)
+ *   listByCategory filter.php?c=   Today's recommendations (gives only the id, the name and the photo)
  *   lookupById     lookup.php?i=   the full recipe after a recommendation is clicked
  * Gson reads the JSON straight into a small record; no JsonElement is used.
  * Call these methods on a background thread: they wait for the internet.
@@ -103,7 +103,7 @@ public class MealDbClient {
                 .toList();
         return new MealData(text(m, "idMeal"), text(m, "strMeal"),
                 text(m, "strCategory"), text(m, "strArea"),
-                text(m, "strInstructions"), amounts);
+                text(m, "strInstructions"), amounts, text(m, "strMealThumb"));
     }
 
     /** The trimmed value, or "" when the field is missing or null. */
