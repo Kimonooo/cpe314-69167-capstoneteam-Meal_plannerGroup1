@@ -46,6 +46,17 @@ class MealDbClientTest {
     }
 
     @Test
+    void thePhotoAddressIsReadFromStrMealThumbAndAMissingOneIsEmpty() {
+        MealData penne = MealDbClient.parseMeals(ARRABIATA).get(0);
+        assertEquals("https://www.themealdb.com/images/media/meals/ustsqw1468250014.jpg", penne.thumbnail());
+        assertTrue(penne.hasPhoto());
+        MealData plain = MealDbClient.parseMeals("{\"meals\":[{\"strMeal\":\"Lugaw\",\"idMeal\":\"1\"}]}").get(0);
+        assertEquals("", plain.thumbnail());
+        assertFalse(plain.hasPhoto());
+        assertFalse(new MealData("2", "Typed by hand", "", "", "", List.of()).hasPhoto());
+    }
+
+    @Test
     void noMatchGivesAnEmptyListNotACrash() {
         assertTrue(MealDbClient.parseMeals("{\"meals\":null}").isEmpty());
         assertTrue(MealDbClient.parseMeals("{}").isEmpty());

@@ -52,15 +52,36 @@ class StreakBadgeTest {
 
     @Test
     void theBadgeIsNamedAfterTheTierCookedMost() {
-        assertEquals("Quick Cook", StreakCalculator.badgeTitle(StreakCalculator.tierCounts(List.of(meal(5), meal(10), meal(60)))));
-        assertEquals("Home Cook", StreakCalculator.badgeTitle(StreakCalculator.tierCounts(List.of(meal(30), meal(40)))));
-        assertEquals("Slow-Food Chef", StreakCalculator.badgeTitle(StreakCalculator.tierCounts(List.of(meal(90)))));
+        assertEquals("Speedy Chef", StreakCalculator.badgeTitle(StreakCalculator.tierCounts(List.of(meal(5), meal(10), meal(60)))));
+        assertEquals("Steady Chef", StreakCalculator.badgeTitle(StreakCalculator.tierCounts(List.of(meal(30), meal(40)))));
+        assertEquals("Patient Chef", StreakCalculator.badgeTitle(StreakCalculator.tierCounts(List.of(meal(90)))));
     }
 
     @Test
     void aTieGoesToTheQuickerTierAndNoMealsMeansNoBadge() {
-        assertEquals("Quick Cook", StreakCalculator.badgeTitle(StreakCalculator.tierCounts(List.of(meal(10), meal(90)))));
+        assertEquals("Speedy Chef", StreakCalculator.badgeTitle(StreakCalculator.tierCounts(List.of(meal(10), meal(90)))));
         assertEquals("No badge yet", StreakCalculator.badgeTitle(StreakCalculator.tierCounts(List.of())));
         assertEquals("No badge yet", StreakCalculator.badgeTitle(StreakCalculator.tierCounts(null)));
+    }
+
+    @Test
+    void theBadgeReasonNamesThePrepRangeOfMostMeals() {
+        assertEquals("most meals in this streak take 16 to 45 min",
+                StreakCalculator.badgeReason(StreakCalculator.tierCounts(List.of(meal(30), meal(40), meal(90)))));
+        assertEquals("", StreakCalculator.badgeReason(StreakCalculator.tierCounts(List.of())));
+    }
+
+    @Test
+    void theNextGoalFollowsTheMilestonesAndTheBarFillsBetweenThem() {
+        assertEquals(3, StreakCalculator.nextMilestone(0));
+        assertEquals(7, StreakCalculator.nextMilestone(3));
+        assertEquals(150, StreakCalculator.nextMilestone(100));
+        assertEquals(0, StreakCalculator.reachedMilestone(2));
+        assertEquals(3, StreakCalculator.reachedMilestone(5));
+        assertEquals(100, StreakCalculator.reachedMilestone(120));
+        assertEquals(0.5, StreakCalculator.milestoneProgress(5), 0.0001);     // halfway from 3 to 7
+        assertEquals(0.0, StreakCalculator.milestoneProgress(0), 0.0001);
+        assertEquals("2 more days to reach a 7-day streak", StreakCalculator.goalLine(5));
+        assertEquals("1 more day to reach a 3-day streak", StreakCalculator.goalLine(2));
     }
 }

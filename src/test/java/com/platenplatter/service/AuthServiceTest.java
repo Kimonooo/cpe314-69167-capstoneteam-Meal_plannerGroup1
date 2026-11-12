@@ -130,4 +130,21 @@ class AuthServiceTest {
         assertEquals("bantay", AuthService.normalize("  BanTay "));
         assertEquals("", AuthService.normalize(null));
     }
+
+    @Test
+    void theRightPasswordDeletesTheAccountAndTheUsernameIsFreeAgain() throws Exception {
+        User ana = registerAna();
+        auth.deleteAccount(ana, "secret1");
+        assertThrows(AuthException.class, () -> auth.login("ana", "secret1"));
+        assertTrue(registerAna().getUserId() > 0);                  // the same username can sign up again
+    }
+
+    @Test
+    void aWrongOrEmptyPasswordDeletesNothing() throws Exception {
+        User ana = registerAna();
+        AuthException wrong = assertThrows(AuthException.class, () -> auth.deleteAccount(ana, "secret2"));
+        assertTrue(wrong.getMessage().contains("Nothing was deleted"));
+        assertThrows(AuthException.class, () -> auth.deleteAccount(ana, ""));
+        assertEquals("Ana", auth.login("ana", "secret1").getDisplayName());
+    }
 }

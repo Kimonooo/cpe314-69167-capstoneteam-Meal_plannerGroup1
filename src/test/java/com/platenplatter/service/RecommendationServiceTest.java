@@ -27,6 +27,7 @@ class RecommendationServiceTest {
     void beforeElevenIsBreakfast() {
         assertEquals(new RecommendationService.Pick(MealSlot.BREAKFAST, "Breakfast"), at(6, 0));
         assertEquals(MealSlot.BREAKFAST, at(10, 59).slot());
+        assertEquals("Breakfast", at(6, 0).title());                       // not "Breakfast · Breakfast"
     }
 
     @Test

@@ -109,4 +109,40 @@ class UserMealsTest {
         assertEquals("Jonathan", users.findById(found.getUserId()).orElseThrow().getDisplayName());
         assertFalse(users.updateDisplayName(999, "Nobody"));
     }
+
+    @Test
+    void deletingAnAccountRemovesOnlyThatUsersData() throws Exception {
+        kim.saveMeal(adobo(), List.of());
+        jon.saveMeal(adobo(), List.of());
+        assertTrue(users.deleteUser(kim.getUserId()));
+        assertFalse(users.findByUsername("kim").isPresent());
+        assertTrue(kim.allMeals().isEmpty());
+        assertFalse(kim.findRecipe("Chicken Adobo").isPresent());
+        assertEquals(1, jon.allMeals().size());                      // the other user is not touched
+        assertFalse(users.deleteUser(999));                          // no such account
+    }
+
+    @Test
+    void aSavedRecipeThatIsStillPlannedCannotBeDeleted() throws Exception {
+        kim.saveMeal(adobo(), List.of());
+        long recipeId = kim.allMeals().get(0).getRecipe().getSavedRecipeId();
+        try (Statement st = conn.createStatement()) {
+            assertThrows(SQLException.class, () -> st.executeUpdate("DELETE FROM saved_recipes WHERE saved_recipe_id = " + recipeId));
+        }
+        assertEquals(1, kim.allMeals().size());
+    }
+
+    @Test
+    void newUsersAndMealsGetACreatedAndAnUpdatedTime() throws Exception {
+        kim.saveMeal(adobo(), List.of());
+        try (Statement st = conn.createStatement();
+             var rs = st.executeQuery("SELECT u.created_at, u.updated_at, p.created_at, p.updated_at "
+                     + "FROM users u JOIN planned_meals p ON p.user_id = u.user_id WHERE u.username = 'kim'")) {
+            assertTrue(rs.next());
+            assertEquals(19, rs.getString(1).length());              // yyyy-mm-dd hh:mm:ss
+            assertEquals(19, rs.getString(2).length());
+            assertEquals(19, rs.getString(3).length());
+            assertEquals(19, rs.getString(4).length());
+        }
+    }
 }

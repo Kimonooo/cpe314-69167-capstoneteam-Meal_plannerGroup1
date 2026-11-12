@@ -70,4 +70,32 @@ class ShoppingListTest {
         assertEquals("", ShoppingList.asText(ShoppingList.build(List.of())));
         assertTrue(ShoppingList.missingRecipes(List.of(), List.of()).isEmpty());
     }
+
+    @Test
+    void theRecipeChoicesListEachPlannedRecipeOnceAToZ() {
+        List<ShoppingList.RecipeChoice> choices = ShoppingList.recipeChoices(
+                List.of(meal(2, "Sinigang"), meal(1, "Adobo"), meal(2, "Sinigang")));
+        assertEquals(List.of(new ShoppingList.RecipeChoice(1, "Adobo"), new ShoppingList.RecipeChoice(2, "Sinigang")), choices);
+        assertEquals("Adobo", choices.get(0).toString());
+        assertTrue(ShoppingList.recipeChoices(List.of()).isEmpty());
+    }
+
+    @Test
+    void theListForOneRecipeHasOnlyThatRecipesIngredientsEachOnce() {
+        IngredientAmount garlic = new IngredientAmount(10, 1, Ingredient.named("Garlic"), "3 cloves");
+        IngredientAmount chicken = new IngredientAmount(11, 1, Ingredient.named("Chicken"), "1 kg");
+        IngredientAmount tamarind = new IngredientAmount(12, 2, Ingredient.named("Tamarind"), "1 pack");
+        // recipe 1 is planned on two days, so the database gives its amounts twice
+        List<IngredientAmount> items = List.of(garlic, chicken, tamarind, garlic, chicken);
+        Map<FoodGroup, Map<String, List<String>>> list = ShoppingList.build(ShoppingList.forRecipe(items, 1));
+        assertEquals(2, ShoppingList.count(list));
+        assertEquals(List.of("3 cloves"), list.get(FoodGroup.FRUITS_VEGETABLES).get("garlic"));
+        assertEquals(1, ShoppingList.forRecipe(items, 2).size());
+        assertTrue(ShoppingList.forRecipe(items, 99).isEmpty());
+        // "All planned recipes" shows a recipe planned on two days once, too: no "garlic (3 cloves, 3 cloves)"
+        Map<FoodGroup, Map<String, List<String>>> all = ShoppingList.build(ShoppingList.distinct(items));
+        assertEquals(3, ShoppingList.count(all));
+        assertEquals(List.of("3 cloves"), all.get(FoodGroup.FRUITS_VEGETABLES).get("garlic"));
+        assertEquals(2, ShoppingList.mealsOf(List.of(meal(1, "Adobo"), meal(2, "Sinigang"), meal(1, "Adobo")), 1).size());
+    }
 }

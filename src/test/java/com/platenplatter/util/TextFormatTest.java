@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class TextFormatTest {
@@ -53,5 +54,19 @@ class TextFormatTest {
         assertEquals("Good afternoon", TextFormat.greeting(LocalTime.of(12, 0)));
         assertEquals("Good evening", TextFormat.greeting(LocalTime.of(18, 0)));
         assertEquals("Good evening", TextFormat.greeting(LocalTime.of(4, 59)));
+    }
+
+    @Test
+    void eachLineOfTheInstructionsIsOneStepAndItsOwnLabelIsRemoved() {
+        assertEquals(List.of("Boil the pasta.", "Fry the garlic.", "2 tablespoons of oil go in last."),
+                TextFormat.steps("STEP 1\r\nBoil the pasta.\r\n\r\nStep 2: Fry the garlic.\r\n3. 2 tablespoons of oil go in last."));
+    }
+
+    @Test
+    void oneLongParagraphIsCutAfterEverySentenceAndNoTextGivesNoSteps() {
+        assertEquals(List.of("Heat the oil.", "Add 1.5 cups of rice!", "Serve hot."),
+                TextFormat.steps("Heat the oil. Add 1.5 cups of rice! Serve hot."));
+        assertEquals(List.of(), TextFormat.steps("   "));
+        assertEquals(List.of(), TextFormat.steps(null));
     }
 }
