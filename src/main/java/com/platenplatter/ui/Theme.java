@@ -97,13 +97,6 @@ public final class Theme {
         return label;
     }
 
-    /** The big title and grey line at the top of a page. */
-    public static VBox pageHeader(String title, String subtitle) {
-        Label sub = text(subtitle, "pnp-subtitle");
-        sub.setWrapText(true);
-        return new VBox(2, text(title, "pnp-title"), sub);
-    }
-
     /** A small picture from the icons folder (for example "streak" or "trophy") at the given height; empty if missing. */
     public static ImageView icon(String name, double height) {
         ImageView view = new ImageView();
