@@ -4,6 +4,13 @@ import com.platenplatter.model.HealthyLevel;
 import com.platenplatter.model.MealSlot;
 import com.platenplatter.model.PlannedMeal;
 import com.platenplatter.model.SavedRecipe;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
@@ -27,6 +34,25 @@ public final class CsvRecipeParser {
     private static final String COMMA_OUTSIDE_QUOTES = ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)";
 
     private CsvRecipeParser() { }
+
+    /**
+     * The lines of a CSV file. It is read as UTF-8; a file saved by Excel as "CSV (Comma delimited)"
+     * (Windows-1252) is read in that encoding instead, so a name such as "Pi\u00F1a colada" never
+     * makes the whole import fail. A byte-order mark at the start is removed.
+     */
+    public static List<String> readLines(Path file) throws IOException {
+        byte[] bytes = Files.readAllBytes(file);
+        String text;
+        try {
+            text = StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes)).toString();
+        } catch (CharacterCodingException notUtf8) {
+            text = new String(bytes, Charset.forName("windows-1252"));
+        }
+        if (text.startsWith("\uFEFF")) {
+            text = text.substring(1);
+        }
+        return text.lines().toList();
+    }
 
     public static PlannedMeal parse(String line) {
         if (line == null || line.isBlank()) {
