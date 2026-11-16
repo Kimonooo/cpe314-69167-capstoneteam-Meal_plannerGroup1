@@ -33,7 +33,7 @@ public final class UserMessages {
 
     /** The sentence to show for this error. */
     public static String of(Throwable error) {
-        if (error instanceof AuthException) {
+        if (error instanceof AuthException || error instanceof InvalidInputException) {
             return error.getMessage();
         }
         if (error instanceof CancellationException) {

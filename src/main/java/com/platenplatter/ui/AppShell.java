@@ -1,6 +1,8 @@
 package com.platenplatter.ui;
 
 import com.platenplatter.api.MealDbClient;
+import com.platenplatter.controller.MealPlanController;
+import com.platenplatter.controller.RecipeController;
 import com.platenplatter.controller.ShoppingListController;
 import com.platenplatter.db.PlanStore;
 import com.platenplatter.model.User;
@@ -48,7 +50,8 @@ public class AppShell {
         header.setUserName(user.getDisplayName());
 
         MealPhotos.useClient(client);                     // the photos use the same TheMealDB client
-        RecipesScreen recipes = new RecipesScreen(client, new RecommendationService(client), store);
+        RecipesScreen recipes = new RecipesScreen(
+                new RecipeController(client, new RecommendationService(client), store));
         TodayScreen today = new TodayScreen(store, slot -> {
             recipes.setDate(LocalDate.now());
             recipes.setSlot(slot);
@@ -60,7 +63,7 @@ public class AppShell {
             open("Recipes");
             recipes.openMeal(meal);
         });
-        MealPlanScreen plan = new MealPlanScreen(store, date -> {
+        MealPlanScreen plan = new MealPlanScreen(new MealPlanController(store), date -> {
             recipes.setDate(date);
             open("Recipes");
         });

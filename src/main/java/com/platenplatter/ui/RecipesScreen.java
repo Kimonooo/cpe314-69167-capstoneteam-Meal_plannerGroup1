@@ -1,17 +1,17 @@
 package com.platenplatter.ui;
 
+import com.platenplatter.api.ApiResult;
 import com.platenplatter.api.MealData;
-import com.platenplatter.api.MealDbClient;
-import com.platenplatter.db.PlanStore;
+import com.platenplatter.controller.InvalidInputException;
+import com.platenplatter.controller.RecipeController;
+import com.platenplatter.controller.RecipeController.Details;
+import com.platenplatter.controller.RecipeController.LevelHint;
+import com.platenplatter.controller.RecipeController.Picks;
+import com.platenplatter.controller.UserMessages;
 import com.platenplatter.model.HealthyLevel;
 import com.platenplatter.model.MealSlot;
 import com.platenplatter.model.PlannedMeal;
-import com.platenplatter.model.PrepTier;
-import com.platenplatter.model.SavedRecipe;
-import com.platenplatter.service.HealthClassifier;
-import com.platenplatter.service.PrepTimeEstimator;
 import com.platenplatter.service.RecommendationService;
-import com.platenplatter.util.CategoryMapper;
 import com.platenplatter.util.TextFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.OptionalInt;
 import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -35,6 +34,7 @@ import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.GridPane;
@@ -51,22 +51,22 @@ import javafx.scene.layout.VBox;
  * the ingredients and the numbered steps are always shown, the user types the prep time (the app
  * only suggests one), and the healthy level appears by itself as soon as the calories are typed.
  * Without internet, a red message with a Retry button appears under the search bar.
- * Every call to TheMealDB and to the database runs on a background thread.
+ *
+ * Every handler calls one RecipeController method, inside a background Task when it waits for
+ * the internet or the database. Only the NEWEST answer is shown: each search or picks request
+ * gets a number, and an older answer that arrives late is thrown away. Enter in the search box
+ * is ignored while a search runs, the same as the disabled Search button.
  */
 public class RecipesScreen {
-    private static final String OFFLINE = "No internet connection. Check your Wi-Fi, then press Retry.";
-    private static final String NOT_RESPONDING = "TheMealDB is not responding right now. Try again in a minute.";
-    private static final List<String> LEVEL_CHIPS = List.of("chip-neutral", "chip-healthy", "chip-moderate", "chip-indulgent");
+    private static final List<String> LEVEL_CHIPS =
+            List.of("chip-neutral", "chip-healthy", "chip-moderate", "chip-indulgent");
 
-    /** A full recipe and the calories the user entered for it last time (if any). */
-    private record Details(MealData meal, OptionalInt usualCalories) { }
-
-    private final MealDbClient client;
-    private final RecommendationService recommendations;
-    private final PlanStore store;
+    private final RecipeController controller;
     private Runnable onPlanChanged = () -> { };
     private Runnable lastAction = this::loadRecommendations;
     private String shownPick = "";
+    private int listRequest;                              // the newest search or picks request
+    private boolean searching;
 
     // left side: search, banner, cards
     private final VBox root = new VBox(14);
@@ -90,7 +90,8 @@ public class RecipesScreen {
     private final VBox panel = new VBox(10);
     private final StackPane panelPhoto = new StackPane();
     private final Label recipeName = new Label("Pick a recipe");
-    private final Label recipeMeta = new Label("Search, or click one of today's picks, to see its ingredients.");
+    private final Label recipeMeta =
+            new Label("Search, or click one of today's picks, to see its ingredients.");
     private final FlowPane ingredientChips = new FlowPane(5, 5);
     private final Label stepsTitle = new Label("STEPS");
     private final VBox stepsBox = new VBox(8);
@@ -107,16 +108,12 @@ public class RecipesScreen {
     private final Button addButton = new Button("Add to my plan");
     private final Label addStatus = new Label();
     private final VBox form = new VBox(10);
-    private MealData current;
-    private MealData opening;                                   // the recipe whose details are being loaded
-    private int basePrepMinutes;
-    private int suggestedPrepMinutes;
+    private Details current;
+    private MealData opening; // the recipe whose details are being loaded
     private MealSlot pendingSlot;
 
-    public RecipesScreen(MealDbClient client, RecommendationService recommendations, PlanStore store) {
-        this.client = client;
-        this.recommendations = recommendations;
-        this.store = store;
+    public RecipesScreen(RecipeController controller) {
+        this.controller = controller;
         VBox left = new VBox(14, buildSearchCard(), buildCardsArea());
         ScrollPane leftScroll = new ScrollPane(left);
         leftScroll.setFitToWidth(true);
@@ -154,7 +151,10 @@ public class RecipesScreen {
         }
     }
 
-    /** Opens one of today's picks in the panel, the same as clicking its card (used by Today's featured meal). */
+    /**
+     * Opens one of today's picks in the panel, the same as clicking its card (Today's featured
+     * meal).
+     */
     public void openMeal(MealData meal) {
         open(meal, cardsById.get(meal.mealDbId()), lastPickSlot);
     }
@@ -172,7 +172,10 @@ public class RecipesScreen {
         }
     }
 
-    /** When the page is opened again: new picks if the part of the day changed (and no search is shown). */
+    /**
+     * When the page is opened again: new picks if the part of the day changed (and no search is
+     * shown).
+     */
     public void refreshPicks() {
         if (searchField.getText().isBlank()
                 && !shownPick.equals(RecommendationService.pickFor(LocalDateTime.now()).title())) {
@@ -184,10 +187,10 @@ public class RecipesScreen {
 
     private VBox buildSearchCard() {
         searchField.setId("searchField");
-        searchField.setPromptText("Search a recipe by name, e.g. adobo, penne, curry");
+        searchField.setPromptText("For example adobo, penne or curry");
         searchField.getStyleClass().addAll("pnp-field", "pnp-search");
         HBox.setHgrow(searchField, Priority.ALWAYS);
-        searchField.setOnAction(e -> search());              // Enter searches too
+        searchField.setOnAction(e -> search()); // Enter searches too (ignored while busy)
         searchButton.setId("searchButton");
         searchButton.getStyleClass().add("pnp-button");
         searchButton.setOnAction(e -> search());
@@ -200,6 +203,8 @@ public class RecipesScreen {
         Theme.show(clearButton, false);
         HBox searchRow = new HBox(10, searchField, searchButton, clearButton);
         searchRow.setAlignment(Pos.CENTER_LEFT);
+        Label searchLabel = Theme.text("Search recipes by name", "pnp-field-label");
+        searchLabel.setLabelFor(searchField);
 
         bannerText.setId("offlineMessage");
         bannerText.getStyleClass().add("pnp-banner-text");
@@ -213,7 +218,7 @@ public class RecipesScreen {
         banner.getStyleClass().add("pnp-banner");
         Theme.show(banner, false);
 
-        VBox card = new VBox(10, searchRow, banner);
+        VBox card = new VBox(8, searchLabel, searchRow, banner);
         card.getStyleClass().add("pnp-card");
         return card;
     }
@@ -251,23 +256,43 @@ public class RecipesScreen {
         stepsTitle.getStyleClass().add("pnp-overline");
         stepsBox.setId("stepsBox");                             // always shown: no Show/Hide button
         stepsBox.getStyleClass().add("pnp-steps");
+        buildFormInputs();
+        form.getChildren().addAll(stepsTitle, stepsBox,
+                Theme.text("PLAN THIS MEAL", "pnp-overline"),
+                pair(field(null, "Date", datePicker), field(null, "Meal slot", slotBox)),
+                pair(field(useSuggestion, "Prep time (min)", prepField),
+                        field(caloriesNote, "Calories (kcal)", caloriesField)),
+                field(levelChip, "Healthy level", levelBox), autoHint, howNote, addButton,
+                        addStatus);
+        Theme.show(form, false);
+        Theme.show(panelPhoto, false);                          // shown when a recipe is opened
+        panel.getChildren().addAll(Theme.text("ADD TO MY PLAN", "pnp-overline"), panelPhoto,
+                recipeName, recipeMeta, ingredientChips, form);
+        panel.getStyleClass().add("pnp-card");
+        return panel;
+    }
 
+    /** The "Plan this meal" boxes, their notes and listeners, and the Add button. */
+    private void buildFormInputs() {
         slotBox.setId("slotBox");
         slotBox.getItems().addAll(MealSlot.values());
         slotBox.setMaxWidth(Double.MAX_VALUE);
         datePicker.setId("datePicker");
         datePicker.setMaxWidth(Double.MAX_VALUE);
+        Theme.dateFormat(datePicker);                           // "Sat, 14 Nov 2026"
         prepField.setId("prepField");
-        prepField.setPromptText("e.g. 30");
+        prepField.setPromptText("0 to 1440, e.g. 30");
         useSuggestion.setId("useSuggestion");
-        useSuggestion.getStyleClass().add("pnp-link");
-        useSuggestion.setStyle("-fx-font-size: 11.5px;");
-        useSuggestion.setOnAction(e -> prepField.setText(String.valueOf(suggestedPrepMinutes)));
+        useSuggestion.getStyleClass().addAll("pnp-link", "pnp-link-small");
+        useSuggestion.setOnAction(e ->
+                prepField.setText(String.valueOf(current.suggestedMinutes())));
         caloriesField.setId("caloriesField");
-        caloriesField.setPromptText("e.g. 520");
-        Stream.of(prepField, caloriesField).forEach(field -> field.getStyleClass().add("pnp-field"));
+        caloriesField.setPromptText("0 to 10000, e.g. 520");
+        Stream.of(prepField, caloriesField)
+                .forEach(field -> field.getStyleClass().add("pnp-field"));
         levelBox.setId("levelBox");
-        levelBox.getItems().addAll(HealthyLevel.HEALTHY.getLabel(), HealthyLevel.MODERATE.getLabel(),
+        levelBox.getItems().addAll(HealthyLevel.HEALTHY.getLabel(),
+                HealthyLevel.MODERATE.getLabel(),
                 HealthyLevel.INDULGENT.getLabel());
         levelBox.setMaxWidth(Double.MAX_VALUE);
         levelChip.setId("levelChip");
@@ -277,10 +302,12 @@ public class RecipesScreen {
         autoHint.getStyleClass().add("pnp-muted");
         howNote.getStyleClass().add("pnp-note");
         howNote.setWrapText(true);
-        caloriesNote.getStyleClass().add("pnp-muted");
-        slotBox.valueProperty().addListener((obs, old, now) -> showAutoLevel());       // the level follows the slot
-        caloriesField.textProperty().addListener((obs, old, now) -> showAutoLevel());  // ... and the calories, as they are typed
-        levelBox.valueProperty().addListener((obs, old, now) -> updateHint());         // the user may still pick another one
+        caloriesNote.getStyleClass().add("pnp-hint");
+        // the level follows the slot and the calories as they are typed; the user may still pick
+        // another
+        slotBox.valueProperty().addListener((obs, old, now) -> showAutoLevel());
+        caloriesField.textProperty().addListener((obs, old, now) -> showAutoLevel());
+        levelBox.valueProperty().addListener((obs, old, now) -> updateHint());
         prepField.textProperty().addListener((obs, old, now) -> updateHint());
         addButton.setId("addButton");
         addButton.getStyleClass().add("pnp-button");
@@ -288,26 +315,12 @@ public class RecipesScreen {
         addButton.setOnAction(e -> addToPlan());
         addStatus.setId("addStatus");
         addStatus.setWrapText(true);
-
-        form.getChildren().addAll(stepsTitle, stepsBox, Theme.text("PLAN THIS MEAL", "pnp-overline"),
-                pair(field("Date", datePicker), field("Meal slot", slotBox)),
-                pair(field(useSuggestion, "Prep time (min)", prepField), field(caloriesNote, "Calories (kcal)", caloriesField)),
-                field(levelChip, "Healthy level", levelBox), autoHint, howNote, addButton, addStatus);
-        Theme.show(form, false);
-        Theme.show(panelPhoto, false);                          // shown when a recipe is opened
-        panel.getChildren().addAll(Theme.text("ADD TO MY PLAN", "pnp-overline"), panelPhoto, recipeName, recipeMeta,
-                ingredientChips, form);
-        panel.getStyleClass().add("pnp-card");
-        return panel;
-    }
-
-    private static VBox field(String label, Region input) {
-        return field(null, label, input);
     }
 
     /** A small bold label (with an optional note, link or chip on the right) above an input box. */
     private static VBox field(Node note, String label, Region input) {
         Label name = Theme.text(label, "pnp-field-label");
+        name.setLabelFor(input);
         Region gap = new Region();
         HBox.setHgrow(gap, Priority.ALWAYS);
         HBox head = note == null ? new HBox(name) : new HBox(4, name, gap, note);
@@ -328,31 +341,38 @@ public class RecipesScreen {
     private void loadRecommendations() {
         LocalDateTime now = LocalDateTime.now();
         RecommendationService.Pick pick = RecommendationService.pickFor(now);
+        int mine = ++listRequest;                               // a search still running is now old
         shownPick = pick.title();
         lastAction = this::loadRecommendations;
         sectionTitle.setText("Today's recommendations");
         pickTag.setText(pick.title());
         Theme.show(pickTag, true);
         Theme.show(clearButton, false);
-        sectionNote.setText("Picked for " + now.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH)
-                + " " + partOfDay(now) + " from TheMealDB · the picks change tomorrow");
+        String day = now.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+        sectionNote.setText("Picked for " + day + " " + partOfDay(now)
+                + " from TheMealDB · the picks change tomorrow");
         listStatus.setText("Loading today's picks...");
-        Task<List<MealData>> task = new Task<>() {
+        Task<Picks> task = new Task<>() {
             @Override
-            protected List<MealData> call() throws Exception {
-                return recommendations.recommend(now);
+            protected Picks call() throws Exception {
+                return controller.picks(now);
             }
         };
         task.setOnSucceeded(e -> {
+            if (mine != listRequest) {
+                return;                                         // the user searched meanwhile
+            }
+            ApiResult result = task.getValue().result();
+            if (result.isFailed()) {
+                showError(result.error(), "Today's picks need the internet.");
+                return;
+            }
             Theme.show(banner, false);
-            List<MealData> picks = task.getValue().stream()          // filter.php has no category: use the pick's
-                    .map(m -> new MealData(m.mealDbId(), m.name(), pick.category(), m.area(), m.instructions(),
-                            m.ingredients(), m.thumbnail()))
-                    .toList();
+            List<MealData> picks = result.meals();
             showCards(picks, pick.slot());
             lastPicks = picks;
             lastPickSlot = pick.slot();
-            onPicksLoaded.accept(picks, pick.title());           // Today shows its featured meal from these
+            onPicksLoaded.accept(picks, pick.title()); // Today shows its featured meal from these
             listStatus.setText(picks.isEmpty() ? "No picks today." : "");
         });
         task.setOnFailed(e -> showError(task.getException(), "Today's picks need the internet."));
@@ -360,42 +380,61 @@ public class RecipesScreen {
     }
 
     private void search() {
+        if (searching) {
+            return; // Enter while a search runs does nothing
+        }
         String text = searchField.getText().trim();
         if (text.isEmpty()) {
             loadRecommendations();
             return;
         }
+        int mine = ++listRequest;
         lastAction = this::search;
-        searchButton.setDisable(true);                          // no double searches
+        setSearching(true);
         listStatus.setText("Searching...");
-        Task<List<MealData>> task = new Task<>() {
+        Task<ApiResult> task = new Task<>() {
             @Override
-            protected List<MealData> call() throws Exception {
-                return client.searchByName(text);
+            protected ApiResult call() throws Exception {
+                return controller.search(text);
             }
         };
         task.setOnSucceeded(e -> {
-            searchButton.setDisable(false);
+            setSearching(false);
+            if (mine != listRequest) {
+                return; // an older answer: a newer one is shown
+            }
+            ApiResult result = task.getValue();
+            if (result.isFailed()) {
+                showError(result.error(), "");
+                return;
+            }
             Theme.show(banner, false);
-            List<MealData> results = task.getValue();
+            List<MealData> results = result.meals();
             sectionTitle.setText("Results for \"" + text + "\" (" + results.size() + ")");
             Theme.show(pickTag, false);
             Theme.show(clearButton, true);
             sectionNote.setText("Click a recipe to see its ingredients and plan it.");
             showCards(results, null);
-            listStatus.setText(results.isEmpty()
-                    ? "No recipes found for \"" + text + "\". Try another word, such as chicken or curry." : "");
+            listStatus.setText(results.isEmpty() ? "No recipes found for \"" + text
+                    + "\". Try another word, such as chicken or curry." : "");
         });
         task.setOnFailed(e -> {
-            searchButton.setDisable(false);
-            showError(task.getException(), "");
+            setSearching(false);
+            if (mine == listRequest) {
+                showError(task.getException(), "");
+            }
         });
         AppShell.runInBackground(task);
     }
 
-    /** No internet, or TheMealDB failed: the red message under the search bar, with Retry. */
+    private void setSearching(boolean busy) {
+        searching = busy;
+        searchButton.setDisable(busy);                          // no double searches
+    }
+
+    /** No internet, too many requests, or TheMealDB failed: the red message with Retry. */
     private void showError(Throwable error, String listText) {
-        bannerText.setText(MealDbClient.isOffline(error) ? OFFLINE : NOT_RESPONDING);
+        bannerText.setText(UserMessages.of(error));
         Theme.show(banner, true);
         cardGrid.getChildren().clear();
         listStatus.setText(listText);
@@ -405,7 +444,7 @@ public class RecipesScreen {
         cardGrid.getChildren().clear();
         cardsById.clear();
         selectedCard = null;
-        meals.forEach(MealPhotos::remember);                     // the photo address came with the result
+        meals.forEach(MealPhotos::remember); // the photo address came with the result
         IntStream.range(0, meals.size())
                 .forEach(i -> cardGrid.add(recipeCard(meals.get(i), slotHint), i % 3, i / 3));
     }
@@ -416,17 +455,27 @@ public class RecipesScreen {
         name.setWrapText(true);
         Region gap = new Region();
         HBox.setHgrow(gap, Priority.ALWAYS);
-        HBox foot = new HBox(Theme.text(slotHint == null ? "Recipe" : slotHint.getLabel() + " idea", "pnp-muted"), gap,
-                Theme.text("View recipe →", "pnp-overline"));
+        Label idea = Theme.text(slotHint == null ? "Recipe" : slotHint.getLabel() + " idea",
+                "pnp-muted");
+        HBox foot = new HBox(idea, gap, Theme.text("View recipe →", "pnp-overline"));
         Region push = new Region();
         VBox.setVgrow(push, Priority.ALWAYS);
         StackPane photo = MealPhotos.photo(meal.thumbnail(), meal.name(), 128);
         VBox.setMargin(photo, new Insets(0, 0, 6, 0));
-        VBox card = new VBox(4, photo, Theme.text(meal.category().toUpperCase(Locale.ROOT), "pnp-overline"), name, push, foot);
+        Label category = Theme.text(meal.category().toUpperCase(Locale.ROOT), "pnp-overline");
+        VBox card = new VBox(4, photo, category, name, push, foot);
         card.getStyleClass().addAll("pnp-card", "pnp-recipe-card");
         card.setMinHeight(236);
         card.setMaxWidth(Double.MAX_VALUE);
         card.setOnMouseClicked(e -> open(meal, card, slotHint));
+        card.setFocusTraversable(true); // Tab reaches it; Enter or Space opens it
+        card.setAccessibleText(meal.name() + ", " + meal.category()
+                + ". Press Enter to view the recipe.");
+        card.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ENTER || e.getCode() == KeyCode.SPACE) {
+                open(meal, card, slotHint);
+            }
+        });
         cardsById.put(meal.mealDbId(), card);
         return card;
     }
@@ -438,10 +487,10 @@ public class RecipesScreen {
             selectedCard.getStyleClass().remove("selected");
         }
         selectedCard = card;
-        if (card != null) {                                      // null: opened from Today while a search is shown
+        if (card != null) { // null: opened from Today during a search
             card.getStyleClass().add("selected");
         }
-        opening = meal;                                          // a slower, older click must not overwrite this one
+        opening = meal; // an older, slower click must not win
         showPanelPhoto(meal);
         recipeName.setText(meal.name());
         recipeMeta.setText("Loading the recipe...");
@@ -450,8 +499,7 @@ public class RecipesScreen {
         Task<Details> task = new Task<>() {
             @Override
             protected Details call() throws Exception {
-                MealData full = meal.isSummary() ? client.lookupById(meal.mealDbId()).orElse(meal) : meal;
-                return new Details(full, store.usualCalories(full.name()));
+                return controller.open(meal);
             }
         };
         task.setOnSucceeded(e -> {
@@ -464,44 +512,36 @@ public class RecipesScreen {
                 return;
             }
             recipeMeta.setText("Could not open the recipe.");
-            bannerText.setText(MealDbClient.isOffline(task.getException()) ? OFFLINE : NOT_RESPONDING);
-            Theme.show(banner, true);                            // the cards stay; only the message appears
+            bannerText.setText(UserMessages.of(task.getException()));
+            Theme.show(banner, true); // the cards stay; only the message appears
         });
         AppShell.runInBackground(task);
     }
 
     private void showDetails(Details details, MealSlot slotHint) {
         MealData meal = details.meal();
-        current = meal;
+        current = details;
         MealPhotos.remember(meal);
         showPanelPhoto(meal);
         recipeName.setText(meal.name());
-        recipeMeta.setText(Stream.of(meal.category(), meal.area(), meal.ingredients().size() + " ingredients")
-                .filter(s -> !s.isBlank()).reduce((a, b) -> a + " · " + b).orElse(""));
-        ingredientChips.getChildren().setAll(meal.ingredients().stream()
-                .map(amount -> Theme.text(amount.label(), "pnp-ingredient")).toList());
-        showSteps(TextFormat.steps(meal.instructions()));
-
-        basePrepMinutes = PrepTimeEstimator.estimateBaseMinutes(meal.instructions(), meal.ingredients().size());
-        SavedRecipe recipe = recipeFor(meal, 0);
-        suggestedPrepMinutes = recipe.getPrepMinutes();                 // the subclass adds its own time
-        prepField.clear();                                              // no fixed prep time: the user types it
-        useSuggestion.setText("Use " + suggestedPrepMinutes + " min");
-        MealSlot slot = pendingSlot != null ? pendingSlot : slotHint != null ? slotHint : MealSlot.defaultFor(meal.category());
-        slotBox.setValue(slot);
+        recipeMeta.setText(RecipeController.about(meal));
+        ingredientChips.getChildren().setAll(details.ingredients().stream()
+                .map(label -> Theme.text(label, "pnp-ingredient")).toList());
+        showSteps(details.steps());
+        prepField.clear(); // no fixed prep time: the user types it
+        useSuggestion.setText("Use " + details.suggestedMinutes() + " min");
+        slotBox.setValue(RecipeController.slotFor(meal, pendingSlot, slotHint));
         pendingSlot = null;
-        caloriesField.setText(details.usualCalories().isPresent() ? String.valueOf(details.usualCalories().getAsInt()) : "");
-        caloriesNote.setText(details.usualCalories().isPresent() ? "from your history" : "type them once");
-        howNote.setText("Type how long this meal takes you. The app only suggests " + suggestedPrepMinutes + " min ("
-                + PrepTimeEstimator.cookingMinutes(meal.instructions()) + " min of cooking found in the steps + "
-                + PrepTimeEstimator.MINUTES_PER_INGREDIENT + " min × " + meal.ingredients().size() + " ingredients"
-                + extraText(recipe) + "). TheMealDB has no calories, so the app remembers the ones you enter for each recipe.");
+        boolean known = details.usualCalories().isPresent();
+        caloriesField.setText(known ? String.valueOf(details.usualCalories().getAsInt()) : "");
+        caloriesNote.setText(known ? "from your history" : "type them once");
+        howNote.setText(details.suggestionText());
         Theme.status(addStatus, "", Theme.Kind.INFO);
         Theme.show(form, true);
         showAutoLevel();
     }
 
-    /** The larger photo at the top of the panel. The picture is already in memory from the card, so it shows at once. */
+    /** The larger photo at the top of the panel. The picture is already in memory from the card. */
     private void showPanelPhoto(MealData meal) {
         panelPhoto.getChildren().setAll(MealPhotos.photo(meal.thumbnail(), meal.name(), 176));
         Theme.show(panelPhoto, true);
@@ -511,7 +551,8 @@ public class RecipesScreen {
     private void showSteps(List<String> steps) {
         stepsTitle.setText(steps.isEmpty() ? "STEPS" : "STEPS (" + steps.size() + ")");
         if (steps.isEmpty()) {
-            stepsBox.getChildren().setAll(Theme.text("This recipe has no written steps.", "pnp-empty"));
+            stepsBox.getChildren()
+                    .setAll(Theme.text("This recipe has no written steps.", "pnp-empty"));
             return;
         }
         stepsBox.getChildren().setAll(IntStream.range(0, steps.size())
@@ -530,30 +571,18 @@ public class RecipesScreen {
         return row;
     }
 
-    private static String extraText(SavedRecipe recipe) {
-        int extra = recipe.getPrepMinutes() - recipe.getBasePrepMinutes();
-        return extra == 0 ? "" : " + " + extra + " min " + recipe.getMealTypeLabel().toLowerCase() + " setup";
-    }
-
-    private SavedRecipe recipeFor(MealData meal, int calories) {
-        return SavedRecipe.create(CategoryMapper.toMealType(meal.category()), 0, meal.name(), meal.area(),
-                basePrepMinutes, calories, meal.mealDbId());
-    }
-
     /**
-     * Shows the healthy level by itself: every time the calories or the meal slot change, the level
-     * is worked out again by HealthClassifier and put in the box and on the colored chip.
+     * Shows the healthy level by itself: every time the calories or the meal slot change, the
+     * controller works the level out again and it is put in the box and on the colored chip.
      */
     private void showAutoLevel() {
         if (current == null || slotBox.getValue() == null) {
             return;
         }
-        levelBox.setValue(autoLevel().getLabel());
+        HealthyLevel auto = controller.autoLevel(current.meal(), slotBox.getValue(),
+                caloriesField.getText());
+        levelBox.setValue(auto.getLabel());
         updateHint();
-    }
-
-    private HealthyLevel autoLevel() {
-        return HealthClassifier.classify(Math.max(number(caloriesField.getText()), 0), slotBox.getValue(), current.category());
     }
 
     /** The colored chip and the line under the boxes: the level and why, and the prep tier. */
@@ -561,74 +590,46 @@ public class RecipesScreen {
         if (current == null || slotBox.getValue() == null) {
             return;
         }
-        int calories = Math.max(number(caloriesField.getText()), 0);
-        int prep = number(prepField.getText());
-        HealthyLevel auto = autoLevel();
-        HealthyLevel shown = HealthyLevel.fromTextOr(levelBox.getValue(), auto);
-        levelChip.setText(shown.getLabel());
+        LevelHint hint = controller.levelHint(current.meal(), slotBox.getValue(),
+                caloriesField.getText(), prepField.getText(), levelBox.getValue());
+        levelChip.setText(hint.shown().getLabel());
         levelChip.getStyleClass().removeAll(LEVEL_CHIPS);
-        levelChip.getStyleClass().add("chip-" + shown.name().toLowerCase(Locale.ROOT));
-        String why;
-        if (shown != auto) {
-            why = "Your own choice. The app would say " + auto.getLabel() + ".";
-        } else if (calories > 0) {
-            why = shown.getLabel() + ": " + HealthClassifier.explain(calories, slotBox.getValue(), current.category()) + ".";
-        } else {
-            why = "No calories yet, so the level follows the recipe type. Type the calories and it updates by itself.";
-        }
-        String tier = prep < 0 ? "" : " Prep tier: " + PrepTier.of(prep).getLabel() + " (" + PrepTier.of(prep).getRange() + ").";
-        autoHint.setText(why + tier);
+        levelChip.getStyleClass().add("chip-" + hint.shown().name().toLowerCase(Locale.ROOT));
+        autoHint.setText(hint.text());
     }
 
     private void addToPlan() {
-        int prep = number(prepField.getText());
-        int calories = caloriesField.getText().isBlank() ? 0 : number(caloriesField.getText());
-        if (current == null || datePicker.getValue() == null || slotBox.getValue() == null) {
-            Theme.status(addStatus, "Pick a recipe, a date and a meal slot first.", Theme.Kind.ERROR);
+        PlannedMeal planned;
+        try {
+            planned = controller.buildMeal(current, datePicker.getValue(), slotBox.getValue(),
+                    prepField.getText(), caloriesField.getText(), levelBox.getValue());
+        } catch (InvalidInputException wrong) {
+            Theme.status(addStatus, wrong.getMessage(), Theme.Kind.ERROR);   // nothing is saved
             return;
         }
-        if (prepField.getText().isBlank()) {
-            Theme.status(addStatus, "Type the prep time in minutes, or press \"Use " + suggestedPrepMinutes + " min\".",
-                    Theme.Kind.ERROR);
-            return;
-        }
-        if (prep < 0 || calories < 0) {
-            Theme.status(addStatus, "Prep time and calories must be whole numbers, 0 or more.", Theme.Kind.ERROR);
-            return;
-        }
-        MealSlot slot = slotBox.getValue();
-        HealthyLevel level = HealthyLevel.fromTextOr(levelBox.getValue(),
-                HealthClassifier.classify(calories, slot, current.category()));
-        MealData meal = current;
-        PlannedMeal planned = new PlannedMeal(0, 0, recipeFor(meal, calories), datePicker.getValue(), slot, prep, calories, level);
+        MealData meal = current.meal();
         addButton.setDisable(true);
         Task<Long> task = new Task<>() {
             @Override
             protected Long call() throws Exception {
-                return store.saveMeal(planned, meal.ingredients());
+                return controller.save(planned, meal);
             }
         };
         task.setOnSucceeded(e -> {
             addButton.setDisable(false);
-            Theme.status(addStatus, "Added " + meal.name() + " to " + slot.getLabel() + " on "
-                    + TextFormat.shortDate(planned.getPlanDate()) + ".", Theme.Kind.OK);
-            caloriesNote.setText(calories > 0 ? "from your history" : caloriesNote.getText());
+            Theme.status(addStatus, "Added " + meal.name() + " to "
+                    + planned.getMealSlot().getLabel()
+                    + " on " + TextFormat.shortDate(planned.getPlanDate()) + ".", Theme.Kind.OK);
+            if (planned.getCalories() > 0) {
+                caloriesNote.setText("from your history");
+            }
             onPlanChanged.run();
         });
         task.setOnFailed(e -> {
             addButton.setDisable(false);
-            Theme.status(addStatus, "Could not save: " + task.getException().getMessage(), Theme.Kind.ERROR);
+            Theme.status(addStatus, UserMessages.of(task.getException()), Theme.Kind.ERROR);
         });
         AppShell.runInBackground(task);
-    }
-
-    /** A whole number typed in a box, or -1 when it is not one. */
-    private static int number(String text) {
-        try {
-            return Integer.parseInt(text.trim());
-        } catch (NumberFormatException e) {
-            return -1;
-        }
     }
 
     private static String partOfDay(LocalDateTime now) {
