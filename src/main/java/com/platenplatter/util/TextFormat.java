@@ -10,14 +10,19 @@ import java.util.regex.Pattern;
 
 /** Turns numbers, minutes, dates and times into the text the screens show. */
 public final class TextFormat {
-    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", Locale.ENGLISH);
-    private static final DateTimeFormatter SHORT_DATE = DateTimeFormatter.ofPattern("EEE, d MMM yyyy", Locale.ENGLISH);
-    private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("EEE d", Locale.ENGLISH);
-    private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH);
+    private static final DateTimeFormatter DATE =
+            DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy", Locale.ENGLISH);
+    /** The one date format the pages show: "Sat, 14 Nov 2026" (the date pickers use it too). */
+    private static final DateTimeFormatter SHORT_DATE =
+            DateTimeFormatter.ofPattern("EEE, d MMM yyyy", Locale.ENGLISH);
+    private static final DateTimeFormatter DAY =
+            DateTimeFormatter.ofPattern("EEE d", Locale.ENGLISH);
+    private static final DateTimeFormatter TIME =
+            DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH);
 
     /** "STEP 1", "Step 2:", "3." or "4)" at the start of a line of instructions. */
-    private static final Pattern STEP_LABEL = Pattern.compile("^(?:step\\s*\\d+\\s*[.:)-]?\\s*|\\d+\\s*[.)]\\s+)",
-            Pattern.CASE_INSENSITIVE);
+    private static final Pattern STEP_LABEL = Pattern.compile(
+            "^(?:step\\s*\\d+\\s*[.:)-]?\\s*|\\d+\\s*[.)]\\s+)", Pattern.CASE_INSENSITIVE);
 
     private TextFormat() { }
 
@@ -62,7 +67,8 @@ public final class TextFormat {
         if (Double.isNaN(minutes) || minutes <= 0) {
             return "-";
         }
-        return minutes >= 60 ? minutes((int) Math.round(minutes)) : String.format(Locale.ENGLISH, "%.1f min", minutes);
+        return minutes >= 60 ? minutes((int) Math.round(minutes)) : String.format(Locale.ENGLISH,
+                "%.1f min", minutes);
     }
 
     /** 520 -> "520 kcal"; 0 (not known) -> "? kcal". */

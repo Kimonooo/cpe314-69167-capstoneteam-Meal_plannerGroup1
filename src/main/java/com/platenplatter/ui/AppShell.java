@@ -6,6 +6,7 @@ import com.platenplatter.controller.ImportController;
 import com.platenplatter.controller.MealPlanController;
 import com.platenplatter.controller.RecipeController;
 import com.platenplatter.controller.ShoppingListController;
+import com.platenplatter.controller.TodayController;
 import com.platenplatter.db.PlanStore;
 import com.platenplatter.model.User;
 import com.platenplatter.service.RecommendationService;
@@ -47,13 +48,14 @@ public class AppShell {
                     Runnable onAccountDeleted) {
         this.user = user;
         DataChangeNotifier notifier = new DataChangeNotifier();
-        header = new HeaderBar(store, PAGES, this::open, onLogout);
+        TodayController todayController = new TodayController(store);
+        header = new HeaderBar(todayController, PAGES, this::open, onLogout);
         header.setUserName(user.getDisplayName());
 
         MealPhotos.useClient(client);                     // the photos use the same TheMealDB client
         RecipesScreen recipes = new RecipesScreen(
                 new RecipeController(client, new RecommendationService(client), store));
-        TodayScreen today = new TodayScreen(store, slot -> {
+        TodayScreen today = new TodayScreen(todayController, slot -> {
             recipes.setDate(LocalDate.now());
             recipes.setSlot(slot);
             open("Recipes");

@@ -1,15 +1,12 @@
 package com.platenplatter.ui;
 
-import com.platenplatter.db.PlanStore;
-import com.platenplatter.model.PlannedMeal;
-import com.platenplatter.model.PrepTier;
-import com.platenplatter.service.StreakCalculator;
+import com.platenplatter.controller.TodayController;
+import com.platenplatter.controller.TodayController.StreakView;
 import com.platenplatter.util.TextFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javafx.animation.Animation;
@@ -39,29 +36,36 @@ import javafx.util.Duration;
  * The top of every page, like the header of a website:
  *   the navigation bar: the logo, one rounded pill per page, the user's initial and Log out;
  *   the banner under it: the greeting with the date and time, the title and subtitle of the open
- *   page, waves with a chef hat, fork and spoon along the bottom, and two pills on the right (the streak with its flame, the badge).
+ *   page, waves with a chef hat, fork and spoon along the bottom, and two pills on the right (the
+ *   streak with its flame, the badge).
  * The clock ticks every second; at midnight it refreshes the streak and tells the other pages.
  */
 public class HeaderBar {
-    private record StreakData(Set<LocalDate> days, List<PlannedMeal> streakMeals) { }
-
-    /** The title and subtitle the banner shows for a page (the page itself no longer repeats them). */
+    /**
+     * The title and subtitle the banner shows for a page (the page itself no longer repeats them).
+     */
     private static final Map<String, String[]> TITLES = Map.of(
-            "Today", new String[] {"Today", "Your streak, an idea for your next meal, and what is planned for today."},
+            "Today", new String[] {"Today",
+                    "Your streak, an idea for your next meal, and what is planned for today."},
             "Meal Plan", new String[] {"Meal Plan",
-                    "Pick a day to see what is planned. Days are colored by how healthy their meals are."},
+                    "Pick a day to see what is planned. Days are colored and lettered by how "
+                            + "healthy their meals are."},
             "Recipes", new String[] {"Recipes",
-                    "Search TheMealDB by name. Nothing is listed until you search, except today's picks."},
+                    "Search TheMealDB by name. Nothing is listed until you search, except "
+                            + "today's picks."},
             "Shopping List", new String[] {"Shopping List",
                     "What to buy for one recipe you planned, grouped by food group."},
             "Import", new String[] {"Import Meal History",
-                    "Load thousands of past meals from a CSV file. It runs in the background, so you can keep using the app."},
+                    "Load thousands of past meals from a CSV file. You can keep using the app "
+                            + "while it loads."},
             "Analytics", new String[] {"Meal Plan Analytics",
-                    "How healthy, how quick, and which meals? Counted straight from your meal plan."},
+                    "How healthy, how quick, and which meals? Counted straight from your "
+                            + "meal plan."},
             "Account", new String[] {"My Account",
                     "Change the name the app calls you, log out, or delete your account."});
 
-    private final PlanStore store;
+    private final TodayController controller;
+    private int request;                                   // only the newest streak read is shown
     private final Supplier<LocalDateTime> now;
     private final VBox root = new VBox();
     private final ToggleGroup pills = new ToggleGroup();
@@ -80,14 +84,28 @@ public class HeaderBar {
     private LocalDate shownDate;
     private Runnable onNewDay = () -> { };
 
-    public HeaderBar(PlanStore store, List<String> pageNames, Consumer<String> onOpen, Runnable onLogout) {
-        this(store, pageNames, onOpen, onLogout, LocalDateTime::now);
+    public HeaderBar(TodayController controller, List<String> pageNames, Consumer<String> onOpen,
+                     Runnable onLogout) {
+        this(controller, pageNames, onOpen, onLogout, LocalDateTime::now);
     }
 
-    public HeaderBar(PlanStore store, List<String> pageNames, Consumer<String> onOpen, Runnable onLogout,
-                     Supplier<LocalDateTime> now) {
-        this.store = store;
+    public HeaderBar(TodayController controller, List<String> pageNames, Consumer<String> onOpen,
+                     Runnable onLogout, Supplier<LocalDateTime> now) {
+        this.controller = controller;
         this.now = now;
+        HBox nav = buildNav(pageNames, onOpen, onLogout);
+        StackPane banner = buildBanner();
+        startFlame();
+        root.getChildren().addAll(nav, banner);
+        Theme.apply(root);
+        tick();
+        clock = new Timeline(new KeyFrame(Duration.seconds(1), e -> tick()));
+        clock.setCycleCount(Animation.INDEFINITE);
+        clock.play();
+    }
+
+    /** The top row: logo, one pill per page, the avatar and Log out. */
+    private HBox buildNav(List<String> pageNames, Consumer<String> onOpen, Runnable onLogout) {
         HBox pillRow = new HBox(6);
         pageNames.forEach(name -> pillRow.getChildren().add(pill(name, onOpen)));
         Region gap = new Region();
@@ -103,7 +121,11 @@ public class HeaderBar {
         nav.setAlignment(Pos.CENTER_LEFT);
         nav.getStyleClass().add("pnp-nav");
         pillRow.setAlignment(Pos.CENTER_LEFT);
+        return nav;
+    }
 
+    /** The banner under the nav: greeting, page title and subtitle, streak and badge chips. */
+    private StackPane buildBanner() {
         greetingLabel.setId("headerGreeting");
         greetingLabel.getStyleClass().add("pnp-hero-greeting");
         pageTitle.setId("headerTitle");
@@ -123,8 +145,8 @@ public class HeaderBar {
         Theme.show(hintLabel, false);
         Tooltip.install(streakChip, streakTip);
         Tooltip.install(badgeChip, streakTip);
-        Region gap2 = new Region();
-        HBox.setHgrow(gap2, Priority.ALWAYS);
+        Region gap = new Region();
+        HBox.setHgrow(gap, Priority.ALWAYS);
         VBox words = new VBox(3, greetingLabel, pageTitle, pageSubtitle);
         words.setAlignment(Pos.CENTER_LEFT);
         words.setMaxWidth(640);
@@ -132,13 +154,18 @@ public class HeaderBar {
         chips.setAlignment(Pos.CENTER_RIGHT);
         VBox right = new VBox(8, chips, hintLabel);
         right.setAlignment(Pos.TOP_RIGHT);
-        HBox hello = new HBox(12, words, gap2, right);
+        HBox hello = new HBox(12, words, gap, right);
         hello.setAlignment(Pos.TOP_LEFT);
         hello.getStyleClass().add("pnp-hero-body");
         StackPane banner = new StackPane(Theme.waves(0.4), hello);   // the waves sit under the text
-        banner.getStyleClass().add("pnp-hero");                       // gradient background on the stack
+        banner.getStyleClass().add("pnp-hero"); // gradient background on the stack
         banner.setAlignment(Pos.TOP_LEFT);
-        flamePulse.setFromX(1.0);                           // the flame beats gently, all the time
+        return banner;
+    }
+
+    /** The flame on the streak chip beats gently, all the time. */
+    private void startFlame() {
+        flamePulse.setFromX(1.0);
         flamePulse.setFromY(1.0);
         flamePulse.setToX(1.18);
         flamePulse.setToY(1.18);
@@ -147,19 +174,16 @@ public class HeaderBar {
         flamePulse.setInterpolator(Interpolator.EASE_BOTH);
         flamePulse.play();
 
-        root.getChildren().addAll(nav, banner);
-        Theme.apply(root);
-        tick();
-        clock = new Timeline(new KeyFrame(Duration.seconds(1), e -> tick()));
-        clock.setCycleCount(Animation.INDEFINITE);
-        clock.play();
     }
 
     public Parent getView() {
         return root;
     }
 
-    /** Marks a page's pill as the selected one (without clicking it) and puts its title in the banner. */
+    /**
+     * Marks a page's pill as the selected one (without clicking it) and puts its title in the
+     * banner.
+     */
     public void select(String pageName) {
         String[] titles = TITLES.get(pageName);
         String newTitle = titles == null ? pageName : titles[0];
@@ -185,6 +209,19 @@ public class HeaderBar {
         this.onNewDay = onNewDay;
     }
 
+    /**
+     * Compact banner for short windows (small laptop screens or Windows scaling at 125 or 150
+     * percent): the subtitle is hidden and the title and padding get smaller, so the page under
+     * the banner keeps most of the height.
+     */
+    public void setCompact(boolean compact) {
+        Theme.show(pageSubtitle, !compact);
+        root.getStyleClass().remove("pnp-header-compact");
+        if (compact) {
+            root.getStyleClass().add("pnp-header-compact");
+        }
+    }
+
     public void stop() {
         clock.stop();
         flamePulse.stop();
@@ -203,7 +240,8 @@ public class HeaderBar {
         pill.setUserData(name);
         pill.setToggleGroup(pills);
         pill.getStyleClass().add("pnp-nav-pill");
-        pill.setOnAction(e -> onOpen.accept(name));     // AppShell opens the page and keeps the pill selected
+        // AppShell opens the page and keeps the pill selected
+        pill.setOnAction(e -> onOpen.accept(name));
         return pill;
     }
 
@@ -211,47 +249,49 @@ public class HeaderBar {
         LocalDateTime moment = now.get();
         String who = userName.isEmpty() ? "" : ", " + userName;
         greetingLabel.setText(TextFormat.greeting(moment.toLocalTime()) + who + " · "
-                + TextFormat.date(moment.toLocalDate()) + " · " + TextFormat.time(moment.toLocalTime()));
+                + TextFormat.shortDate(moment.toLocalDate()) + " · "
+                        + TextFormat.time(moment.toLocalTime()));
         if (shownDate != null && !shownDate.equals(moment.toLocalDate())) {
             onNewDay.run();                                // a new day: Today and the streak change
         }
         shownDate = moment.toLocalDate();
     }
 
-    /** Reads the streak in the background and shows it. */
+    /** Reads the streak in the background and shows it (only the newest answer is used). */
     public void refresh() {
         LocalDate today = now.get().toLocalDate();
-        Task<StreakData> task = new Task<>() {
+        int mine = ++request;
+        Task<StreakView> task = new Task<>() {
             @Override
-            protected StreakData call() throws Exception {
-                Set<LocalDate> days = store.plannedDates();
-                LocalDate[] range = StreakCalculator.currentRange(days, today);
-                return new StreakData(days, range == null ? List.of() : store.mealsBetween(range[0], range[1]));
+            protected StreakView call() throws Exception {
+                return controller.streak(today);
             }
         };
-        task.setOnSucceeded(e -> showStreak(today, task.getValue()));
+        task.setOnSucceeded(e -> {
+            if (mine == request) {
+                showStreak(task.getValue());
+            }
+        });
         task.setOnFailed(e -> streakTip.setText("Could not read the meal plan."));
         AppShell.runInBackground(task);
     }
 
-    private void showStreak(LocalDate today, StreakData data) {
-        int current = StreakCalculator.current(data.days(), today);
-        int best = StreakCalculator.longest(data.days(), today);
-        boolean atRisk = StreakCalculator.atRisk(data.days(), today);
-        Map<PrepTier, Long> tiers = StreakCalculator.tierCounts(data.streakMeals());
+    private void showStreak(StreakView streak) {
+        int current = streak.current();
+        int best = streak.best();
         streakChip.setText(current + "-day streak");
         streakChip.getStyleClass().remove("at-risk");
-        if (atRisk) {
+        if (streak.atRisk()) {
             streakChip.getStyleClass().add("at-risk");
         }
-        Theme.show(hintLabel, atRisk);
-        badgeChip.setText(current == 0 ? "Plan a meal to start" : StreakCalculator.badgeTitle(tiers) + " badge");
+        Theme.show(hintLabel, streak.atRisk());
+        badgeChip.setText(current == 0 ? "Plan a meal to start" : streak.badgeTitle() + " badge");
         streakTip.setText("Current streak: " + current + (current == 1 ? " day" : " days")
                 + "\nBest streak: " + best + (best == 1 ? " day" : " days")
-                + "\nNext goal: " + StreakCalculator.goalLine(current)
-                + (current == 0 ? "" : "\nBadge: " + StreakCalculator.badgeTitle(tiers) + ", because "
-                        + StreakCalculator.badgeReason(tiers))
-                + "\nMeals in this streak: " + StreakCalculator.tierLine(tiers)
+                + "\nNext goal: " + streak.goalLine()
+                + (current == 0 ? "" : "\nBadge: " + streak.badgeTitle() + ", because "
+                        + streak.badgeReason())
+                + "\nMeals in this streak: " + streak.tierLine()
                 + "\nPlan at least one meal every day to keep it going.");
     }
 }
