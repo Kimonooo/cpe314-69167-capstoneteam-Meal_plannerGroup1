@@ -1,6 +1,7 @@
 package com.platenplatter.ui;
 
-import com.platenplatter.db.PlanStore;
+import com.platenplatter.controller.ImportController;
+import com.platenplatter.service.MealImporter;
 import java.io.File;
 import java.util.List;
 import java.util.Locale;
@@ -21,12 +22,14 @@ import javafx.stage.FileChooser;
 
 /**
  * The Import page: pick or drop a CSV file and import it in the background with CsvImportTask.
- * The window stays responsive: the progress bar and the message follow the Task.
+ * The window stays responsive: the progress bar and the message follow the Task. After a file
+ * was imported, Import stays off until a file is chosen again, so one click cannot import the
+ * same file twice. The result banner says how many rows were imported, skipped and already planned.
  * A colored indicator in the drop zone always says where the file is: not chosen yet,
  * uploaded and ready, importing, imported, cancelled or failed.
  */
 public class ImportScreen {
-    private final PlanStore store;
+    private final ImportController controller;
     private Runnable onImportFinished = () -> { };
     private final VBox root = new VBox(14);
     private final ScrollPane scroller = new ScrollPane(root);
@@ -41,13 +44,34 @@ public class ImportScreen {
     private final HBox resultsRow = new HBox(14);
     private final Label importedValue = new Label("0");
     private final Label skippedValue = new Label("0");
+    private final Label duplicateValue = new Label("0");
     private final Label timeValue = new Label("0 s");
     private File chosenFile;
     private CsvImportTask currentTask;
     private long startNanos;
 
-    public ImportScreen(PlanStore store) {
-        this.store = store;
+    public ImportScreen(ImportController controller) {
+        this.controller = controller;
+        buildDropZone();
+        HBox progressRow = buildProgressRow();
+        buildResultsRow();
+        root.setPadding(new Insets(22, 26, 26, 26));
+        root.getChildren().addAll(
+                card(stepTitle(1, "Pick your file"), dropZone),
+                card(stepTitle(2, "Import it"), new HBox(10, importButton, cancelButton),
+                        progressRow,
+                        statusLabel),
+                resultsRow,
+                formatCard());
+        scroller.setFitToWidth(true);
+        scroller.getStyleClass().add("pnp-scroll");
+        Theme.apply(scroller);
+        Theme.status(statusLabel, "Choose a CSV file to begin.", Theme.Kind.INFO);
+        wireEvents();
+    }
+
+    /** Step 1: the drop zone with its indicator, the Choose button and the file name. */
+    private void buildDropZone() {
         chooseButton.setId("chooseButton");
         chooseButton.getStyleClass().add("pnp-button");
         fileLabel.setId("fileLabel");
@@ -57,10 +81,14 @@ public class ImportScreen {
         uploadIndicator.setId("uploadIndicator");
         uploadIndicator.getStyleClass().add("pnp-chip");
         indicate("No CSV uploaded yet", "chip-neutral", false);
-        dropZone.getChildren().addAll(Theme.icon("dishes", 64), uploadIndicator, dropText, Theme.text("or", "pnp-muted"), chooseButton, fileLabel);
+        dropZone.getChildren().addAll(Theme.icon("dishes", 64), uploadIndicator, dropText,
+                Theme.text("or", "pnp-muted"), chooseButton, fileLabel);
         dropZone.setAlignment(Pos.CENTER);
         dropZone.getStyleClass().add("pnp-drop");
+    }
 
+    /** Step 2: Import and Cancel (both off at first), the bar with its percent and the banner. */
+    private HBox buildProgressRow() {
         importButton.setId("importButton");
         importButton.getStyleClass().add("pnp-button");
         importButton.setDisable(true);
@@ -73,40 +101,48 @@ public class ImportScreen {
         HBox.setHgrow(bar, Priority.ALWAYS);
         Label percent = new Label();
         percent.setMinWidth(44);
-        percent.setStyle("-fx-font-weight: bold;");
+        percent.getStyleClass().add("pnp-percent");
         percent.textProperty().bind(Bindings.createStringBinding(
-                () -> bar.getProgress() < 0 ? "" : Math.round(bar.getProgress() * 100) + "%", bar.progressProperty()));
+                () -> bar.getProgress() < 0 ? "" : Math.round(bar.getProgress() * 100) + "%",
+                        bar.progressProperty()));
         HBox progressRow = new HBox(10, bar, percent);
         progressRow.setAlignment(Pos.CENTER_LEFT);
         statusLabel.setId("importStatus");
-        statusLabel.getStyleClass().add("pnp-status-banner");   // green when the import worked, red when it failed
+        // green when the import worked, red when it failed
+        statusLabel.getStyleClass().add("pnp-status-banner");
         statusLabel.setMaxWidth(Double.MAX_VALUE);
-        resultsRow.getChildren().addAll(Theme.statCard("ROWS IMPORTED", importedValue, new Label("meals added to your plan"), "dishes"),
-                Theme.statCard("BAD ROWS SKIPPED", skippedValue, new Label("never stop the import"), "food"),
-                Theme.statCard("TIME TAKEN", timeValue, new Label("on a background thread"), "streak"));
-        Theme.show(resultsRow, false);
+        return progressRow;
+    }
 
-        Label example = Theme.text("date,recipe_name,category,prep_minutes,meal_slot,calories,healthy_level\n"
+    /** The four result cards, hidden until an import finishes. */
+    private void buildResultsRow() {
+        resultsRow.getChildren().addAll(
+                Theme.statCard("MEALS IMPORTED", importedValue, new Label("added to your plan"),
+                        "dishes"),
+                Theme.statCard("ROWS SKIPPED", skippedValue, new Label("because of errors"),
+                        "food"),
+                Theme.statCard("ALREADY PLANNED", duplicateValue, new Label("not added again"),
+                        "meal"),
+                Theme.statCard("TIME TAKEN", timeValue, new Label("you could keep working"),
+                        "streak"));
+        Theme.show(resultsRow, false);
+    }
+
+    /** The card that shows what a CSV file must look like. */
+    private VBox formatCard() {
+        Label example = Theme.text(
+                "date,recipe_name,category,prep_minutes,meal_slot,calories,healthy_level\n"
                 + "2026-11-03,Chicken Adobo,MainCourse,45,Dinner,620,Healthy\n"
                 + "2026-11-04,Leche Flan,Dessert,50,Snack,350,Indulgent\n"
                 + "2026-11-05,Tapsilog,Breakfast,20", "pnp-mono");
-        Label note = Theme.text("The last three columns are optional, so old 4-column files still work. Without them a meal "
-                + "gets the slot of its type and its healthy level is worked out from the calories. Rows with a wrong date, "
-                + "a missing name, a bad number or an unknown slot or level are skipped and counted.", "pnp-muted");
+        Label note = Theme.text("The last three columns are optional, so old 4-column files "
+                + "still work. Without them a meal gets the slot of its type and its healthy level "
+                + "is worked out from the calories. Rows with a wrong date, a missing name, a bad "
+                + "number (prep time 0 to 1,440 minutes, calories 0 to 10,000) or an unknown slot "
+                + "or level are skipped and counted. Blank lines are ignored. A meal that is "
+                + "already planned on that day and slot is not added twice.", "pnp-muted");
         note.setWrapText(true);
-
-        root.setPadding(new Insets(22, 26, 26, 26));
-        root.getChildren().addAll(
-                card(stepTitle(1, "Pick your file"), dropZone),
-                card(stepTitle(2, "Import it"), new HBox(10, importButton, cancelButton), progressRow,
-                        statusLabel),
-                resultsRow,
-                card(Theme.text("What the CSV must look like", "pnp-section"), example, note));
-        scroller.setFitToWidth(true);
-        scroller.getStyleClass().add("pnp-scroll");
-        Theme.apply(scroller);
-        Theme.status(statusLabel, "Choose a CSV file to begin.", Theme.Kind.INFO);
-        wireEvents();
+        return card(Theme.text("What the CSV must look like", "pnp-section"), example, note);
     }
 
     public Parent getView() {
@@ -126,7 +162,8 @@ public class ImportScreen {
 
     /** "1  Pick your file": the step number in a burgundy circle, then the step's name. */
     private static HBox stepTitle(int number, String text) {
-        HBox title = new HBox(10, Theme.text(String.valueOf(number), "pnp-step-number"), Theme.text(text, "pnp-section"));
+        HBox title = new HBox(10, Theme.text(String.valueOf(number), "pnp-step-number"),
+                Theme.text(text, "pnp-section"));
         title.setAlignment(Pos.CENTER_LEFT);
         return title;
     }
@@ -176,10 +213,14 @@ public class ImportScreen {
         }
     }
 
-    /** Sets the indicator's text and color, and gives the drop zone a green edge while a file is loaded. */
+    /**
+     * Sets the indicator's text and color, and gives the drop zone a green edge while a file is
+     * loaded.
+     */
     private void indicate(String text, String chipClass, boolean hasFile) {
         uploadIndicator.setText(text);
-        uploadIndicator.getStyleClass().removeAll("chip-neutral", "chip-healthy", "chip-moderate", "chip-indulgent");
+        uploadIndicator.getStyleClass().removeAll("chip-neutral", "chip-healthy", "chip-moderate",
+                "chip-indulgent");
         uploadIndicator.getStyleClass().add(chipClass);
         dropZone.getStyleClass().remove("has-file");
         if (hasFile) {
@@ -189,8 +230,10 @@ public class ImportScreen {
 
     private void pick(File file) {
         chosenFile = file;
-        indicate("\u2713 CSV uploaded: " + file.getName() + " is ready to import", "chip-healthy", true);
-        fileLabel.setText(file.getName() + "   (" + String.format(Locale.ENGLISH, "%.1f KB", file.length() / 1024.0) + ")");
+        indicate("\u2713 CSV uploaded: " + file.getName() + " is ready to import", "chip-healthy",
+                true);
+        fileLabel.setText(file.getName() + "   ("
+                + String.format(Locale.ENGLISH, "%.1f KB", file.length() / 1024.0) + ")");
         importButton.setDisable(false);
         Theme.show(resultsRow, false);
         bar.setProgress(0);
@@ -198,7 +241,7 @@ public class ImportScreen {
     }
 
     private void startImport() {
-        CsvImportTask task = new CsvImportTask(chosenFile, store);
+        CsvImportTask task = new CsvImportTask(chosenFile, controller);
         currentTask = task;
         startNanos = System.nanoTime();
         chooseButton.setDisable(true);
@@ -210,36 +253,44 @@ public class ImportScreen {
         statusLabel.textProperty().bind(task.messageProperty());
         String name = chosenFile.getName();
         task.setOnSucceeded(e -> {
-            finish(task, "Done! The import finished.", 1.0, Theme.Kind.OK, true);
-            indicate("\u2713 Imported " + String.format(Locale.ENGLISH, "%,d", task.getImported()) + " rows from " + name,
-                    "chip-healthy", true);
+            MealImporter.Result result = task.getValue();
+            finish(ImportController.summary(result), 1.0, Theme.Kind.OK);
+            showNumbers(result);
+            chosenFile = null; // the same file cannot be imported twice
+            importButton.setDisable(true);
+            indicate("\u2713 Imported " + String.format(Locale.ENGLISH, "%,d", result.imported())
+                    + " meals from " + name + ". Choose a file to import more.", "chip-healthy",
+                            true);
         });
         task.setOnFailed(e -> {
-            finish(task, "Import failed: " + task.getException().getMessage(), 0, Theme.Kind.ERROR, false);
-            indicate("Import failed for " + name, "chip-indulgent", false);
+            finish(ImportController.failure(task.getException()), 0, Theme.Kind.ERROR);
+            indicate("Import failed for " + name + ". Nothing was added.", "chip-indulgent", false);
         });
         task.setOnCancelled(e -> {
-            finish(task, "Import cancelled.", 0, Theme.Kind.INFO, true);
+            finish("Import cancelled. Nothing was added.", 0, Theme.Kind.INFO);
             indicate("Import cancelled: " + name + " is still loaded", "chip-neutral", true);
         });
-        AppShell.runInBackground(task);                             // BACKGROUND THREAD: the UI stays responsive
+        AppShell.runInBackground(task);                             // BACKGROUND THREAD
     }
 
-    private void finish(CsvImportTask task, String message, double progress, Theme.Kind kind, boolean showNumbers) {
+    private void finish(String message, double progress, Theme.Kind kind) {
         statusLabel.textProperty().unbind();
         bar.progressProperty().unbind();
         Theme.status(statusLabel, message, kind);
         bar.setProgress(progress);
-        if (showNumbers) {
-            importedValue.setText(String.format(Locale.ENGLISH, "%,d", task.getImported()));
-            skippedValue.setText(String.format(Locale.ENGLISH, "%,d", task.getSkipped()));
-            timeValue.setText(String.format(Locale.ENGLISH, "%.1f s", (System.nanoTime() - startNanos) / 1_000_000_000.0));
-            Theme.show(resultsRow, true);
-        }
         chooseButton.setDisable(false);
         importButton.setDisable(chosenFile == null);
         cancelButton.setDisable(true);
         currentTask = null;
         onImportFinished.run();
+    }
+
+    private void showNumbers(MealImporter.Result result) {
+        importedValue.setText(String.format(Locale.ENGLISH, "%,d", result.imported()));
+        skippedValue.setText(String.format(Locale.ENGLISH, "%,d", result.badRows()));
+        duplicateValue.setText(String.format(Locale.ENGLISH, "%,d", result.duplicates()));
+        timeValue.setText(String.format(Locale.ENGLISH, "%.1f s",
+                (System.nanoTime() - startNanos) / 1e9));
+        Theme.show(resultsRow, true);
     }
 }

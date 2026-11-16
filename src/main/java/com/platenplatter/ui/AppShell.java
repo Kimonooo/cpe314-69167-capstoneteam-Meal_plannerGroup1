@@ -2,6 +2,7 @@ package com.platenplatter.ui;
 
 import com.platenplatter.api.MealDbClient;
 import com.platenplatter.controller.AuthController;
+import com.platenplatter.controller.ImportController;
 import com.platenplatter.controller.MealPlanController;
 import com.platenplatter.controller.RecipeController;
 import com.platenplatter.controller.ShoppingListController;
@@ -68,7 +69,7 @@ public class AppShell {
             open("Recipes");
         });
         ShoppingListScreen shopping = new ShoppingListScreen(new ShoppingListController(store, client));
-        importScreen = new ImportScreen(store);
+        importScreen = new ImportScreen(new ImportController(store));
         AnalyticsScreen analytics = new AnalyticsScreen(store);
         AccountScreen account = new AccountScreen(auth, user,
                 renamed -> header.setUserName(renamed.getDisplayName()), onLogout);
