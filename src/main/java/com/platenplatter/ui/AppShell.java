@@ -1,12 +1,12 @@
 package com.platenplatter.ui;
 
 import com.platenplatter.api.MealDbClient;
+import com.platenplatter.controller.AuthController;
 import com.platenplatter.controller.MealPlanController;
 import com.platenplatter.controller.RecipeController;
 import com.platenplatter.controller.ShoppingListController;
 import com.platenplatter.db.PlanStore;
 import com.platenplatter.model.User;
-import com.platenplatter.service.AuthService;
 import com.platenplatter.service.RecommendationService;
 import com.platenplatter.util.DataChangeNotifier;
 import java.time.LocalDate;
@@ -42,7 +42,7 @@ public class AppShell {
     private final ImportScreen importScreen;
     private final User user;
 
-    public AppShell(PlanStore store, MealDbClient client, User user, AuthService auth, Runnable onLogout,
+    public AppShell(PlanStore store, MealDbClient client, User user, AuthController auth, Runnable onLogout,
                     Runnable onAccountDeleted) {
         this.user = user;
         DataChangeNotifier notifier = new DataChangeNotifier();

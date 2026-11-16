@@ -1,7 +1,7 @@
 package com.platenplatter.ui;
 
+import com.platenplatter.controller.AuthController;
 import com.platenplatter.model.User;
-import com.platenplatter.service.AuthService;
 import java.util.function.Consumer;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
@@ -17,9 +17,12 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 
-/** The first page: log in, or go to Sign up or Forgot password. Checking runs in the background. */
+/**
+ * The first page: log in, or go to Sign up or Forgot password. Checking runs in the background.
+ * Five wrong passwords in a row lock the username for five minutes (AuthService).
+ */
 public class LoginScreen {
-    private final AuthService auth;
+    private final AuthController auth;
     private final Consumer<User> onLoggedIn;
     private final TextField usernameField = new TextField();
     private final PasswordField passwordField = new PasswordField();
@@ -28,33 +31,20 @@ public class LoginScreen {
     private final BooleanProperty working = new SimpleBooleanProperty(false);
     private final Parent root;
 
-    public LoginScreen(AuthService auth, Consumer<User> onLoggedIn, Runnable onCreateAccount,
+    public LoginScreen(AuthController auth, Consumer<User> onLoggedIn, Runnable onCreateAccount,
                        Runnable onForgotPassword, String username, String notice) {
         this.auth = auth;
         this.onLoggedIn = onLoggedIn;
-        usernameField.setId("loginUsername");
-        usernameField.setPromptText("Your username");
-        usernameField.getStyleClass().add("pnp-field");
-        passwordField.setId("loginPassword");
-        passwordField.setPromptText("Your password");
-        passwordField.getStyleClass().add("pnp-field");
-        loginButton.setId("loginButton");
-        loginButton.getStyleClass().add("pnp-button");
-        loginButton.setDefaultButton(true);
-        loginButton.setMaxWidth(Double.MAX_VALUE);
-        loginButton.disableProperty().bind(working);
-        messageLabel.setId("loginMessage");
-        messageLabel.setWrapText(true);
-
+        setUpInputs();
         Button forgotLink = AuthLayout.link("Forgot password?");
         forgotLink.setId("forgotPasswordLink");
         forgotLink.disableProperty().bind(working);
         forgotLink.setOnAction(e -> onForgotPassword.run());
         Region gap = new Region();
         HBox.setHgrow(gap, Priority.ALWAYS);
-        HBox forgotRow = new HBox(gap, forgotLink);           // the link sits under the box, on the right
+        HBox forgotRow = new HBox(gap, forgotLink); // the link sits under the box, on the right
 
-        Button createLink = AuthLayout.link("Create an account");
+        Button createLink = AuthLayout.link("Create account");
         createLink.setId("createAccountLink");
         createLink.disableProperty().bind(working);
         createLink.setOnAction(e -> onCreateAccount.run());
@@ -80,6 +70,23 @@ public class LoginScreen {
         Platform.runLater(() -> (username == null ? usernameField : passwordField).requestFocus());
     }
 
+    /** Ids and hints of the two boxes; the Log in button is off while a check runs. */
+    private void setUpInputs() {
+        usernameField.setId("loginUsername");
+        usernameField.setPromptText("Your username");
+        usernameField.getStyleClass().add("pnp-field");
+        passwordField.setId("loginPassword");
+        passwordField.setPromptText("Your password");
+        passwordField.getStyleClass().add("pnp-field");
+        loginButton.setId("loginButton");
+        loginButton.getStyleClass().add("pnp-button");
+        loginButton.setDefaultButton(true);
+        loginButton.setMaxWidth(Double.MAX_VALUE);
+        loginButton.disableProperty().bind(working);
+        messageLabel.setId("loginMessage");
+        messageLabel.setWrapText(true);
+    }
+
     public Parent getView() {
         return root;
     }
@@ -92,7 +99,7 @@ public class LoginScreen {
         Task<User> task = new Task<>() {
             @Override
             protected User call() throws Exception {
-                return auth.login(username, password);   // PBKDF2 hashing is slow on purpose
+                return auth.logIn(username, password);   // PBKDF2 hashing is slow on purpose
             }
         };
         task.setOnSucceeded(e -> {

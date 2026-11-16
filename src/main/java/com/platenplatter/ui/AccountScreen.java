@@ -1,7 +1,9 @@
 package com.platenplatter.ui;
 
+import com.platenplatter.controller.AuthController;
 import com.platenplatter.model.User;
 import com.platenplatter.service.AuthService;
+import java.util.Locale;
 import java.util.function.Consumer;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -25,7 +27,7 @@ import javafx.scene.layout.VBox;
  * account. Deleting asks for the password and a tick first, because it cannot be undone.
  */
 public class AccountScreen {
-    private final AuthService auth;
+    private final AuthController auth;
     private final Consumer<User> onRenamed;
     private Runnable onDeleted = () -> { };
     private User user;
@@ -39,7 +41,8 @@ public class AccountScreen {
     private final Label statusLabel = new Label();
     private final BooleanProperty working = new SimpleBooleanProperty(false);
 
-    public AccountScreen(AuthService auth, User user, Consumer<User> onRenamed, Runnable onLogout) {
+    public AccountScreen(AuthController auth, User user, Consumer<User> onRenamed,
+            Runnable onLogout) {
         this.auth = auth;
         this.user = user;
         this.onRenamed = onRenamed;
@@ -50,7 +53,8 @@ public class AccountScreen {
         scroller.setFitToWidth(true);
         scroller.getStyleClass().add("pnp-scroll");
         Theme.apply(scroller);
-        Theme.status(statusLabel, "Your display name is the name in the greeting at the top.", Theme.Kind.INFO);
+        Theme.status(statusLabel, "Your display name is the name in the greeting at the top.",
+                Theme.Kind.INFO);
     }
 
     public Parent getView() {
@@ -64,6 +68,7 @@ public class AccountScreen {
 
     private VBox buildNameCard() {
         nameField.setId("displayNameField");
+        nameField.setAccessibleText("Display name");      // the card's heading names the box
         nameField.setText(user.getDisplayName());
         nameField.setPromptText("For example Kim");
         nameField.getStyleClass().add("pnp-field");
@@ -77,7 +82,8 @@ public class AccountScreen {
         HBox row = new HBox(10, nameField, saveButton);
         row.setAlignment(Pos.CENTER_LEFT);
         VBox card = new VBox(10, Theme.sectionTitle("Display name", "hat"), row,
-                Theme.text("1 to " + AuthService.MAX_NAME_LENGTH + " characters. Your username does not change.", "pnp-muted"));
+                Theme.text("1 to " + AuthService.MAX_NAME_LENGTH
+                        + " characters. Your username does not change.", "pnp-muted"));
         card.getStyleClass().add("pnp-card");
         return card;
     }
@@ -89,9 +95,11 @@ public class AccountScreen {
         Label username = new Label(user.getUsername());
         username.setId("accountUsername");
         grid.addRow(0, label("Username"), username);
-        grid.addRow(1, label("Age"), new Label(user.getAge() > 0 ? String.valueOf(user.getAge()) : "-"));
-        grid.addRow(2, label("Gender"), new Label(blankToDash(user.getGender())));
-        grid.addRow(3, label("Security question"), new Label(blankToDash(user.getSecurityQuestion())));
+        grid.addRow(1, label("Age"), new Label(user.getAge() > 0 ? String.valueOf(user.getAge())
+                : "-"));
+        grid.addRow(2, label("Gender"), new Label(genderText(user.getGender())));
+        grid.addRow(3, label("Security question"),
+                new Label(blankToDash(user.getSecurityQuestion())));
         Button logout = new Button("Log out");
         logout.setId("logoutButton");
         logout.getStyleClass().add("pnp-button-secondary");
@@ -104,9 +112,11 @@ public class AccountScreen {
 
     /** The red card at the bottom: what is removed, the password box, the tick and the button. */
     private VBox buildDeleteCard() {
-        Label what = Theme.text("This permanently removes your account, your saved recipes with their ingredient lists, "
-                + "and every meal you planned or imported. The streak and the charts are made from those meals, so they "
-                + "go too. Other users are not touched.", "pnp-muted");
+        Label what = Theme.text("This permanently removes your account, your saved recipes "
+                + "with their ingredient lists, and every meal you planned or imported. The streak "
+                + "and the charts are made from those meals, so they go too. Other users are not "
+                + "touched.",
+                "pnp-muted");
         what.setWrapText(true);
         deletePassword.setId("deletePasswordField");
         deletePassword.setPromptText("Type your password to confirm");
@@ -118,8 +128,8 @@ public class AccountScreen {
         deleteButton.getStyleClass().add("pnp-button-danger");
         deleteButton.disableProperty().bind(working.or(deleteConfirm.selectedProperty().not()));
         deleteButton.setOnAction(e -> deleteAccount());
-        VBox card = new VBox(10, Theme.text("Delete my account", "pnp-section"), what, deletePassword, deleteConfirm,
-                deleteButton);
+        VBox card = new VBox(10, Theme.text("Delete my account", "pnp-section"), what,
+                Theme.labeled("Your password", deletePassword), deleteConfirm, deleteButton);
         card.getStyleClass().addAll("pnp-card", "pnp-danger-card");
         return card;
     }
@@ -149,9 +159,17 @@ public class AccountScreen {
     }
 
     private static Label label(String text) {
-        Label label = Theme.text(text, "pnp-muted");
-        label.setStyle("-fx-font-weight: bold;");
-        return label;
+        return Theme.text(text, "pnp-detail-label");
+    }
+
+    /** Accounts made before the sign-up page said Female and Male saved "F" and "M". */
+    private static String genderText(String gender) {
+        String clean = blankToDash(gender);
+        return switch (clean.toUpperCase(Locale.ROOT)) {
+            case "F" -> "Female";
+            case "M" -> "Male";
+            default -> clean;
+        };
     }
 
     private static String blankToDash(String text) {
@@ -174,7 +192,8 @@ public class AccountScreen {
             user = task.getValue();
             nameField.setText(user.getDisplayName());
             onRenamed.accept(user);
-            Theme.status(statusLabel, "Saved! We will call you " + user.getDisplayName() + " from now on.", Theme.Kind.OK);
+            Theme.status(statusLabel, "Saved! We will call you " + user.getDisplayName()
+                    + " from now on.", Theme.Kind.OK);
         });
         task.setOnFailed(e -> {
             working.set(false);

@@ -1,6 +1,7 @@
 package com.platenplatter;
 
 import com.platenplatter.api.MealDbClient;
+import com.platenplatter.controller.AuthController;
 import com.platenplatter.db.DatabaseConnector;
 import com.platenplatter.db.MealPlanDao;
 import com.platenplatter.db.UserDao;
@@ -30,7 +31,7 @@ public class PlateNPlatterApp extends Application {
 
     private Stage stage;
     private Connection connection;
-    private AuthService auth;
+    private AuthController auth;
     private final MealDbClient client = new MealDbClient();
     private AppShell shell;
 
@@ -40,7 +41,7 @@ public class PlateNPlatterApp extends Application {
         try {
             connection = DatabaseConnector.open();
             DatabaseConnector.createTables(connection);     // safe every time: CREATE TABLE IF NOT EXISTS
-            auth = new AuthService(new UserDao(connection));
+            auth = new AuthController(new AuthService(new UserDao(connection)));
             stage.setTitle("Plate N Platter");
             stage.setMinWidth(1040);
             stage.setMinHeight(720);
