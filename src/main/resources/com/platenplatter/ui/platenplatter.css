@@ -1,24 +1,26 @@
 /*
  * Plate N Platter: one stylesheet for the whole app (the design system). Dark burgundy theme.
  *
- * Every color is written once, as a "looked-up color" at the top of .pnp-root (the names that start
- * with -pnp-). Change a color there and the whole app follows.
+ * Every color is written once, as a "looked-up color" at the top of .pnp-root (the names that
+ * start with -pnp-). Change a color there and the whole app follows.
  *
- *   #1A0F14  -pnp-bg       page background             #24141D  -pnp-bg2     navigation bar, input boxes
- *   #311B24  -pnp-card     cards                       #3D212E  -pnp-card2   raised and hovered cards
- *   #4A2A38  -pnp-line     card edges and dividers     #6B3A4E  -pnp-line2   edges of buttons and boxes
- *   #B85C7D  -pnp-accent   active pills, buttons, progress bars (warm rose)
- *   #D97A9C  -pnp-accent-hi  glow, hover       #8E3F5C  -pnp-accent-lo  pressed, the start of a gradient
- *   #F6EDE6  -pnp-text     main text (off-white)       #EAD9B8  -pnp-cream   titles and big numbers (soft gold)
- *   #BFA9B1  -pnp-muted    descriptions and hints      #8F7A84  -pnp-faint   prompt text only
- *   #5CC38F  -pnp-ok  Healthy and success;  #E3B341  -pnp-warn  Moderate;  #F0766E  -pnp-bad  Indulgent and errors
+ *   #1A0F14 -pnp-bg      page background          #24141D -pnp-bg2    navigation bar, input boxes
+ *   #311B24 -pnp-card    cards                    #3D212E -pnp-card2  raised and hovered cards
+ *   #4A2A38 -pnp-line    card edges and dividers  #6B3A4E -pnp-line2  edges of buttons and boxes
+ *   #B85C7D -pnp-accent  active pills, buttons, progress bars (warm rose)
+ *   #D97A9C -pnp-accent-hi  glow, hover           #8E3F5C -pnp-accent-lo  pressed, gradients
+ *   #F6EDE6 -pnp-text    main text (off-white)    #EAD9B8 -pnp-cream  titles and big numbers
+ *   #BFA9B1 -pnp-muted   descriptions and hints   #8F7A84 -pnp-faint  prompt text only
+ *   #5CC38F -pnp-ok  Healthy, success   #E3B341 -pnp-warn  Moderate   #F0766E -pnp-bad  Indulgent
  *
  * Shapes: cards 16 px corners, buttons and inputs 10 px, pills and chips fully round.
- * Glow: active pills, the streak and badge chips and the focused input box have a soft rose shadow.
+ * Glow: active pills, the streak and badge chips and the focused input box have a rose shadow.
  * States: every button has hover, pressed, focused and disabled looks.
+ * Text: nothing is smaller than 12 px. Big numbers use Segoe UI (its 0 never looks like an O);
+ * Georgia is kept for titles only.
  *
- * The first block also re-colors JavaFX's own controls (scroll bars, date picker, tooltips, pop-up
- * lists) by changing -fx-base, so nothing in the app is left light by accident.
+ * The first block also re-colors JavaFX's own controls (scroll bars, date picker, tooltips,
+ * pop-up lists) by changing -fx-base and the selection colors, so nothing is left light.
  */
 
 /* ------------------------------------------------------------------ page */
@@ -46,6 +48,9 @@
     -fx-accent: #B85C7D;
     -fx-focus-color: #D97A9C;
     -fx-faint-focus-color: #D97A9C33;
+    -fx-selection-bar: #B85C7D;
+    -fx-selection-bar-non-focused: #4A2A38;
+    -fx-cell-focus-inner-border: #D97A9C;
     -fx-text-background-color: #F6EDE6;
     -fx-text-base-color: #F6EDE6;
     -fx-text-inner-color: #F6EDE6;
@@ -58,22 +63,41 @@
 .pnp-scroll { -fx-padding: 0; }
 .pnp-scroll > .corner { -fx-background-color: transparent; }
 
-.pnp-title { -fx-font-family: "Georgia"; -fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
+.pnp-title {
+    -fx-font-family: "Georgia"; -fx-font-size: 28px; -fx-font-weight: bold;
+    -fx-text-fill: -pnp-cream;
+}
 .pnp-subtitle { -fx-font-size: 13.5px; -fx-text-fill: -pnp-muted; }
 .pnp-section { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -pnp-text; }
 .pnp-muted { -fx-text-fill: -pnp-muted; }
 .pnp-empty { -fx-text-fill: -pnp-muted; -fx-font-style: italic; }
-.pnp-field-label { -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: -pnp-text; }
-.pnp-mono { -fx-font-family: "Consolas"; -fx-font-size: 12px; -fx-background-color: -pnp-bg2;
-            -fx-background-radius: 10; -fx-padding: 12; -fx-text-fill: -pnp-cream; }
-.pnp-overline { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -pnp-accent-hi; }
+.pnp-field-label { -fx-font-size: 12.5px; -fx-font-weight: bold; -fx-text-fill: -pnp-text; }
+.pnp-mono {
+    -fx-font-family: "Consolas"; -fx-font-size: 12.5px; -fx-background-color: -pnp-bg2;
+    -fx-background-radius: 10; -fx-padding: 12; -fx-text-fill: -pnp-cream;
+}
+.pnp-overline { -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: -pnp-accent-hi; }
 .pnp-card-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: -pnp-text; }
-.pnp-note { -fx-background-color: -pnp-bg2; -fx-background-radius: 10; -fx-padding: 10 12 10 12;
-            -fx-text-fill: -pnp-muted; -fx-font-size: 12px; }
+.pnp-note {
+    -fx-background-color: -pnp-bg2; -fx-background-radius: 10; -fx-padding: 10 12 10 12;
+    -fx-text-fill: -pnp-muted; -fx-font-size: 12.5px;
+}
 .pnp-question { -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
 .pnp-week-title { -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
 .pnp-breakdown-title { -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
 .pnp-bold { -fx-font-weight: bold; }
+/* Text that used to be styled inline in the screens (setStyle) now has its own class. */
+.pnp-meal-name { -fx-font-weight: bold; -fx-text-fill: -pnp-text; }
+.pnp-percent { -fx-font-weight: bold; -fx-text-fill: -pnp-text; }
+.pnp-detail-label { -fx-font-weight: bold; -fx-text-fill: -pnp-muted; }
+.pnp-breakdown-name { -fx-font-weight: bold; -fx-text-fill: -pnp-text; }
+.pnp-hint { -fx-font-size: 12px; -fx-text-fill: -pnp-muted; }
+
+/* ------------------------------------------------------------------ start-up error page */
+.pnp-error-page { -fx-padding: 32; -fx-spacing: 14; }
+.pnp-error-title {
+    -fx-font-family: "Georgia"; -fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: -pnp-bad;
+}
 
 /* ------------------------------------------------------------------ top navigation bar */
 .pnp-nav {
@@ -101,35 +125,51 @@
 .pnp-avatar {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #A94B70 0%, #7E2C4C 100%);
     -fx-background-radius: 999; -fx-text-fill: white;
-    -fx-font-weight: bold; -fx-font-size: 14px; -fx-min-width: 38; -fx-min-height: 38; -fx-alignment: center;
+    -fx-font-weight: bold; -fx-font-size: 14px; -fx-min-width: 38; -fx-min-height: 38;
+    -fx-alignment: center;
     -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.40), 10, 0.1, 0, 0);
 }
 .pnp-logout {
-    -fx-background-color: transparent; -fx-background-radius: 999; -fx-border-color: -pnp-line2; -fx-border-radius: 999;
-    -fx-text-fill: -pnp-text; -fx-font-weight: bold; -fx-font-size: 12.5px; -fx-padding: 8 16 8 16; -fx-cursor: hand;
+    -fx-background-color: transparent; -fx-background-radius: 999; -fx-border-color: -pnp-line2;
+    -fx-border-radius: 999; -fx-text-fill: -pnp-text; -fx-font-weight: bold; -fx-font-size: 12.5px;
+    -fx-padding: 8 16 8 16; -fx-cursor: hand;
 }
-.pnp-logout:hover { -fx-border-color: -pnp-accent-hi; -fx-text-fill: white; -fx-background-color: #B85C7D26; }
+.pnp-logout:hover {
+    -fx-border-color: -pnp-accent-hi; -fx-text-fill: white; -fx-background-color: #B85C7D26;
+}
 .pnp-logout:focused { -fx-border-color: -pnp-accent-hi; }
 
-/* The banner under the navigation bar: a gradient with the wave picture along its bottom edge (put there by
-   Theme.waves), and on top of it the greeting, page title, subtitle and the two pills. The gradient is on the
-   banner itself so the waves show; .pnp-hero-body is the transparent text row with the padding. */
+/* The banner under the navigation bar: a gradient with the wave picture along its bottom edge
+   (put there by Theme.waves), and on top of it the greeting, page title, subtitle and the two
+   pills. The gradient is on the banner itself so the waves show; .pnp-hero-body is the
+   transparent text row with the padding. */
 .pnp-hero {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #4B1F34 0%, #2E1722 55%, #24141D 100%);
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #4B1F34 0%, #2E1722 55%,
+                                          #24141D 100%);
     -fx-border-color: transparent transparent #4A2A38 transparent;
 }
 .pnp-hero-body { -fx-padding: 18 26 34 26; }
 .pnp-hero-greeting { -fx-font-size: 13.5px; -fx-text-fill: -pnp-text; }
-.pnp-hero-title { -fx-font-family: "Georgia"; -fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
+.pnp-hero-title {
+    -fx-font-family: "Georgia"; -fx-font-size: 36px; -fx-font-weight: bold;
+    -fx-text-fill: -pnp-cream;
+}
 .pnp-hero-subtitle { -fx-font-size: 13.5px; -fx-text-fill: -pnp-muted; }
+/* Short windows (HeaderBar.setCompact): a lower banner so the page keeps the height. */
+.pnp-header-compact .pnp-nav { -fx-padding: 6 22 6 22; }
+.pnp-header-compact .pnp-hero-body { -fx-padding: 8 22 16 22; }
+.pnp-header-compact .pnp-hero-title { -fx-font-size: 26px; }
+.pnp-header-compact .pnp-hero-greeting { -fx-font-size: 12.5px; }
 .pnp-streak-chip {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #6A2B45 0%, #4A2034 100%);
     -fx-background-radius: 999; -fx-border-color: #B85C7D; -fx-border-radius: 999;
     -fx-padding: 8 16 8 16; -fx-text-fill: -pnp-text; -fx-font-size: 12.5px; -fx-font-weight: bold;
     -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.40), 14, 0.1, 0, 0);
 }
-.pnp-streak-chip.at-risk { -fx-border-color: -pnp-warn; -fx-text-fill: -pnp-warn;
-    -fx-effect: dropshadow(gaussian, rgba(227, 179, 65, 0.40), 14, 0.1, 0, 0); }
+.pnp-streak-chip.at-risk {
+    -fx-border-color: -pnp-warn; -fx-text-fill: -pnp-warn;
+    -fx-effect: dropshadow(gaussian, rgba(227, 179, 65, 0.40), 14, 0.1, 0, 0);
+}
 
 /* ------------------------------------------------------------------ cards */
 .pnp-card {
@@ -147,12 +187,17 @@
     -fx-border-color: -pnp-accent;
     -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.35), 20, 0.05, 0, 4);
 }
-.pnp-recipe-card.selected { -fx-border-color: -pnp-accent-hi; -fx-border-width: 2; -fx-background-color: -pnp-card2; }
+.pnp-recipe-card.selected {
+    -fx-border-color: -pnp-accent-hi; -fx-border-width: 2; -fx-background-color: -pnp-card2;
+}
 .pnp-photo-letter { -fx-font-size: 30px; -fx-font-weight: bold; -fx-text-fill: -pnp-accent-hi; }
 .pnp-photo-letter-small { -fx-font-size: 15px; }
 /* The featured meal on Today: a large photo beside the name and the Plan button. */
 .pnp-featured { -fx-padding: 14; -fx-spacing: 18; -fx-alignment: center-left; }
-.pnp-featured-name { -fx-font-family: "Georgia"; -fx-font-size: 26px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
+.pnp-featured-name {
+    -fx-font-family: "Georgia"; -fx-font-size: 26px; -fx-font-weight: bold;
+    -fx-text-fill: -pnp-cream;
+}
 
 /* ------------------------------------------------------------------ buttons and fields */
 .pnp-button {
@@ -165,9 +210,14 @@
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #D97A9C 0%, #A94B70 100%);
     -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.55), 16, 0.1, 0, 0);
 }
-.pnp-button:focused { -fx-background-color: #D97A9C66, #B85C7D; -fx-background-insets: -3, 0; -fx-background-radius: 999, 999; }
+.pnp-button:focused {
+    -fx-background-color: #D97A9C66, #B85C7D; -fx-background-insets: -3, 0;
+    -fx-background-radius: 999, 999;
+}
 .pnp-button:pressed { -fx-background-color: #7E2C4C; -fx-background-insets: 0; }
-.pnp-button:disabled { -fx-background-color: #4A2A38; -fx-text-fill: #8F7A84; -fx-opacity: 1; -fx-effect: null; }
+.pnp-button:disabled {
+    -fx-background-color: #4A2A38; -fx-text-fill: #8F7A84; -fx-opacity: 1; -fx-effect: null;
+}
 .pnp-button-secondary {
     -fx-background-color: transparent; -fx-background-radius: 999; -fx-border-color: -pnp-accent;
     -fx-border-radius: 999; -fx-border-width: 1.5; -fx-text-fill: -pnp-text; -fx-font-weight: bold;
@@ -176,15 +226,17 @@
 .pnp-button-secondary:hover { -fx-background-color: #B85C7D33; -fx-text-fill: white; }
 .pnp-button-secondary:focused { -fx-background-color: #B85C7D33; }
 .pnp-button-secondary:pressed { -fx-background-color: #B85C7D55; }
-.pnp-button-secondary:disabled { -fx-border-color: -pnp-line2; -fx-text-fill: -pnp-faint; -fx-opacity: 0.7; }
+.pnp-button-secondary:disabled {
+    -fx-border-color: -pnp-line2; -fx-text-fill: -pnp-faint; -fx-opacity: 0.7;
+}
 .pnp-small-button {
     -fx-background-color: transparent; -fx-text-fill: -pnp-bad; -fx-font-size: 12px;
     -fx-background-radius: 999; -fx-padding: 4 10 4 10; -fx-cursor: hand;
 }
 .pnp-small-button:hover { -fx-background-color: #F0766E26; }
 .pnp-small-add {
-    -fx-background-color: #B85C7D33; -fx-text-fill: -pnp-accent-hi; -fx-font-weight: bold; -fx-font-size: 12px;
-    -fx-background-radius: 999; -fx-padding: 4 12 4 12; -fx-cursor: hand;
+    -fx-background-color: #B85C7D33; -fx-text-fill: -pnp-accent-hi; -fx-font-weight: bold;
+    -fx-font-size: 12px; -fx-background-radius: 999; -fx-padding: 4 12 4 12; -fx-cursor: hand;
 }
 .pnp-small-add:hover { -fx-background-color: #B85C7D66; -fx-text-fill: white; }
 .pnp-button-danger {
@@ -192,8 +244,13 @@
     -fx-font-weight: bold; -fx-font-size: 13.5px; -fx-padding: 10 22 10 22; -fx-cursor: hand;
 }
 .pnp-button-danger:hover { -fx-background-color: #D9483D; }
-.pnp-button-danger:focused { -fx-background-color: #F0766E66, #C0392F; -fx-background-insets: -3, 0; -fx-background-radius: 999, 999; }
-.pnp-button-danger:disabled { -fx-background-color: #4A2A38; -fx-text-fill: #8F7A84; -fx-opacity: 1; }
+.pnp-button-danger:focused {
+    -fx-background-color: #F0766E66, #C0392F; -fx-background-insets: -3, 0;
+    -fx-background-radius: 999, 999;
+}
+.pnp-button-danger:disabled {
+    -fx-background-color: #4A2A38; -fx-text-fill: #8F7A84; -fx-opacity: 1;
+}
 .pnp-danger-card { -fx-border-color: #8C3B36; }
 .pnp-link {
     -fx-background-color: transparent; -fx-text-fill: -pnp-accent-hi; -fx-font-weight: bold;
@@ -202,6 +259,7 @@
 .pnp-link:hover { -fx-underline: true; -fx-text-fill: white; }
 .pnp-link:focused { -fx-underline: true; }
 .pnp-link:disabled { -fx-opacity: 0.45; }
+.pnp-link-small { -fx-font-size: 12px; }
 
 .pnp-field, .pnp-root .combo-box, .pnp-root .date-picker, .pnp-root .spinner {
     -fx-background-color: -pnp-bg2; -fx-background-radius: 10; -fx-border-color: -pnp-line2;
@@ -209,31 +267,150 @@
     -fx-text-fill: -pnp-text; -fx-prompt-text-fill: -pnp-faint;
 }
 .pnp-root .date-picker, .pnp-root .spinner, .pnp-root .combo-box { -fx-padding: 1 2 1 2; }
-.pnp-root .date-picker > .text-field, .pnp-root .spinner > .text-field { -fx-background-color: transparent; -fx-text-fill: -pnp-text; }
+.pnp-root .date-picker > .text-field, .pnp-root .spinner > .text-field {
+    -fx-background-color: transparent; -fx-text-fill: -pnp-text; -fx-opacity: 1;
+}
 .pnp-root .combo-box .list-cell { -fx-background-color: transparent; -fx-text-fill: -pnp-text; }
-.pnp-root .combo-box > .arrow-button, .pnp-root .date-picker > .arrow-button { -fx-background-color: transparent; }
-.pnp-root .combo-box > .arrow-button > .arrow, .pnp-root .date-picker > .arrow-button > .calendar-button { -fx-background-color: -pnp-muted; }
-.pnp-field:hover, .pnp-root .combo-box:hover, .pnp-root .date-picker:hover { -fx-border-color: -pnp-accent; }
-.pnp-field:focused, .pnp-root .combo-box:focused, .pnp-root .date-picker:focused, .pnp-root .spinner:focused {
+.pnp-root .combo-box > .arrow-button, .pnp-root .date-picker > .arrow-button {
+    -fx-background-color: transparent;
+}
+.pnp-root .combo-box > .arrow-button > .arrow,
+.pnp-root .date-picker > .arrow-button > .calendar-button {
+    -fx-background-color: -pnp-text;
+}
+.pnp-field:hover, .pnp-root .combo-box:hover, .pnp-root .date-picker:hover {
+    -fx-border-color: -pnp-accent;
+}
+.pnp-field:focused, .pnp-root .combo-box:focused, .pnp-root .date-picker:focused,
+.pnp-root .spinner:focused {
     -fx-border-color: -pnp-accent-hi; -fx-border-width: 2;
     -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.40), 9, 0.1, 0, 0);
 }
 .pnp-field:disabled { -fx-opacity: 0.6; }
-.pnp-search { -fx-font-size: 14px; -fx-padding: 11 14 11 14; -fx-background-radius: 999; -fx-border-radius: 999; }
+.pnp-search {
+    -fx-font-size: 14px; -fx-padding: 11 14 11 14; -fx-background-radius: 999;
+    -fx-border-radius: 999;
+}
 
-/* Pop-up lists and the calendar of the date picker (they open in their own small window). */
+/* ------------------------------------------------------------------ pop-up lists */
 .combo-box-popup > .list-view { -fx-background-color: #24141D; -fx-border-color: #6B3A4E; }
-.combo-box-popup .list-cell { -fx-background-color: #24141D; -fx-text-fill: #F6EDE6; -fx-padding: 7 12 7 12; }
-.combo-box-popup .list-cell:filled:hover, .combo-box-popup .list-cell:filled:selected { -fx-background-color: #8E3F5C; -fx-text-fill: white; }
-.date-picker-popup { -fx-background-color: #311B24; -fx-border-color: #6B3A4E; }
-.date-picker-popup > .month-year-pane { -fx-background-color: #3D212E; }
-.date-picker-popup .label { -fx-text-fill: #F6EDE6; }
-.date-picker-popup .day-cell { -fx-background-color: transparent; -fx-text-fill: #F6EDE6; }
-.date-picker-popup .day-cell:hover { -fx-background-color: #8E3F5C; }
-.date-picker-popup .day-cell:selected { -fx-background-color: #B85C7D; -fx-text-fill: white; }
-.date-picker-popup .day-cell:today { -fx-border-color: #D97A9C; }
-.date-picker-popup .day-name-cell, .date-picker-popup .week-number-cell { -fx-text-fill: #BFA9B1; }
-.tooltip { -fx-background-color: #3D212E; -fx-text-fill: #F6EDE6; -fx-border-color: #6B3A4E; -fx-background-radius: 8; -fx-border-radius: 8; -fx-font-size: 12px; }
+.combo-box-popup .list-cell {
+    -fx-background-color: #24141D; -fx-text-fill: #F6EDE6; -fx-padding: 7 12 7 12;
+}
+.combo-box-popup .list-cell:filled:hover, .combo-box-popup .list-cell:filled:selected {
+    -fx-background-color: #8E3F5C; -fx-text-fill: white;
+}
+
+/* ------------------------------------------------------------------ date picker calendar */
+/* The calendar of a date picker opens in its own small window. JavaFX's default sheet gives its
+   grid a light grey background; with our light text the days could not be seen. Every part of
+   the pop-up calendar is colored here: dark cells, light numbers, rose for the chosen day and a
+   cream ring for today. The selectors copy the ones of JavaFX's own sheet (modena.css). */
+.date-picker-popup {
+    -fx-background-color: #6B3A4E, #311B24;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 10, 9;
+    -fx-padding: 6;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.55), 18, 0, 0, 6);
+}
+.date-picker-popup > .month-year-pane {
+    -fx-background-color: #3D212E;
+    -fx-background-insets: 0;
+    -fx-background-radius: 8;
+    -fx-padding: 8 6 8 6;
+}
+/* the month and year spinners of the pop-up are plain, not boxes like the app's input fields
+   (.pnp-root .spinner would otherwise reach them and squeeze out their arrows) */
+.date-picker-popup > * > .spinner,
+.date-picker-popup > * > .spinner:focused,
+.date-picker-popup > * > .spinner:hover {
+    -fx-background-color: transparent; -fx-border-color: transparent; -fx-border-width: 0;
+    -fx-padding: 0; -fx-effect: null;
+}
+.date-picker-popup > * > .spinner > .label {
+    -fx-text-fill: #EAD9B8; -fx-font-weight: bold; -fx-font-size: 13.5px;
+}
+.date-picker-popup > * > .spinner > .button {
+    -fx-background-color: transparent; -fx-background-radius: 999; -fx-padding: 4 8 4 8;
+}
+.date-picker-popup > * > .spinner > .button:hover,
+.date-picker-popup > * > .spinner > .button:focused {
+    -fx-background-color: #B85C7D55;
+}
+.date-picker-popup > * > .spinner > .button > .left-arrow,
+.date-picker-popup > * > .spinner > .button > .right-arrow,
+.date-picker-popup > * > .spinner > .button:hover > .left-arrow,
+.date-picker-popup > * > .spinner > .button:hover > .right-arrow,
+.date-picker-popup > * > .spinner > .button:pressed > .left-arrow,
+.date-picker-popup > * > .spinner > .button:pressed > .right-arrow {
+    -fx-background-color: #F6EDE6; -fx-effect: null;
+}
+.date-picker-popup > .month-year-pane > .secondary-label { -fx-text-fill: #D97A9C; }
+.date-picker-popup > .calendar-grid {
+    -fx-background-color: #311B24; -fx-padding: 4 0 0 0; -fx-hgap: 2; -fx-vgap: 2;
+}
+.date-picker-popup > * > .date-cell {
+    -fx-background-color: transparent; -fx-alignment: center; -fx-opacity: 1;
+}
+.date-picker-popup > * > .day-name-cell {
+    -fx-text-fill: #EAD9B8; -fx-font-weight: bold; -fx-font-size: 12px; -fx-padding: 4 6 4 6;
+}
+.date-picker-popup > * > .week-number-cell {
+    -fx-background-color: transparent; -fx-border-color: transparent;
+    -fx-text-fill: #BFA9B1; -fx-font-size: 12px;
+}
+.date-picker-popup > * > .day-cell {
+    -fx-background: #3D212E;
+    -fx-background-color: #3D212E;
+    -fx-background-insets: 1;
+    -fx-background-radius: 7;
+    -fx-border-color: transparent;
+    -fx-text-fill: #F6EDE6;
+    -fx-font-size: 13px;
+    -fx-padding: 6 9 6 9;
+    -fx-cursor: hand;
+}
+.date-picker-popup > * > .day-cell:hover {
+    -fx-background-color: #8E3F5C; -fx-text-fill: white;
+}
+.date-picker-popup > * > .today {
+    -fx-background-color: #EAD9B8, #3D212E;
+    -fx-background-insets: 1, 3;
+    -fx-background-radius: 7, 5;
+    -fx-font-weight: bold;
+}
+/* focus ring first, so the chosen day below keeps its rose fill when it has the focus */
+.date-picker-popup > * > .day-cell:focused,
+.date-picker-popup > * > .today:focused {
+    -fx-background-color: #D97A9C, #3D212E; -fx-background-insets: 1, 2;
+}
+.date-picker-popup > * > .day-cell:focused:hover,
+.date-picker-popup > * > .today:focused:hover {
+    -fx-background-color: #8E3F5C;
+}
+.date-picker-popup > * > .selected,
+.date-picker-popup > * > .today.selected,
+.date-picker-popup > * > .selected:focused,
+.date-picker-popup > * > .today.selected:focused,
+.date-picker-popup > * > .previous-month.selected,
+.date-picker-popup > * > .next-month.selected {
+    -fx-background-color: #B85C7D; -fx-background-insets: 1; -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+.date-picker-popup > * > .previous-month,
+.date-picker-popup > * > .next-month {
+    -fx-background-color: transparent; -fx-text-fill: #8F7A84;
+}
+.date-picker-popup > * > .previous-month:hover,
+.date-picker-popup > * > .next-month:hover {
+    -fx-background-color: #4A2A38; -fx-text-fill: #F6EDE6;
+}
+.date-picker-popup > * > .day-cell:disabled { -fx-opacity: 0.4; }
+
+.tooltip {
+    -fx-background-color: #3D212E; -fx-text-fill: #F6EDE6; -fx-border-color: #6B3A4E;
+    -fx-background-radius: 8; -fx-border-radius: 8; -fx-font-size: 12.5px;
+}
 
 /* ------------------------------------------------------------------ offline banner */
 .pnp-banner {
@@ -243,11 +420,19 @@
 .pnp-banner-text { -fx-text-fill: #FFC9C4; -fx-font-size: 13px; }
 .pnp-banner .pnp-button { -fx-background-color: #C0392F; -fx-effect: null; -fx-padding: 6 16 6 16; }
 
+/* ------------------------------------------------------------------ undo bar (Meal Plan) */
+.pnp-undo-bar {
+    -fx-background-color: #3D212E; -fx-background-radius: 12; -fx-border-color: #6B3A4E;
+    -fx-border-radius: 12; -fx-padding: 8 14 8 14; -fx-spacing: 12; -fx-alignment: center-left;
+}
+
 /* ------------------------------------------------------------------ chips */
 .pnp-chip {
-    -fx-background-radius: 999; -fx-padding: 4 11 4 11; -fx-font-size: 11.5px; -fx-font-weight: bold;
+    -fx-background-radius: 999; -fx-padding: 4 11 4 11; -fx-font-size: 12px; -fx-font-weight: bold;
 }
-.pnp-root .chip-neutral, .pnp-root .chip-slot { -fx-background-color: #FFFFFF1F; -fx-text-fill: -pnp-text; }
+.pnp-root .chip-neutral, .pnp-root .chip-slot {
+    -fx-background-color: #FFFFFF1F; -fx-text-fill: -pnp-text;
+}
 .pnp-root .chip-tag { -fx-background-color: #B85C7D40; -fx-text-fill: -pnp-cream; }
 .pnp-root .chip-healthy { -fx-background-color: #5CC38F2E; -fx-text-fill: #8FE3B8; }
 .pnp-root .chip-moderate { -fx-background-color: #E3B3412E; -fx-text-fill: #F2CE73; }
@@ -257,15 +442,18 @@
 .pnp-root .chip-slow { -fx-background-color: #F0766E2E; -fx-text-fill: #FF9D96; }
 .pnp-ingredient {
     -fx-background-color: -pnp-bg2; -fx-background-radius: 8; -fx-border-color: -pnp-line;
-    -fx-border-radius: 8; -fx-padding: 3 8 3 8; -fx-font-size: 11.5px; -fx-text-fill: -pnp-text;
+    -fx-border-radius: 8; -fx-padding: 3 8 3 8; -fx-font-size: 12px; -fx-text-fill: -pnp-text;
 }
 
-/* ------------------------------------------------------------------ recipe steps (always shown, numbered) */
-.pnp-steps { -fx-background-color: -pnp-bg2; -fx-background-radius: 12; -fx-border-color: -pnp-line;
-             -fx-border-radius: 12; -fx-padding: 12; }
+/* ------------------------------------------------------------------ recipe steps */
+.pnp-steps {
+    -fx-background-color: -pnp-bg2; -fx-background-radius: 12; -fx-border-color: -pnp-line;
+    -fx-border-radius: 12; -fx-padding: 12;
+}
 .pnp-step-number {
     -fx-min-width: 22; -fx-min-height: 22; -fx-alignment: center; -fx-background-radius: 999;
-    -fx-background-color: -pnp-accent; -fx-text-fill: white; -fx-font-size: 11px; -fx-font-weight: bold;
+    -fx-background-color: -pnp-accent; -fx-text-fill: white; -fx-font-size: 12px;
+    -fx-font-weight: bold;
 }
 
 /* ------------------------------------------------------------------ status lines */
@@ -274,70 +462,121 @@
 .pnp-status.error { -fx-text-fill: -pnp-bad; -fx-font-weight: bold; }
 .pnp-status.info { -fx-text-fill: -pnp-muted; }
 /* A status line shown as a banner (Import): green when it worked, red when it failed. */
-.pnp-status-banner { -fx-font-size: 13px; -fx-background-radius: 10; -fx-border-radius: 10; -fx-padding: 10 14 10 14; }
-.pnp-status-banner.info { -fx-background-color: -pnp-bg2; -fx-border-color: -pnp-line; -fx-text-fill: -pnp-muted; }
-.pnp-status-banner.ok { -fx-background-color: #5CC38F26; -fx-border-color: #3E9A6D; -fx-text-fill: #A8EBC9; }
-.pnp-status-banner.error { -fx-background-color: #F0766E26; -fx-border-color: #8C3B36; -fx-text-fill: #FFC9C4; }
+.pnp-status-banner {
+    -fx-font-size: 13px; -fx-background-radius: 10; -fx-border-radius: 10;
+    -fx-padding: 10 14 10 14;
+}
+.pnp-status-banner.info {
+    -fx-background-color: -pnp-bg2; -fx-border-color: -pnp-line; -fx-text-fill: -pnp-muted;
+}
+.pnp-status-banner.ok {
+    -fx-background-color: #5CC38F26; -fx-border-color: #3E9A6D; -fx-text-fill: #A8EBC9;
+}
+.pnp-status-banner.error {
+    -fx-background-color: #F0766E26; -fx-border-color: #8C3B36; -fx-text-fill: #FFC9C4;
+}
 
 /* ------------------------------------------------------------------ stat cards */
 .pnp-stat-card { -fx-padding: 14 18 16 18; }
-.pnp-stat-value { -fx-font-family: "Georgia"; -fx-font-size: 34px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
-.pnp-stat-label { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -pnp-text; }
-.pnp-badge { -fx-text-fill: -pnp-cream; -fx-font-weight: bold; -fx-font-size: 12px; }
+.pnp-stat-value {
+    -fx-font-family: "Segoe UI"; -fx-font-size: 32px; -fx-font-weight: bold;
+    -fx-text-fill: -pnp-cream;
+}
+.pnp-stat-label { -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: -pnp-text; }
+.pnp-badge { -fx-text-fill: -pnp-cream; -fx-font-weight: bold; -fx-font-size: 12.5px; }
 
-/* ------------------------------------------------------------------ Today: streak card, week strip and slots */
+/* ------------------------------------------------------------------ Today: streak and week */
 .pnp-streak-card {
     -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #3D212E 0%, #311B24 70%);
     -fx-border-color: #6B3A4E;
 }
-.pnp-streak-number { -fx-font-family: "Georgia"; -fx-font-size: 56px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
+.pnp-streak-number {
+    -fx-font-family: "Segoe UI"; -fx-font-size: 54px; -fx-font-weight: bold;
+    -fx-text-fill: -pnp-cream;
+}
 .pnp-streak-card.at-risk { -fx-border-color: -pnp-warn; -fx-border-width: 2; }
-.pnp-week-label { -fx-font-size: 10.5px; -fx-text-fill: -pnp-muted; -fx-font-weight: bold; }
+.pnp-week-label { -fx-font-size: 12px; -fx-text-fill: -pnp-text; -fx-font-weight: bold; }
+/* The week strip: a day without a meal is a plain dark circle, a day with a meal is rose and
+   carries a check mark under the number, so the meaning is not given by color alone. */
 .pnp-weekday {
-    -fx-min-width: 38; -fx-min-height: 38; -fx-alignment: center; -fx-background-radius: 999;
-    -fx-background-color: #FFFFFF14; -fx-text-fill: -pnp-muted; -fx-font-weight: bold;
+    -fx-min-width: 40; -fx-min-height: 40; -fx-alignment: center; -fx-background-radius: 999;
+    -fx-background-color: #4A2A38; -fx-border-color: #6B3A4E; -fx-border-radius: 999;
+    -fx-text-fill: -pnp-text; -fx-font-weight: bold; -fx-font-size: 13px;
 }
 .pnp-weekday.has-meals {
-    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #A94B70 0%, #7E2C4C 100%);
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #C9668B 0%, #8E3F5C 100%);
+    -fx-border-color: #D97A9C;
     -fx-text-fill: white;
 }
-.pnp-weekday.is-today { -fx-border-color: -pnp-text; -fx-border-width: 2; -fx-border-radius: 999; }
+.pnp-weekday.is-today { -fx-border-color: -pnp-cream; -fx-border-width: 2.5; }
+.pnp-week-mark { -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: -pnp-accent-hi; }
 .pnp-slot-heading { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: -pnp-accent-hi; }
-.pnp-slot-section { -fx-padding: 8 0 8 0; -fx-border-color: transparent transparent #4A2A38 transparent; }
+.pnp-slot-section {
+    -fx-padding: 8 0 8 0; -fx-border-color: transparent transparent #4A2A38 transparent;
+}
 
 /* ------------------------------------------------------------------ Meal Plan calendar */
-.pnp-month-title { -fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
-.pnp-weekday-head { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: -pnp-muted; }
+/* Each day is a raised tile that stands out from the card: a lighter tile, a visible edge and
+   bold light numbers. A day with meals is filled with the color of its healthy level AND shows
+   a letter (H, M or I) under the number, with a tooltip that says it in words. */
+.pnp-month-title { -fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
+.pnp-weekday-head { -fx-font-size: 12.5px; -fx-font-weight: bold; -fx-text-fill: -pnp-text; }
+.pnp-weekday-head.weekend { -fx-text-fill: -pnp-accent-hi; }
 .pnp-nav-button {
-    -fx-background-color: #B85C7D33; -fx-background-radius: 999; -fx-text-fill: -pnp-text;
+    -fx-background-color: #B85C7D40; -fx-background-radius: 999; -fx-text-fill: -pnp-text;
     -fx-font-weight: bold; -fx-padding: 6 14 6 14; -fx-cursor: hand;
 }
-.pnp-nav-button:hover { -fx-background-color: #B85C7D66; -fx-text-fill: white; }
+.pnp-nav-button:hover { -fx-background-color: #B85C7D80; -fx-text-fill: white; }
 .pnp-day {
-    -fx-background-color: -pnp-bg2; -fx-background-radius: 12; -fx-border-color: -pnp-line;
-    -fx-border-radius: 12; -fx-text-fill: -pnp-text; -fx-cursor: hand;
+    -fx-background-color: #4A2A38;
+    -fx-background-radius: 12;
+    -fx-border-color: #7A4A5E;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 12;
+    -fx-text-fill: -pnp-text;
+    -fx-padding: 4 2 4 2;
+    -fx-cursor: hand;
 }
-.pnp-day:hover { -fx-border-color: -pnp-accent; }
-.pnp-day.day-healthy { -fx-background-color: #5CC38F33; -fx-border-color: #3E9A6D; }
-.pnp-day.day-moderate { -fx-background-color: #E3B34133; -fx-border-color: #B58B22; }
-.pnp-day.day-indulgent { -fx-background-color: #F0766E33; -fx-border-color: #B5504A; }
-.pnp-day.day-today { -fx-border-color: -pnp-text; -fx-border-width: 2; }
-.pnp-day.day-selected { -fx-border-color: -pnp-accent-hi; -fx-border-width: 2.5; -fx-font-weight: bold;
-    -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.45), 10, 0.1, 0, 0); }
-.pnp-legend-swatch { -fx-min-width: 14; -fx-min-height: 14; -fx-background-radius: 4; }
-.legend-healthy { -fx-background-color: #5CC38F55; -fx-border-color: #5CC38F; -fx-border-radius: 4; }
-.legend-moderate { -fx-background-color: #E3B34155; -fx-border-color: #E3B341; -fx-border-radius: 4; }
-.legend-indulgent { -fx-background-color: #F0766E55; -fx-border-color: #F0766E; -fx-border-radius: 4; }
-.pnp-legend-ring { -fx-min-width: 14; -fx-min-height: 14; -fx-border-color: -pnp-text; -fx-border-width: 2; -fx-border-radius: 4; }
+.pnp-day:hover { -fx-background-color: #5A3346; -fx-border-color: -pnp-accent-hi; }
+.pnp-day-number { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: -pnp-text; }
+.pnp-day-mark { -fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: white; }
+.pnp-day.day-healthy { -fx-background-color: #2E7A57; -fx-border-color: #5CC38F; }
+.pnp-day.day-moderate { -fx-background-color: #8A6A1E; -fx-border-color: #E3B341; }
+.pnp-day.day-indulgent { -fx-background-color: #8E3833; -fx-border-color: #F0766E; }
+.pnp-day.day-today { -fx-border-color: -pnp-cream; -fx-border-width: 3; }
+.pnp-day.day-selected {
+    -fx-border-color: white; -fx-border-width: 3;
+    -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.75), 14, 0.2, 0, 0);
+}
+.pnp-legend-swatch { -fx-min-width: 16; -fx-min-height: 16; -fx-background-radius: 4; }
+.pnp-legend-text { -fx-font-size: 12.5px; -fx-text-fill: -pnp-text; }
+.legend-healthy { -fx-background-color: #2E7A57; -fx-border-color: #5CC38F; -fx-border-radius: 4; }
+.legend-moderate { -fx-background-color: #8A6A1E; -fx-border-color: #E3B341; -fx-border-radius: 4; }
+.legend-indulgent {
+    -fx-background-color: #8E3833; -fx-border-color: #F0766E; -fx-border-radius: 4;
+}
+.pnp-legend-ring {
+    -fx-min-width: 16; -fx-min-height: 16; -fx-border-color: -pnp-cream; -fx-border-width: 2.5;
+    -fx-border-radius: 4;
+}
+/* The day card: the day's totals (worked out recursively) and the cooking order (a queue). */
+.pnp-day-totals { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
+.pnp-queue-box {
+    -fx-background-color: -pnp-bg2; -fx-background-radius: 12; -fx-border-color: -pnp-line;
+    -fx-border-radius: 12; -fx-padding: 10 12 10 12; -fx-spacing: 6;
+}
+.pnp-queue-next { -fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: -pnp-text; }
 
-/* ------------------------------------------------------------------ toggles, progress, drop zone */
+/* ------------------------------------------------------------ toggles, progress, drop zone */
 .pnp-toggle {
     -fx-background-color: transparent; -fx-border-color: -pnp-line2; -fx-background-radius: 999;
     -fx-border-radius: 999; -fx-padding: 7 16 7 16; -fx-text-fill: -pnp-text; -fx-cursor: hand;
 }
 .pnp-toggle:hover { -fx-background-color: #B85C7D33; }
-.pnp-toggle:selected {
-    -fx-background-color: -pnp-text; -fx-border-color: -pnp-text; -fx-text-fill: #311B24; -fx-font-weight: bold;
+/* The chosen toggle looks like the open page's pill: rose, not white. */
+.pnp-toggle:selected, .pnp-toggle:selected:focused {
+    -fx-background-color: linear-gradient(from 0% 0% to 100% 100%, #A94B70 0%, #7E2C4C 100%);
+    -fx-border-color: -pnp-accent-hi; -fx-text-fill: white; -fx-font-weight: bold;
 }
 .pnp-progress > .track { -fx-background-color: #FFFFFF1F; -fx-background-radius: 999; }
 .pnp-progress > .bar {
@@ -345,9 +584,13 @@
     -fx-background-radius: 999; -fx-background-insets: 0; -fx-padding: 0.4em;
 }
 .pnp-mini-bar > .track { -fx-background-color: #FFFFFF1F; -fx-background-radius: 999; }
-.pnp-mini-bar > .bar { -fx-background-radius: 999; -fx-background-insets: 0; -fx-background-color: -pnp-accent; }
+.pnp-mini-bar > .bar {
+    -fx-background-radius: 999; -fx-background-insets: 0; -fx-background-color: -pnp-accent;
+}
 .pnp-mini-bar.bar-healthy > .bar, .pnp-mini-bar.bar-quick > .bar { -fx-background-color: #4CB782; }
-.pnp-mini-bar.bar-moderate > .bar, .pnp-mini-bar.bar-average > .bar { -fx-background-color: #E3B341; }
+.pnp-mini-bar.bar-moderate > .bar, .pnp-mini-bar.bar-average > .bar {
+    -fx-background-color: #E3B341;
+}
 .pnp-mini-bar.bar-indulgent > .bar, .pnp-mini-bar.bar-slow > .bar { -fx-background-color: #E5655C; }
 .pnp-mini-bar.bar-breakfast > .bar { -fx-background-color: #E3B341; }
 .pnp-mini-bar.bar-lunch > .bar { -fx-background-color: #4CB782; }
@@ -355,19 +598,29 @@
 .pnp-mini-bar.bar-snack > .bar { -fx-background-color: #D9A0B8; }
 .pnp-progress { -fx-pref-height: 12; }
 .pnp-drop {
-    -fx-background-color: #B85C7D14; -fx-border-color: -pnp-accent; -fx-border-style: segments(9, 7);
-    -fx-border-width: 2; -fx-border-radius: 16; -fx-background-radius: 16; -fx-padding: 28 22 28 22;
-    -fx-spacing: 8;
+    -fx-background-color: #B85C7D14; -fx-border-color: -pnp-accent;
+    -fx-border-style: segments(9, 7);
+    -fx-border-width: 2; -fx-border-radius: 16; -fx-background-radius: 16;
+    -fx-padding: 28 22 28 22; -fx-spacing: 8;
 }
 .pnp-drop:hover { -fx-background-color: #B85C7D2E; }
 .pnp-drop-title { -fx-font-size: 17px; -fx-font-weight: bold; -fx-text-fill: -pnp-cream; }
-.pnp-drop.drag-over { -fx-border-style: solid; -fx-border-width: 3; -fx-background-color: #B85C7D40; }
-.pnp-drop.has-file, .pnp-drop.has-file:hover { -fx-border-color: #4CB782; -fx-border-style: solid; -fx-background-color: #5CC38F1A; }
+.pnp-drop.drag-over {
+    -fx-border-style: solid; -fx-border-width: 3; -fx-background-color: #B85C7D40;
+}
+.pnp-drop.has-file, .pnp-drop.has-file:hover {
+    -fx-border-color: #4CB782; -fx-border-style: solid; -fx-background-color: #5CC38F1A;
+}
 
 /* ------------------------------------------------------------------ shopping list */
-.pnp-group-header { -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: -pnp-accent-hi; -fx-padding: 6 0 2 0; }
+.pnp-group-header {
+    -fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: -pnp-accent-hi; -fx-padding: 6 0 2 0;
+}
 .pnp-check { -fx-cursor: hand; -fx-text-fill: -pnp-text; }
-.pnp-check > .box { -fx-background-color: -pnp-line2, -pnp-bg2; -fx-background-insets: 0, 1.5; -fx-background-radius: 5, 4; }
+.pnp-check > .box {
+    -fx-background-color: -pnp-line2, -pnp-bg2; -fx-background-insets: 0, 1.5;
+    -fx-background-radius: 5, 4;
+}
 .pnp-check:selected > .box { -fx-background-color: -pnp-accent-hi, -pnp-accent; }
 .pnp-check:selected > .box > .mark { -fx-background-color: white; }
 .pnp-check-done .text { -fx-strikethrough: true; -fx-fill: #8F7A84; }
@@ -378,38 +631,81 @@
 .pnp-chart .chart-content { -fx-background-color: transparent; }
 .pnp-chart .chart-plot-background { -fx-background-color: transparent; }
 .pnp-chart .chart-horizontal-grid-lines { -fx-stroke: #FFFFFF1A; }
-.pnp-chart .chart-horizontal-zero-line, .pnp-chart .chart-vertical-zero-line { -fx-stroke: #FFFFFF33; }
-.pnp-chart .axis { -fx-tick-label-fill: #BFA9B1; }
+.pnp-chart .chart-horizontal-zero-line, .pnp-chart .chart-vertical-zero-line {
+    -fx-stroke: #FFFFFF33;
+}
+.pnp-chart .axis { -fx-tick-label-fill: #D9C7CE; -fx-tick-label-font-size: 12px; }
 .pnp-chart .axis-label { -fx-font-weight: bold; -fx-text-fill: -pnp-accent-hi; }
 .pnp-chart .chart-legend { -fx-background-color: transparent; }
 .pnp-chart .chart-legend-item { -fx-text-fill: -pnp-text; }
 .pnp-chart .chart-bar:hover { -fx-opacity: 0.8; }
-.group-healthy_level .default-color0.chart-bar, .group-healthy_level .chart-legend-item-symbol.default-color0 { -fx-bar-fill: #4CB782; -fx-background-color: #4CB782; }
-.group-healthy_level .default-color1.chart-bar, .group-healthy_level .chart-legend-item-symbol.default-color1 { -fx-bar-fill: #E3B341; -fx-background-color: #E3B341; }
-.group-healthy_level .default-color2.chart-bar, .group-healthy_level .chart-legend-item-symbol.default-color2 { -fx-bar-fill: #E5655C; -fx-background-color: #E5655C; }
-.group-prep_time .default-color0.chart-bar, .group-prep_time .chart-legend-item-symbol.default-color0 { -fx-bar-fill: #4CB782; -fx-background-color: #4CB782; }
-.group-prep_time .default-color1.chart-bar, .group-prep_time .chart-legend-item-symbol.default-color1 { -fx-bar-fill: #E3B341; -fx-background-color: #E3B341; }
-.group-prep_time .default-color2.chart-bar, .group-prep_time .chart-legend-item-symbol.default-color2 { -fx-bar-fill: #E5655C; -fx-background-color: #E5655C; }
-.group-meal_slot .default-color0.chart-bar, .group-meal_slot .chart-legend-item-symbol.default-color0 { -fx-bar-fill: #E3B341; -fx-background-color: #E3B341; }
-.group-meal_slot .default-color1.chart-bar, .group-meal_slot .chart-legend-item-symbol.default-color1 { -fx-bar-fill: #4CB782; -fx-background-color: #4CB782; }
-.group-meal_slot .default-color2.chart-bar, .group-meal_slot .chart-legend-item-symbol.default-color2 { -fx-bar-fill: #B85C7D; -fx-background-color: #B85C7D; }
-.group-meal_slot .default-color3.chart-bar, .group-meal_slot .chart-legend-item-symbol.default-color3 { -fx-bar-fill: #D9A0B8; -fx-background-color: #D9A0B8; }
+.group-healthy_level .default-color0.chart-bar,
+.group-healthy_level .chart-legend-item-symbol.default-color0 {
+    -fx-bar-fill: #4CB782; -fx-background-color: #4CB782;
+}
+.group-healthy_level .default-color1.chart-bar,
+.group-healthy_level .chart-legend-item-symbol.default-color1 {
+    -fx-bar-fill: #E3B341; -fx-background-color: #E3B341;
+}
+.group-healthy_level .default-color2.chart-bar,
+.group-healthy_level .chart-legend-item-symbol.default-color2 {
+    -fx-bar-fill: #E5655C; -fx-background-color: #E5655C;
+}
+.group-prep_time .default-color0.chart-bar,
+.group-prep_time .chart-legend-item-symbol.default-color0 {
+    -fx-bar-fill: #4CB782; -fx-background-color: #4CB782;
+}
+.group-prep_time .default-color1.chart-bar,
+.group-prep_time .chart-legend-item-symbol.default-color1 {
+    -fx-bar-fill: #E3B341; -fx-background-color: #E3B341;
+}
+.group-prep_time .default-color2.chart-bar,
+.group-prep_time .chart-legend-item-symbol.default-color2 {
+    -fx-bar-fill: #E5655C; -fx-background-color: #E5655C;
+}
+.group-meal_slot .default-color0.chart-bar,
+.group-meal_slot .chart-legend-item-symbol.default-color0 {
+    -fx-bar-fill: #E3B341; -fx-background-color: #E3B341;
+}
+.group-meal_slot .default-color1.chart-bar,
+.group-meal_slot .chart-legend-item-symbol.default-color1 {
+    -fx-bar-fill: #4CB782; -fx-background-color: #4CB782;
+}
+.group-meal_slot .default-color2.chart-bar,
+.group-meal_slot .chart-legend-item-symbol.default-color2 {
+    -fx-bar-fill: #B85C7D; -fx-background-color: #B85C7D;
+}
+.group-meal_slot .default-color3.chart-bar,
+.group-meal_slot .chart-legend-item-symbol.default-color3 {
+    -fx-bar-fill: #D9A0B8; -fx-background-color: #D9A0B8;
+}
 
-/* ------------------------------------------------------------------ log in, sign up, forgot password */
-.pnp-auth { -fx-background-color: radial-gradient(center 50% 35%, radius 75%, #4B1F34 0%, #1A0F14 100%); }
+/* ------------------------------------------------------------------ log in, sign up, forgot */
+.pnp-auth {
+    -fx-background-color: radial-gradient(center 50% 35%, radius 75%, #4B1F34 0%, #1A0F14 100%);
+}
 .pnp-auth-card {
-    -fx-padding: 34 36 30 36; -fx-background-radius: 20; -fx-border-radius: 20;
+    -fx-padding: 30 36 26 36; -fx-background-radius: 20; -fx-border-radius: 20;
     -fx-border-color: -pnp-line2; -fx-border-width: 1;
     -fx-background-color: -pnp-card;
     -fx-effect: dropshadow(gaussian, rgba(217, 122, 156, 0.30), 36, 0.05, 0, 8);
 }
-.pnp-auth-card .pnp-field { -fx-padding: 10 14 10 14; -fx-font-size: 14px; }
+.pnp-auth-card .pnp-field {
+    -fx-padding: 10 14 10 14; -fx-font-size: 14px; -fx-pref-height: 42; -fx-min-height: 42;
+}
 .pnp-auth-card .pnp-button { -fx-padding: 12 20 12 20; -fx-font-size: 14.5px; }
+/* Sign up: the boxes of a two-column row (Age and Gender, Password and Confirm) are the same
+   height, so the drop-down list never looks shorter than the text box beside it. */
+.pnp-auth-card .combo-box { -fx-pref-height: 42; -fx-min-height: 42; }
 
 /* ------------------------------------------------------------------ scroll bars */
 .pnp-scroll .scroll-bar { -fx-background-color: transparent; }
 .pnp-scroll .scroll-bar .track { -fx-background-color: transparent; }
 .pnp-scroll .scroll-bar .thumb { -fx-background-color: #6B3A4E; -fx-background-radius: 999; }
 .pnp-scroll .scroll-bar .thumb:hover { -fx-background-color: #B85C7D; }
-.pnp-scroll .scroll-bar .increment-button, .pnp-scroll .scroll-bar .decrement-button { -fx-padding: 0; -fx-background-color: transparent; }
-.pnp-scroll .scroll-bar .increment-arrow, .pnp-scroll .scroll-bar .decrement-arrow { -fx-padding: 0; -fx-shape: " "; }
+.pnp-scroll .scroll-bar .increment-button, .pnp-scroll .scroll-bar .decrement-button {
+    -fx-padding: 0; -fx-background-color: transparent;
+}
+.pnp-scroll .scroll-bar .increment-arrow, .pnp-scroll .scroll-bar .decrement-arrow {
+    -fx-padding: 0; -fx-shape: " ";
+}

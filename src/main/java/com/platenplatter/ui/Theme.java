@@ -4,7 +4,11 @@ import com.platenplatter.model.HealthyLevel;
 import com.platenplatter.model.MealSlot;
 import com.platenplatter.model.PrepTier;
 import java.net.URL;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import javafx.animation.Animation;
 import javafx.animation.Interpolator;
@@ -19,6 +23,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.ButtonBase;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -27,25 +32,33 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
-import javafx.scene.shape.Rectangle;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
+import javafx.util.StringConverter;
 
 /**
  * The look of the app in one place: loads platenplatter.css, makes the colored chips,
  * colors the status lines and shows the team logo.
- * Dark burgundy theme: background #1A0F14, cards #311B24, accent rose #B85C7D, text off-white #F6EDE6,
+ * Dark burgundy theme: background #1A0F14, cards #311B24, accent rose #B85C7D,
+ * text off-white #F6EDE6,
  * titles soft gold #EAD9B8. Every color lives at the top of platenplatter.css.
- * It also loads the small picture assets (chef hat, food, dishes, meal, streak, trophy ...) from the icons folder.
+ * It also loads the small picture assets (chef hat, food, dishes, meal, streak, trophy ...) from
+ * the icons folder.
  */
 public final class Theme {
     private static final String CSS = "/com/platenplatter/ui/platenplatter.css";
     private static final String LOGO = "/com/platenplatter/ui/logo.png";
     private static final String ICONS = "/com/platenplatter/ui/icons/";
-    private static final Map<String, Image> ICON_CACHE = new HashMap<String, Image>();   // each picture is read once
+    // each picture is read once
+    private static final Map<String, Image> ICON_CACHE = new HashMap<String, Image>();
     private static final Duration MOTION = Duration.millis(140);
-    private static final double SINK = 0.08;                   // how much of the wave picture sinks below the banner edge
+    // how much of the wave picture sinks below the banner edge
+    private static final double SINK = 0.08;
+    /** The one date format of the app, the same as TextFormat.shortDate: "Sat, 14 Nov 2026". */
+    private static final DateTimeFormatter DATE =
+            DateTimeFormatter.ofPattern("EEE, d MMM yyyy", Locale.ENGLISH);
 
     /** The kind of message a status line shows: grey, green or red. */
     public enum Kind { INFO, OK, ERROR }
@@ -65,7 +78,8 @@ public final class Theme {
     /** The team logo at the given height, or an empty view if the picture is missing. */
     public static ImageView logo(double height) {
         URL url = Theme.class.getResource(LOGO);
-        ImageView view = url == null ? new ImageView() : new ImageView(new Image(url.toExternalForm()));
+        ImageView view = url == null ? new ImageView()
+                : new ImageView(new Image(url.toExternalForm()));
         view.setFitHeight(height);
         view.setPreserveRatio(true);
         view.setSmooth(true);
@@ -79,7 +93,8 @@ public final class Theme {
     }
 
     public static Label healthChip(HealthyLevel level) {
-        return chip(level == null ? "?" : level.getLabel(), level == null ? "chip-neutral" : "chip-" + level.name().toLowerCase());
+        return chip(level == null ? "?" : level.getLabel(),
+                level == null ? "chip-neutral" : "chip-" + level.name().toLowerCase());
     }
 
     public static Label slotChip(MealSlot slot) {
@@ -87,7 +102,58 @@ public final class Theme {
     }
 
     public static Label tierChip(PrepTier tier) {
-        return chip(tier == null ? "?" : tier.getLabel(), tier == null ? "chip-neutral" : "chip-" + tier.name().toLowerCase());
+        return chip(tier == null ? "?" : tier.getLabel(),
+                tier == null ? "chip-neutral" : "chip-" + tier.name().toLowerCase());
+    }
+
+    /**
+     * A small bold label above an input box. setLabelFor ties the two together, so a screen reader
+     * reads the label for the box (a prompt text alone disappears as soon as the user types).
+     */
+    public static VBox labeled(String text, Node field) {
+        Label label = text(text, "pnp-field-label");
+        label.setLabelFor(field);
+        return new VBox(4, label, field);
+    }
+
+    /**
+     * Makes a date picker show the app's one date format ("Sat, 14 Nov 2026") instead of the
+     * computer's own (09/11/2026). The day is picked on the calendar, not typed, so a wrongly
+     * typed date can never reach the program.
+     */
+    public static void dateFormat(DatePicker picker) {
+        picker.setEditable(false);
+        picker.setConverter(new StringConverter<LocalDate>() {
+            @Override
+            public String toString(LocalDate date) {
+                return date == null ? "" : date.format(DATE);
+            }
+
+            @Override
+            public LocalDate fromString(String text) {
+                if (text == null || text.isBlank()) {
+                    return null;
+                }
+                try {
+                    return LocalDate.parse(text.trim(), DATE);
+                } catch (DateTimeParseException notOurFormat) {
+                    return picker.getValue();          // keep the day that was there
+                }
+            }
+        });
+    }
+
+    /**
+     * The page shown when the app cannot start: the same dark theme, a title and a short reason.
+     */
+    public static Parent errorPage(String title, String reason) {
+        Label heading = text(title, "pnp-error-title");
+        Label detail = text(reason, "pnp-muted");
+        detail.setWrapText(true);
+        VBox page = new VBox(heading, detail);
+        page.getStyleClass().add("pnp-error-page");
+        apply(page);
+        return page;
     }
 
     /** A label with a style class, the way most screens make their text. */
@@ -97,7 +163,10 @@ public final class Theme {
         return label;
     }
 
-    /** A small picture from the icons folder (for example "streak" or "trophy") at the given height; empty if missing. */
+    /**
+     * A small picture from the icons folder (for example "streak" or "trophy") at the given height;
+     * empty if missing.
+     */
     public static ImageView icon(String name, double height) {
         ImageView view = new ImageView();
         swapIcon(view, name);
@@ -107,7 +176,10 @@ public final class Theme {
         return view;
     }
 
-    /** Shows another icons-folder picture in an existing view (the banner changes its picture for each page). */
+    /**
+     * Shows another icons-folder picture in an existing view (the banner changes its picture for
+     * each page).
+     */
     public static void swapIcon(ImageView view, String name) {
         Image image = ICON_CACHE.get(name);
         if (image == null) {
@@ -142,8 +214,12 @@ public final class Theme {
         return box;
     }
 
-    /** A faint, mouse-transparent picture meant to sit on the right side of a StackPane (see withWatermark). */
-    public static ImageView watermark(String iconName, double height, double opacity, double rightMargin) {
+    /**
+     * A faint, mouse-transparent picture meant to sit on the right side of a StackPane (see
+     * withWatermark).
+     */
+    public static ImageView watermark(String iconName, double height, double opacity,
+            double rightMargin) {
         ImageView mark = icon(iconName, height);
         mark.setOpacity(opacity);
         mark.setMouseTransparent(true);
@@ -153,35 +229,42 @@ public final class Theme {
     }
 
     /**
-     * Puts a faint picture behind a node, on its right side (the chef hat in the banner, the botanical
-     * drawing on the featured meal). The picture ignores the mouse, so buttons on top stay clickable.
+     * Puts a faint picture behind a node, on its right side (the chef hat in the banner, the
+     * botanical
+     * drawing on the featured meal). The picture ignores the mouse, so buttons on top stay
+     * clickable.
      */
-    public static StackPane withWatermark(Node content, String iconName, double height, double opacity, double rightMargin) {
+    public static StackPane withWatermark(Node content, String iconName, double height,
+            double opacity, double rightMargin) {
         StackPane stack = new StackPane(watermark(iconName, height, opacity, rightMargin), content);
         stack.setAlignment(Pos.CENTER_LEFT);
         return stack;
     }
 
     /**
-     * The wave picture along the bottom of a banner. It comes in two pieces cut where only waves are
-     * left: the left piece is stretched to fill the width (soft waves stay soft), and the right piece
-     * (chef hat, fork and spoon) keeps its shape. Both are as high as heightShare of the banner, sink a
-     * little below its bottom edge (what sticks out is clipped) and ignore the mouse. Put it first in a StackPane, under the text.
+     * The wave picture along the bottom of a banner. It comes in two pieces cut where only waves
+     * are
+     * left: the left piece is stretched to fill the width (soft waves stay soft), and the right
+     * piece
+     * (chef hat, fork and spoon) keeps its shape. Both are as high as heightShare of the banner,
+     * sink a
+     * little below its bottom edge (what sticks out is clipped) and ignore the mouse. Put it first
+     * in a StackPane, under the text.
      */
     public static Pane waves(double heightShare) {
         Pane pane = new Pane();
         pane.setMouseTransparent(true);
-        Rectangle clip = new Rectangle();                     // nothing may be drawn outside the banner
+        Rectangle clip = new Rectangle(); // nothing may be drawn outside the banner
         clip.widthProperty().bind(pane.widthProperty());
         clip.heightProperty().bind(pane.heightProperty());
         pane.setClip(clip);
         ImageView left = icon("wave_left", 10);
         ImageView right = icon("wave_right", 10);
         if (left.getImage() == null || right.getImage() == null) {
-            return pane;                                      // picture missing: the plain gradient shows
+            return pane; // picture missing: the plain gradient shows
         }
         left.setPreserveRatio(false);
-        left.setManaged(false);                               // the pane never grows because of the pictures
+        left.setManaged(false); // the pane never grows because of the pictures
         right.setManaged(false);
         double ratio = right.getImage().getWidth() / right.getImage().getHeight();
         DoubleBinding high = pane.heightProperty().multiply(heightShare);
@@ -189,7 +272,8 @@ public final class Theme {
         left.fitHeightProperty().bind(high);
         right.fitHeightProperty().bind(high);
         left.fitWidthProperty().bind(Bindings.createDoubleBinding(
-                () -> Math.max(0, pane.getWidth() - rightWidth.get()), pane.widthProperty(), rightWidth));
+                () -> Math.max(0, pane.getWidth() - rightWidth.get()), pane.widthProperty(),
+                        rightWidth));
         DoubleBinding top = pane.heightProperty().subtract(high.multiply(1.0 - SINK));
         left.layoutYProperty().bind(top);
         right.layoutYProperty().bind(top);
@@ -201,9 +285,11 @@ public final class Theme {
     // ------------------------------------------------------------------ button motion
 
     /**
-     * Every button grows a little when the mouse is on it and shrinks a little while it is pressed; a
+     * Every button grows a little when the mouse is on it and shrinks a little while it is pressed;
+     * a
      * recipe card also lifts. JavaFX CSS has no transitions, so this is done with short animations.
-     * One handler set on a page's root covers every button on that page, including ones added later.
+     * One handler set on a page's root covers every button on that page, including ones added
+     * later.
      */
     private static void installMotion(Parent root) {
         if (root.getProperties().putIfAbsent("motionInstalled", Boolean.TRUE) != null) {
@@ -215,7 +301,10 @@ public final class Theme {
         root.addEventHandler(MouseEvent.MOUSE_RELEASED, e -> press(e.getTarget(), false));
     }
 
-    /** The button (or recipe card) that the mouse event happened on, or null when it should stay still. */
+    /**
+     * The button (or recipe card) that the mouse event happened on, or null when it should stay
+     * still.
+     */
     private static Node animated(Object target) {
         Node node = target instanceof Node ? (Node) target : null;
         while (node != null) {
@@ -223,7 +312,8 @@ public final class Theme {
             if (ours && node.getStyleClass().contains("pnp-recipe-card")) {
                 return node;
             }
-            if (ours && node instanceof ButtonBase && !(node instanceof CheckBox) && !node.isDisabled()
+            if (ours && node instanceof ButtonBase && !(node instanceof CheckBox)
+                    && !node.isDisabled()
                     && !node.getStyleClass().contains("pnp-link")) {
                 return node;
             }
@@ -255,7 +345,7 @@ public final class Theme {
     private static void play(Node node, double scale, double lift, boolean moves) {
         Object running = node.getProperties().get("motionAnimation");
         if (running instanceof Animation) {
-            ((Animation) running).stop();                     // start from where the last one stopped
+            ((Animation) running).stop(); // start from where the last one stopped
         }
         ScaleTransition grow = new ScaleTransition(MOTION, node);
         grow.setToX(scale);
@@ -277,7 +367,10 @@ public final class Theme {
         return statCard(caption, value, unit, null);
     }
 
-    /** The same card with a small picture on its right (the trophy on Best Streak, the dishes on Meals Today). */
+    /**
+     * The same card with a small picture on its right (the trophy on Best Streak, the dishes on
+     * Meals Today).
+     */
     public static VBox statCard(String caption, Label value, Label unit, String iconName) {
         value.getStyleClass().add("pnp-stat-value");
         unit.getStyleClass().add("pnp-muted");

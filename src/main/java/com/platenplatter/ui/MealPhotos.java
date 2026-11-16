@@ -5,6 +5,7 @@ import com.platenplatter.api.MealDbClient;
 import com.platenplatter.model.SavedRecipe;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -31,36 +32,74 @@ import javafx.scene.shape.Rectangle;
  *
  * Nothing here blocks the window: JavaFX downloads each Image on its own background thread, and
  * the look-up of a planned meal's photo runs in a Task. Each picture is downloaded once and each
- * meal is looked up once, then kept in memory. All methods are called on the JavaFX thread.
+ * meal is looked up once, then kept in memory, but only the most recently used ones (an LRU map),
+ * and everything is forgotten at log-out. All methods are called on the JavaFX thread.
  */
 public final class MealPhotos {
-    /** Set this to false to run the app without food photos: every box then keeps its letter and nothing is downloaded. */
+    /**
+     * Set this to false to run the app without food photos: every box then keeps its letter and
+     * nothing is downloaded.
+     */
     public static final boolean SHOW_PHOTOS = true;
 
     private static final double CORNER = 10;
-    private static final double LOAD_SIZE = 480;                                   // enough for the biggest box
+    private static final double LOAD_SIZE = 480; // enough for the biggest box
     private static final Color PLACEHOLDER = Color.web("#4A2A38");
 
-    private static final Map<String, Image> IMAGES = new HashMap<>();              // photo address -> picture
-    private static final Map<String, String> ADDRESSES = new HashMap<>();          // mealdb_id -> photo address
+    /** At most this many pictures stay in memory; the one used longest ago is dropped first. */
+    static final int MAX_IMAGES = 120;
+    /** At most this many photo addresses are remembered. */
+    static final int MAX_ADDRESSES = 1000;
+
+    private static final Map<String, Image> IMAGES = lru(MAX_IMAGES); // photo address -> picture
+    private static final Map<String, String> ADDRESSES = lru(MAX_ADDRESSES); // mealdb_id -> address
     private static final Map<String, List<Consumer<String>>> WAITING = new HashMap<>();
     private static MealDbClient client;
 
     private MealPhotos() { }
+
+    /**
+     * A map that keeps only the most recently used entries (LRU): LinkedHashMap in access order
+     * removes its eldest entry once it holds more than max. So browsing hundreds of recipes can
+     * never fill the memory with pictures.
+     */
+    private static <K, V> Map<K, V> lru(int max) {
+        return new LinkedHashMap<K, V>(16, 0.75f, true) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
+                return size() > max;
+            }
+        };
+    }
+
+    /** Forgets every picture and address (called at log-out, so the next user starts empty). */
+    public static void clear() {
+        IMAGES.clear();
+        ADDRESSES.clear();
+        WAITING.clear();
+    }
 
     /** The one TheMealDB client of the app, used to look up the photo of a planned meal. */
     public static void useClient(MealDbClient mealDbClient) {
         client = mealDbClient;
     }
 
-    /** Remembers the photo address of a meal already read from TheMealDB, so it is never asked for again. */
+    /**
+     * Remembers the photo address of a meal already read from TheMealDB, so it is never asked for
+     * again.
+     */
     public static void remember(MealData meal) {
         if (meal != null && meal.hasPhoto() && !meal.mealDbId().isBlank()) {
             ADDRESSES.put(meal.mealDbId(), meal.thumbnail());
         }
     }
 
-    /** A photo box as wide as its parent and this many pixels high (recipe cards and the recipe panel). */
+    /**
+     * A photo box as wide as its parent and this many pixels high (recipe cards and the recipe
+     * panel).
+     */
     public static StackPane photo(String address, String mealName, double height) {
         StackPane box = placeholder(mealName);
         box.setMinHeight(height);
@@ -100,11 +139,13 @@ public final class MealPhotos {
         return box;
     }
 
-    /** Looks the photo address of a meal up once; everyone who asked meanwhile gets the same answer. */
+    /**
+     * Looks the photo address of a meal up once; everyone who asked meanwhile gets the same answer.
+     */
     private static void whenKnown(String id, Consumer<String> use) {
         List<Consumer<String>> waiting = WAITING.get(id);
         if (waiting != null) {
-            waiting.add(use);                                   // a look-up for this meal is already running
+            waiting.add(use); // a look-up for this meal is already running
             return;
         }
         List<Consumer<String>> first = new ArrayList<>();
@@ -119,24 +160,29 @@ public final class MealPhotos {
         };
         task.setOnSucceeded(e -> {
             String address = task.getValue();
-            ADDRESSES.put(id, address);                         // "" is remembered too: this meal has no photo
+            ADDRESSES.put(id, address); // "" is remembered too: this meal has no photo
             List<Consumer<String>> asked = WAITING.remove(id);
             if (asked != null) {
                 asked.forEach(waiter -> waiter.accept(address));
             }
         });
-        task.setOnFailed(e -> WAITING.remove(id));              // no internet: the letter stays, tried again later
+        // no internet: the letter stays, tried again later
+        task.setOnFailed(e -> WAITING.remove(id));
         AppShell.runInBackground(task);
     }
 
-    /** The box before (or without) a picture: the first letter of the meal on a dark rose background. */
+    /**
+     * The box before (or without) a picture: the first letter of the meal on a dark rose
+     * background.
+     */
     private static StackPane placeholder(String mealName) {
         String name = mealName == null ? "" : mealName.trim();
         Label letter = new Label(name.isEmpty() ? "?" : name.substring(0, 1).toUpperCase());
         letter.getStyleClass().add("pnp-photo-letter");
         StackPane box = new StackPane(letter);
-        box.setBackground(new Background(new BackgroundFill(PLACEHOLDER, new CornerRadii(CORNER), Insets.EMPTY)));
-        Rectangle clip = new Rectangle();                       // rounds the corners of the picture too
+        box.setBackground(new Background(new BackgroundFill(PLACEHOLDER, new CornerRadii(CORNER),
+                Insets.EMPTY)));
+        Rectangle clip = new Rectangle(); // rounds the corners of the picture too
         clip.setArcWidth(CORNER * 2);
         clip.setArcHeight(CORNER * 2);
         clip.widthProperty().bind(box.widthProperty());
@@ -145,14 +191,18 @@ public final class MealPhotos {
         return box;
     }
 
-    /** Puts the picture in the box when it has arrived. The download runs on a JavaFX background thread. */
+    /**
+     * Puts the picture in the box when it has arrived. The download runs on a JavaFX background
+     * thread.
+     */
     private static void fill(StackPane box, String address) {
         if (!SHOW_PHOTOS || address == null || address.isBlank()) {
             return;
         }
         Image image = IMAGES.get(address);
         if (image == null || image.isError()) {
-            image = new Image(address, LOAD_SIZE, LOAD_SIZE, true, true, true);   // true = load in the background
+            // true = load in the background
+            image = new Image(address, LOAD_SIZE, LOAD_SIZE, true, true, true);
             IMAGES.put(address, image);
         }
         Image picture = image;
@@ -162,14 +212,17 @@ public final class MealPhotos {
         }
         picture.progressProperty().addListener((obs, old, now) -> {
             if (now.doubleValue() >= 1 && !picture.isError()) {
-                show(box, picture);                             // this listener runs on the JavaFX thread
+                show(box, picture); // this listener runs on the JavaFX thread
             }
         });
     }
 
-    /** The picture covers the whole box and is cut at the edges, so every card has the same shape. */
+    /**
+     * The picture covers the whole box and is cut at the edges, so every card has the same shape.
+     */
     private static void show(StackPane box, Image picture) {
-        BackgroundSize cover = new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false, false, false, true);
+        BackgroundSize cover = new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false,
+                false, false, true);
         box.setBackground(new Background(new BackgroundImage(picture, BackgroundRepeat.NO_REPEAT,
                 BackgroundRepeat.NO_REPEAT, BackgroundPosition.CENTER, cover)));
         box.getChildren().clear();                              // the letter is not needed any more
