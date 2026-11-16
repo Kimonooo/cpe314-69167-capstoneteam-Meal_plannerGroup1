@@ -12,7 +12,8 @@ class PasswordHasherTest {
     @Test
     void samePasswordAndSaltAlwaysGiveTheSameHash() {
         String salt = PasswordHasher.generateSalt();
-        assertEquals(PasswordHasher.hash("secret123", salt), PasswordHasher.hash("secret123", salt));
+        assertEquals(PasswordHasher.hash("secret123", salt), PasswordHasher.hash("secret123",
+                salt));
     }
 
     @Test
@@ -20,7 +21,8 @@ class PasswordHasherTest {
         String saltOne = PasswordHasher.generateSalt();
         String saltTwo = PasswordHasher.generateSalt();
         assertNotEquals(saltOne, saltTwo);
-        assertNotEquals(PasswordHasher.hash("secret123", saltOne), PasswordHasher.hash("secret123", saltTwo));
+        assertNotEquals(PasswordHasher.hash("secret123", saltOne), PasswordHasher.hash("secret123",
+                saltTwo));
     }
 
     @Test
@@ -28,7 +30,8 @@ class PasswordHasherTest {
         String salt = PasswordHasher.generateSalt();
         String hash = PasswordHasher.hash("secret123", salt);
         assertTrue(PasswordHasher.verify("secret123", salt, hash));
-        assertFalse(PasswordHasher.verify("Secret123", salt, hash)); // edge case: one capital letter
+        // edge case: one capital letter
+        assertFalse(PasswordHasher.verify("Secret123", salt, hash));
         assertNotEquals("secret123", hash); // the real password is never what gets saved
     }
 }

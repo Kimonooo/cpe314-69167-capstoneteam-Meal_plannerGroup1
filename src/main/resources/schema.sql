@@ -1,7 +1,23 @@
 -- Plate N Platter database: 5 tables, one primary key each.
 -- Table names are plural; a primary key is named after one row (user_id, saved_recipe_id, ...);
 -- a foreign key has the same name as the key it points to.
--- DatabaseConnector.createTables runs this file every time the app starts (IF NOT EXISTS makes that safe).
+-- DatabaseConnector.createTables runs this file every time the app starts
+-- (IF NOT EXISTS makes that safe).
+--
+-- created_at and updated_at (users, planned_meals) hold the UTC date and time
+-- as 'yyyy-mm-dd hh:mm:ss'.
+-- Limits: prep time 0 to 1,440 minutes (one day) and calories 0 to 10,000 kcal, the same numbers
+-- the app checks before saving (PlannedMeal.MAX_PREP_MINUTES and PlannedMeal.MAX_CALORIES).
+-- The streak has no table: it is worked out from planned_meals.plan_date every time
+-- (StreakCalculator).
+--
+-- Deleting rules:
+--   * Deleting a user removes that user's saved_recipes and planned_meals (ON DELETE CASCADE),
+--     and deleting a saved recipe removes its ingredient_amounts (ON DELETE CASCADE).
+--   * A saved recipe that is still used by a planned meal cannot be deleted on its own: the
+--     foreign key planned_meals.saved_recipe_id has no cascade, so SQLite refuses the delete.
+--     The planned meals must be removed first.
+--   * ingredients is a shared list of names (no user data), so its rows are kept.
 
 CREATE TABLE IF NOT EXISTS users (
     user_id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -12,7 +28,9 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash        TEXT    NOT NULL,
     salt                 TEXT    NOT NULL,
     security_question    TEXT    NOT NULL,
-    security_answer_hash TEXT    NOT NULL
+    security_answer_hash TEXT    NOT NULL,
+    created_at           TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS saved_recipes (
@@ -23,8 +41,8 @@ CREATE TABLE IF NOT EXISTS saved_recipes (
     meal_type         TEXT    NOT NULL
         CHECK (meal_type IN ('BREAKFAST', 'MAIN_COURSE', 'DESSERT')),
     cuisine           TEXT    NOT NULL DEFAULT '',
-    base_prep_minutes INTEGER NOT NULL DEFAULT 0 CHECK (base_prep_minutes >= 0),
-    usual_calories    INTEGER NOT NULL DEFAULT 0 CHECK (usual_calories >= 0),
+    base_prep_minutes INTEGER NOT NULL DEFAULT 0 CHECK (base_prep_minutes BETWEEN 0 AND 1440),
+    usual_calories    INTEGER NOT NULL DEFAULT 0 CHECK (usual_calories BETWEEN 0 AND 10000),
     mealdb_id         TEXT    NOT NULL DEFAULT '',
     UNIQUE (user_id, recipe_name)
 );
@@ -50,14 +68,17 @@ CREATE TABLE IF NOT EXISTS planned_meals (
     user_id         INTEGER NOT NULL
         REFERENCES users(user_id) ON DELETE CASCADE,
     saved_recipe_id INTEGER NOT NULL
+        -- no cascade: a recipe in use cannot be deleted
         REFERENCES saved_recipes(saved_recipe_id),
     plan_date       TEXT    NOT NULL,                  -- yyyy-mm-dd
     meal_slot       TEXT    NOT NULL
         CHECK (meal_slot IN ('BREAKFAST', 'LUNCH', 'DINNER', 'SNACK')),
-    prep_minutes    INTEGER NOT NULL CHECK (prep_minutes >= 0),
-    calories        INTEGER NOT NULL DEFAULT 0 CHECK (calories >= 0),
+    prep_minutes    INTEGER NOT NULL CHECK (prep_minutes BETWEEN 0 AND 1440),
+    calories        INTEGER NOT NULL DEFAULT 0 CHECK (calories BETWEEN 0 AND 10000),
     healthy_level   TEXT    NOT NULL
-        CHECK (healthy_level IN ('HEALTHY', 'MODERATE', 'INDULGENT'))
+        CHECK (healthy_level IN ('HEALTHY', 'MODERATE', 'INDULGENT')),
+    created_at      TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_planned_meals_user_date

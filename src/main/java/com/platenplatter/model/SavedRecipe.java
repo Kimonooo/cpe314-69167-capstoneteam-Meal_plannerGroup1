@@ -1,7 +1,5 @@
 package com.platenplatter.model;
 
-import com.platenplatter.util.CircularRecipeException;
-import com.platenplatter.util.RecipeCalculator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -49,10 +47,19 @@ public abstract class SavedRecipe {
 
     /** Puts a recipe inside this one. A recipe can never end up inside itself. */
     public void addSubRecipe(SavedRecipe sub) {
-        if (RecipeCalculator.wouldCreateCycle(this, sub)) {
+        if (sub == this || sub.contains(this)) {
             throw new CircularRecipeException(this, sub);
         }
         subRecipes.add(sub);
+    }
+
+    /**
+     * True when the recipe sits somewhere inside this one, at any depth. RECURSIVE: the base case
+     * is a recipe with no sub-recipes (its stream is empty, so the answer is false). The model
+     * keeps this check itself, so it needs no class from another package.
+     */
+    public boolean contains(SavedRecipe recipe) {
+        return subRecipes.stream().anyMatch(sub -> sub == recipe || sub.contains(recipe));
     }
 
     public List<SavedRecipe> getSubRecipes() {
@@ -75,14 +82,20 @@ public abstract class SavedRecipe {
         };
     }
 
-    /** Makes the right subclass from the meal_type text (the factory the DAO and the screens use). */
-    public static SavedRecipe create(String mealType, long savedRecipeId, String recipeName, String cuisine,
+    /**
+     * Makes the right subclass from the meal_type text (the factory the DAO and the screens use).
+     */
+    public static SavedRecipe create(String mealType, long savedRecipeId, String recipeName,
+            String cuisine,
                                      int basePrepMinutes, int usualCalories, String mealDbId) {
         String type = mealType == null ? "" : mealType.trim().toUpperCase(Locale.ROOT);
         return switch (type) {
-            case "BREAKFAST" -> new BreakfastRecipe(savedRecipeId, recipeName, cuisine, basePrepMinutes, usualCalories, mealDbId);
-            case "DESSERT" -> new DessertRecipe(savedRecipeId, recipeName, cuisine, basePrepMinutes, usualCalories, mealDbId);
-            default -> new MainCourseRecipe(savedRecipeId, recipeName, cuisine, basePrepMinutes, usualCalories, mealDbId);
+            case "BREAKFAST" -> new BreakfastRecipe(savedRecipeId, recipeName, cuisine,
+                    basePrepMinutes, usualCalories, mealDbId);
+            case "DESSERT" -> new DessertRecipe(savedRecipeId, recipeName, cuisine, basePrepMinutes,
+                    usualCalories, mealDbId);
+            default -> new MainCourseRecipe(savedRecipeId, recipeName, cuisine, basePrepMinutes,
+                    usualCalories, mealDbId);
         };
     }
 

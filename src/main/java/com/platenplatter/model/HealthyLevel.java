@@ -18,11 +18,15 @@ public enum HealthyLevel {
         return label;
     }
 
-    /** Reads "HEALTHY", "Healthy" or "healthy". Anything else throws, with a reason the import can show. */
+    /**
+     * Reads "HEALTHY", "Healthy" or "healthy". Anything else throws, with a reason the import can
+     * show.
+     */
     public static HealthyLevel fromText(String text) {
         String clean = text == null ? "" : text.trim();
         return Arrays.stream(values())
-                .filter(level -> level.name().equalsIgnoreCase(clean) || level.label.equalsIgnoreCase(clean))
+                .filter(level -> level.name().equalsIgnoreCase(clean)
+                        || level.label.equalsIgnoreCase(clean))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Unknown healthy level (use Healthy, Moderate or Indulgent): " + text));
@@ -32,7 +36,8 @@ public enum HealthyLevel {
     public static HealthyLevel fromTextOr(String text, HealthyLevel fallback) {
         String clean = text == null ? "" : text.trim();
         return Arrays.stream(values())
-                .filter(level -> level.name().equalsIgnoreCase(clean) || level.label.equalsIgnoreCase(clean))
+                .filter(level -> level.name().equalsIgnoreCase(clean)
+                        || level.label.equalsIgnoreCase(clean))
                 .findFirst()
                 .orElse(fallback);
     }

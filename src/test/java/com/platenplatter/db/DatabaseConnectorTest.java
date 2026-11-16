@@ -23,7 +23,8 @@ class DatabaseConnectorTest {
 
     private static int primaryKeyColumns(Connection c, String table) {
         try (Statement st = c.createStatement();
-             ResultSet rs = st.executeQuery("SELECT count(*) FROM pragma_table_info('" + table + "') WHERE pk > 0")) {
+             ResultSet rs = st.executeQuery("SELECT count(*) FROM pragma_table_info('" + table
+                     + "') WHERE pk > 0")) {
             return rs.next() ? rs.getInt(1) : 0;
         } catch (SQLException e) {
             throw new IllegalStateException(e);
@@ -50,7 +51,8 @@ class DatabaseConnectorTest {
     void schemaSqlCreatesExactlyTheFivePluralTables() throws SQLException {
         try (Connection c = DatabaseConnector.open("jdbc:sqlite::memory:")) {
             DatabaseConnector.createTables(c);
-            assertEquals(List.of("ingredient_amounts", "ingredients", "planned_meals", "saved_recipes", "users"),
+            assertEquals(List.of("ingredient_amounts", "ingredients", "planned_meals",
+                    "saved_recipes", "users"),
                     DatabaseConnector.tableNames(c));
         }
     }
@@ -68,12 +70,40 @@ class DatabaseConnectorTest {
     void everyTableHasExactlyOnePrimaryKeyColumn() throws SQLException {
         try (Connection c = DatabaseConnector.open("jdbc:sqlite::memory:")) {
             DatabaseConnector.createTables(c);
-            DatabaseConnector.tableNames(c).forEach(table -> assertEquals(1, primaryKeyColumns(c, table), table));
+            DatabaseConnector.tableNames(c)
+                    .forEach(table -> assertEquals(1, primaryKeyColumns(c, table), table));
         }
     }
 
     @Test
     void aBrokenUrlThrowsAnSqlException() {
         assertThrows(SQLException.class, () -> DatabaseConnector.open("jdbc:notadatabase:oops"));
+    }
+
+    @Test
+    void anOlderDatabaseFileGetsTheDateAndTimeColumns() throws SQLException {
+        try (Connection c = DatabaseConnector.open("jdbc:sqlite::memory:")) {
+            DatabaseConnector.createTables(c);
+            // make it look like a file from before this change
+            try (Statement st = c.createStatement()) {
+                st.executeUpdate("INSERT INTO users (username, display_name, age, gender, "
+                        + "password_hash, salt, "
+                        + "security_question, security_answer_hash) VALUES ('old', 'Old', 20, "
+                        + "'F', 'h', 's', 'q', 'a')");
+                st.executeUpdate("ALTER TABLE users DROP COLUMN created_at");
+                st.executeUpdate("ALTER TABLE planned_meals DROP COLUMN updated_at");
+            }
+            assertFalse(DatabaseConnector.hasColumn(c, "users", "created_at"));
+            DatabaseConnector.createTables(c);                     // the app starts again
+            assertTrue(DatabaseConnector.hasColumn(c, "users", "created_at"));
+            assertTrue(DatabaseConnector.hasColumn(c, "planned_meals", "updated_at"));
+            try (Statement st = c.createStatement();
+                 ResultSet rs = st.executeQuery("SELECT created_at FROM users WHERE username = "
+                         + "'old'")) {
+                assertTrue(rs.next());
+                // the row that was already there is filled in
+                assertEquals(19, rs.getString(1).length());
+            }
+        }
     }
 }

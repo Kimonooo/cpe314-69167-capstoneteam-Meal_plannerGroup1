@@ -15,29 +15,36 @@ import javafx.scene.layout.Region;
 public final class MealRows {
     private MealRows() { }
 
-    /** The recipe name, then its chips: slot (optional), healthy level, prep tier, minutes and calories. */
+    /**
+     * The meal's photo and the recipe name, then its chips: slot (optional), healthy level, prep
+     * tier, minutes and calories.
+     */
     public static HBox row(PlannedMeal meal, Runnable onRemove, boolean showSlot) {
         Label name = new Label(meal.getRecipeName());
         name.setTextOverrun(OverrunStyle.ELLIPSIS);
         name.setMaxWidth(280);
-        name.setStyle("-fx-font-weight: bold;");
-        name.setTooltip(new Tooltip(meal.getRecipeName() + " (" + meal.getRecipe().getMealTypeLabel() + ")"));
+        name.getStyleClass().add("pnp-meal-name");
+        name.setTooltip(new Tooltip(meal.getRecipeName() + " ("
+                + meal.getRecipe().getMealTypeLabel() + ")"));
         Region gap = new Region();
         HBox.setHgrow(gap, Priority.ALWAYS);
-        HBox line = new HBox(8, name, gap);
+        HBox line = new HBox(10, MealPhotos.thumbnail(meal.getRecipe(), 40), name, gap);
         if (showSlot) {
             line.getChildren().add(Theme.slotChip(meal.getMealSlot()));
         }
-        line.getChildren().addAll(Theme.healthChip(meal.getHealthyLevel()), Theme.tierChip(meal.getPrepTier()),
+        line.getChildren().addAll(Theme.healthChip(meal.getHealthyLevel()),
+                Theme.tierChip(meal.getPrepTier()),
                 Theme.text(TextFormat.minutes(meal.getPrepMinutes()), "pnp-muted"),
                 Theme.text(TextFormat.calories(meal.getCalories()), "pnp-muted"));
         if (onRemove != null) {
             Button remove = new Button("Remove");
             remove.getStyleClass().add("pnp-small-button");
+            remove.setTooltip(new Tooltip("Remove this meal (you can undo it)"));
             remove.setOnAction(e -> onRemove.run());
             line.getChildren().add(remove);
         }
-        line.getChildren().stream().skip(2).forEach(node -> ((Region) node).setMinWidth(Region.USE_PREF_SIZE));
+        line.getChildren().stream().skip(3)
+                .forEach(node -> ((Region) node).setMinWidth(Region.USE_PREF_SIZE));
         line.setAlignment(Pos.CENTER_LEFT);
         return line;
     }

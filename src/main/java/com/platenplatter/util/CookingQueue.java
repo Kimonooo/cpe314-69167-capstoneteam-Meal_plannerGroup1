@@ -2,9 +2,13 @@ package com.platenplatter.util;
 
 import com.platenplatter.model.SavedRecipe;
 import java.util.ArrayDeque;
+import java.util.List;
 import java.util.Queue;
 
-/** A QUEUE of recipes to cook: first in, first out. Used by RecipeDemo. */
+/**
+ * A QUEUE of recipes to cook: first in, first out. The Meal Plan page puts a day's meals in it in
+ * cooking order (breakfast first), shows the one at the front, and "Done, next" takes it off.
+ */
 public class CookingQueue {
     private final Queue<SavedRecipe> queue = new ArrayDeque<>();
 
@@ -27,5 +31,10 @@ public class CookingQueue {
 
     public boolean isEmpty() {
         return queue.isEmpty();
+    }
+
+    /** Everything still waiting, front first, without taking anything off the queue. */
+    public List<SavedRecipe> inOrder() {
+        return List.copyOf(queue);
     }
 }

@@ -8,6 +8,11 @@ import java.time.LocalDate;
  * A CSV row, a recipe chosen on the Recipes page and a row read from SQLite all become this class.
  */
 public class PlannedMeal {
+    /** The longest prep time the app accepts: one day, 1,440 minutes. */
+    public static final int MAX_PREP_MINUTES = 1440;
+    /** The most calories the app accepts for one meal. */
+    public static final int MAX_CALORIES = 10_000;
+
     private final long plannedMealId;
     private final long userId;
     private final SavedRecipe recipe;
@@ -18,9 +23,11 @@ public class PlannedMeal {
     private final HealthyLevel healthyLevel;
 
     public PlannedMeal(long plannedMealId, long userId, SavedRecipe recipe, LocalDate planDate,
-                       MealSlot mealSlot, int prepMinutes, int calories, HealthyLevel healthyLevel) {
+                       MealSlot mealSlot, int prepMinutes, int calories,
+                               HealthyLevel healthyLevel) {
         if (recipe == null || planDate == null || mealSlot == null || healthyLevel == null) {
-            throw new IllegalArgumentException("A planned meal needs a recipe, a date, a meal slot and a healthy level");
+            throw new IllegalArgumentException(
+                    "A planned meal needs a recipe, a date, a meal slot and a healthy level");
         }
         if (prepMinutes < 0 || calories < 0) {
             throw new IllegalArgumentException("Minutes and calories cannot be negative");
@@ -56,7 +63,8 @@ public class PlannedMeal {
 
     /** The same meal after it was saved: with its new id, its owner and the saved recipe. */
     public PlannedMeal saved(long newPlannedMealId, long ownerId, SavedRecipe savedRecipe) {
-        return new PlannedMeal(newPlannedMealId, ownerId, savedRecipe, planDate, mealSlot, prepMinutes, calories, healthyLevel);
+        return new PlannedMeal(newPlannedMealId, ownerId, savedRecipe, planDate, mealSlot,
+                prepMinutes, calories, healthyLevel);
     }
 
     @Override

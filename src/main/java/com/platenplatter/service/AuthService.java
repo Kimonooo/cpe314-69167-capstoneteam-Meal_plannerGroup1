@@ -7,8 +7,9 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Every rule for accounts: sign up, log in, change the display name, and reset a forgotten
- * password with the security question. The screens only show what this class decides.
+ * Every rule for accounts: sign up, log in, change the display name, reset a forgotten
+ * password with the security question, and delete the account. The screens only show what this
+ * class decides. Five wrong passwords or answers in a row lock the username for five minutes.
  */
 public class AuthService {
     public static final int MIN_PASSWORD_LENGTH = 6;
@@ -22,25 +23,38 @@ public class AuthService {
             "What is your favorite food?",
             "What was the name of your elementary school?");
 
+    /** The one message for a wrong answer AND for a username that does not exist. */
+    public static final String ANSWER_DOES_NOT_MATCH = "That answer does not match.";
+
     private final UserDao users;
+    private final LoginAttempts attempts;
 
     public AuthService(UserDao users) {
-        this.users = users;
+        this(users, new LoginAttempts());
     }
 
-    public User register(String displayName, String username, String ageText, String gender, String password,
+    public AuthService(UserDao users, LoginAttempts attempts) {
+        this.users = users;
+        this.attempts = attempts;
+    }
+
+    public User register(String displayName, String username, String ageText, String gender,
+            String password,
                          String confirmPassword, String securityQuestion, String securityAnswer)
             throws AuthException, SQLException {
         String name = trim(displayName);
         String cleanUsername = trim(username);
         String answer = normalize(securityAnswer);
-        if (name.isEmpty() || cleanUsername.isEmpty() || trim(ageText).isEmpty() || trim(gender).isEmpty()
-                || password == null || password.isEmpty() || trim(securityQuestion).isEmpty() || answer.isEmpty()) {
+        if (name.isEmpty() || cleanUsername.isEmpty() || trim(ageText).isEmpty()
+                || trim(gender).isEmpty()
+                || password == null || password.isEmpty() || trim(securityQuestion).isEmpty()
+                        || answer.isEmpty()) {
             throw new AuthException("Please fill in every field.");
         }
         checkName(name);
         if (!cleanUsername.matches(USERNAME_RULE)) {
-            throw new AuthException("Username must be 3 to 20 letters, numbers, dots or underscores (no spaces).");
+            throw new AuthException(
+                    "Username must be 3 to 20 letters, numbers, dots or underscores (no spaces).");
         }
         int age = age(ageText);
         checkPassword(password, confirmPassword);
@@ -59,10 +73,15 @@ public class AuthService {
         if (cleanUsername.isEmpty() || password == null || password.isEmpty()) {
             throw new AuthException("Please enter your username and password.");
         }
+        checkNotLocked(cleanUsername);
         User user = users.findByUsername(cleanUsername).orElse(null);
         if (user == null || !users.passwordMatches(user.getUserId(), password)) {
-            throw new AuthException("Incorrect username or password."); // never says which one was wrong
+            attempts.failed(cleanUsername); // an unknown name is counted the same way
+            checkNotLocked(cleanUsername);                   // the fifth wrong try locks it now
+            // never says which was wrong
+            throw new AuthException("Incorrect username or password.");
         }
+        attempts.succeeded(cleanUsername);
         return user;
     }
 
@@ -75,22 +94,71 @@ public class AuthService {
         return user.withDisplayName(clean);
     }
 
-    /** Step 1 of Forgot password: the question this username chose when signing up. */
-    public String securityQuestionFor(String username) throws AuthException, SQLException {
-        return users.findByUsername(trim(username)).map(User::getSecurityQuestion)
-                .orElseThrow(() -> new AuthException("No account with that username."));
+    /**
+     * Deletes the user's own account and everything saved for it (saved recipes, their ingredient
+     * amounts and planned meals). The password must be typed again, so nobody else at the
+     * keyboard can delete it. It cannot be undone.
+     */
+    public void deleteAccount(User user, String password) throws AuthException, SQLException {
+        if (password == null || password.isEmpty()) {
+            throw new AuthException("Type your password to delete your account.");
+        }
+        if (!users.passwordMatches(user.getUserId(), password)) {
+            throw new AuthException("That password is not correct. Nothing was deleted.");
+        }
+        if (!users.deleteUser(user.getUserId())) {
+            throw new AuthException("Your account was not found. Please log in again.");
+        }
     }
 
-    /** Step 2 of Forgot password: check the answer and the new password, then save a new hash. */
-    public void resetPassword(String username, String answer, String newPassword, String confirmPassword)
-            throws AuthException, SQLException {
-        User user = users.findByUsername(trim(username)).orElseThrow(
-                () -> new AuthException("No account with that username."));
-        checkPassword(newPassword, confirmPassword); // 6+ characters, not only spaces, typed twice
-        if (!users.answerMatches(user.getUserId(), normalize(answer))) {
-            throw new AuthException("That answer does not match.");
+    /**
+     * Step 1 of Forgot password: the question this username chose when signing up. A username
+     * that does not exist gets one of the four questions too (always the same one for that name),
+     * so this page cannot be used to find out which usernames exist.
+     */
+    public String securityQuestionFor(String username) throws AuthException, SQLException {
+        String clean = trim(username);
+        if (clean.isEmpty()) {
+            throw new AuthException("Please enter your username.");
         }
+        return users.findByUsername(clean).map(User::getSecurityQuestion)
+                .orElse(decoyQuestion(clean));
+    }
+
+    /**
+     * Step 2 of Forgot password: check the answer and the new password, then save a new hash.
+     * A wrong answer and an unknown username give the same message and count as a wrong try.
+     */
+    public void resetPassword(String username, String answer, String newPassword,
+            String confirmPassword)
+            throws AuthException, SQLException {
+        String clean = trim(username);
+        checkNotLocked(clean);
+        checkPassword(newPassword, confirmPassword); // 6+ characters, not only spaces, typed twice
+        User user = users.findByUsername(clean).orElse(null);
+        if (user == null || !users.answerMatches(user.getUserId(), normalize(answer))) {
+            attempts.failed(clean);
+            checkNotLocked(clean);
+            throw new AuthException(ANSWER_DOES_NOT_MATCH);
+        }
+        attempts.succeeded(clean);
         users.updatePassword(user.getUserId(), newPassword);   // new PBKDF2 hash
+    }
+
+    /** After five wrong tries in a row the username waits five minutes (LoginAttempts). */
+    private void checkNotLocked(String username) throws AuthException {
+        if (attempts.isLocked(username)) {
+            long minutes = attempts.minutesLeft(username);
+            throw new AuthException("Too many wrong tries. Wait " + minutes
+                    + (minutes == 1 ? " minute" : " minutes") + ", then try again.");
+        }
+    }
+
+    /** The same question every time for the same unknown username. */
+    private static String decoyQuestion(String username) {
+        int index = Math.floorMod(username.toLowerCase(Locale.ROOT).hashCode(),
+                SECURITY_QUESTIONS.size());
+        return SECURITY_QUESTIONS.get(index);
     }
 
     /** " Bantay " and "bantay" are the same answer. */
@@ -100,7 +168,8 @@ public class AuthService {
 
     private static void checkPassword(String password, String confirm) throws AuthException {
         if (password == null || password.length() < MIN_PASSWORD_LENGTH || password.isBlank()) {
-            throw new AuthException("Password must be at least " + MIN_PASSWORD_LENGTH + " characters, not only spaces.");
+            throw new AuthException("Password must be at least " + MIN_PASSWORD_LENGTH
+                    + " characters, not only spaces.");
         }
         if (!password.equals(confirm)) {
             throw new AuthException("Passwords do not match.");

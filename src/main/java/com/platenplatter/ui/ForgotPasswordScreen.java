@@ -1,5 +1,6 @@
 package com.platenplatter.ui;
 
+import com.platenplatter.controller.AuthController;
 import com.platenplatter.service.AuthService;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -18,16 +19,17 @@ import javafx.scene.layout.VBox;
 /**
  * Forgot password, in two steps:
  *   1. type the username; the page shows that account's security question;
- *   2. type the answer and a new password twice; AuthService.resetPassword checks them and saves a new hash.
+ *   2. type the answer and a new password twice; AuthService.resetPassword checks them and saves a
+ *   new hash.
  * Both steps run in the background, like log in.
  */
 public class ForgotPasswordScreen {
-    private final AuthService auth;
+    private final AuthController auth;
     private final Consumer<String> onPasswordChanged;
     private final TextField usernameField = new TextField();
     private final Button findButton = new Button("Show my question");
     private final Label questionLabel = new Label();
-    private final TextField answerField = new TextField();
+    private final PasswordField answerField = new PasswordField();
     private final PasswordField newPasswordField = new PasswordField();
     private final PasswordField confirmField = new PasswordField();
     private final Button resetButton = new Button("Change password");
@@ -36,7 +38,8 @@ public class ForgotPasswordScreen {
     private final BooleanProperty working = new SimpleBooleanProperty(false);
     private final Parent root;
 
-    public ForgotPasswordScreen(AuthService auth, Consumer<String> onPasswordChanged, Runnable onBack) {
+    public ForgotPasswordScreen(AuthController auth, Consumer<String> onPasswordChanged,
+            Runnable onBack) {
         this.auth = auth;
         this.onPasswordChanged = onPasswordChanged;
         usernameField.setId("forgotUsername");
@@ -44,7 +47,8 @@ public class ForgotPasswordScreen {
         answerField.setId("forgotAnswer");
         answerField.setPromptText("Your answer");
         newPasswordField.setId("forgotNewPassword");
-        newPasswordField.setPromptText("At least " + AuthService.MIN_PASSWORD_LENGTH + " characters");
+        newPasswordField.setPromptText("At least " + AuthService.MIN_PASSWORD_LENGTH
+                + " characters");
         confirmField.setId("forgotConfirm");
         confirmField.setPromptText("Type it again");
         Stream.of(usernameField, answerField, newPasswordField, confirmField)
@@ -56,7 +60,7 @@ public class ForgotPasswordScreen {
         usernameField.setOnAction(e -> findQuestion());
         questionLabel.setId("forgotQuestion");
         questionLabel.setWrapText(true);
-        questionLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #4E0920;");
+        questionLabel.getStyleClass().add("pnp-question");
         resetButton.setId("resetPasswordButton");
         resetButton.getStyleClass().add("pnp-button");
         resetButton.setMaxWidth(Double.MAX_VALUE);
@@ -66,7 +70,7 @@ public class ForgotPasswordScreen {
         messageLabel.setWrapText(true);
 
         stepTwo = new VBox(12, questionLabel,
-                AuthLayout.labeled("Answer", answerField),
+                AuthLayout.labeled("Answer", AuthLayout.secret(answerField, "Show answer")),
                 AuthLayout.labeled("New password", newPasswordField),
                 AuthLayout.labeled("New password again", confirmField),
                 resetButton);
@@ -78,8 +82,10 @@ public class ForgotPasswordScreen {
         HBox backRow = new HBox(6, Theme.text("Remembered it?", "pnp-muted"), backLink);
         backRow.setAlignment(Pos.CENTER_LEFT);
 
-        root = AuthLayout.page("Forgot password", "Answer your security question to choose a new password.",
-                AuthLayout.labeled("Username", usernameField), findButton, stepTwo, messageLabel, backRow);
+        root = AuthLayout.page("Forgot password",
+                "Answer your security question to choose a new password.",
+                AuthLayout.labeled("Username", usernameField), findButton, stepTwo, messageLabel,
+                        backRow);
     }
 
     public Parent getView() {
@@ -93,14 +99,15 @@ public class ForgotPasswordScreen {
         Task<String> task = new Task<>() {
             @Override
             protected String call() throws Exception {
-                return auth.securityQuestionFor(username);
+                return auth.questionFor(username);
             }
         };
         task.setOnSucceeded(e -> {
             working.set(false);
             questionLabel.setText(task.getValue());
             Theme.show(stepTwo, true);
-            Theme.status(messageLabel, "Answer the question, then choose a new password.", Theme.Kind.INFO);
+            Theme.status(messageLabel, "Answer the question, then choose a new password.",
+                    Theme.Kind.INFO);
             answerField.requestFocus();
         });
         task.setOnFailed(e -> {

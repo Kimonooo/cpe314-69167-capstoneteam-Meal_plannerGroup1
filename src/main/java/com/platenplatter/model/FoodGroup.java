@@ -36,7 +36,8 @@ public enum FoodGroup {
     }
 
     /** "bell pepper" is a vegetable, but a bare "pepper" is the spice. */
-    private static final Pattern VEGETABLE_PEPPER = Pattern.compile("\\b(bell|red|green|yellow|chili|chilli|hot) peppers?\\b");
+    private static final Pattern VEGETABLE_PEPPER =
+            Pattern.compile("\\b(bell|red|green|yellow|chili|chilli|hot) peppers?\\b");
 
     /**
      * The rules, checked from top to bottom; the first rule whose words appear in the name wins.
@@ -44,29 +45,45 @@ public enum FoodGroup {
      * and "coconut milk" must hit Grains & Pantry before "milk" hits Dairy.
      */
     private static final List<Map.Entry<FoodGroup, Pattern>> RULES = List.of(
-            rule(SAUCES_CONDIMENTS, "sauce|vinegar|ketchup|mayo|mayonnaise|mustard|paste|syrup|honey|dressing|marinade"
-                    + "|relish|jam|soy"),
-            rule(GRAINS_PANTRY, "stock|broth|bouillon|coconut milk|coconut cream|peanut butter|noodles?|pasta|penne"
-                    + "|spaghetti|macaroni|vermicelli|lasagne|lasagna|flour|baking powder|baking soda|cocoa powder"
+            rule(SAUCES_CONDIMENTS,
+                    "sauce|vinegar|ketchup|mayo|mayonnaise|mustard|paste|syrup"
+                    + "|honey|dressing|marinade|relish|jam|soy"),
+            rule(GRAINS_PANTRY,
+                    "stock|broth|bouillon|coconut milk|coconut cream|peanut butter"
+                    + "|noodles?|pasta|penne|spaghetti|macaroni|vermicelli|lasagne"
+                    + "|lasagna|flour|baking powder|baking soda|cocoa powder"
                     + "|cornstarch|corn starch"),
-            rule(HERBS_SPICES, "powder|salt|peppercorns?|pepper|paprika|cumin|turmeric|cinnamon|oregano|thyme|rosemary"
-                    + "|bay leaf|bay leaves|nutmeg|curry|vanilla|seasoning|spices?|cayenne|saffron|cardamom|chil+i flakes"
-                    + "|ground cloves|basil|parsley|coriander|cilantro|mint|dill|chives"),
-            rule(DAIRY_EGGS, "milk|cheese|butter|cream|yogh?urt|eggs?|mozzarella|parmesan|parmigiano|cheddar|margarine"
-                    + "|ghee|custard"),
-            rule(MEAT_SEAFOOD, "chicken|beef|pork|bacon|ham|sausages?|lamb|turkey|fish|salmon|tuna|shrimps?|prawns?|crab"
-                    + "|squid|bangus|milkfish|longganisa|tocino|liver|duck|mutton|anchov(y|ies)|sardines?|mussels?"
+            rule(HERBS_SPICES,
+                    "powder|salt|peppercorns?|pepper|paprika|cumin|turmeric"
+                    + "|cinnamon|oregano|thyme|rosemary|bay leaf|bay leaves|nutmeg"
+                    + "|curry|vanilla|seasoning|spices?|cayenne|saffron|cardamom"
+                    + "|chil+i flakes|ground cloves|basil|parsley|coriander|cilantro"
+                    + "|mint|dill|chives"),
+            rule(DAIRY_EGGS,
+                    "milk|cheese|butter|cream|yogh?urt|eggs?|mozzarella|parmesan"
+                    + "|parmigiano|cheddar|margarine|ghee|custard"),
+            rule(MEAT_SEAFOOD,
+                    "chicken|beef|pork|bacon|ham|sausages?|lamb|turkey|fish|salmon"
+                    + "|tuna|shrimps?|prawns?|crab|squid|bangus|milkfish|longganisa"
+                    + "|tocino|liver|duck|mutton|anchov(y|ies)|sardines?|mussels?"
                     + "|clams?|oysters?|tilapia|cod|ribs|steak|mince|oxtail"),
-            rule(BREAD_BAKERY, "bread|pandesal|buns?|tortillas?|pastry|baguette|pita|rolls?|croissant|bagel|brioche"
-                    + "|sponge|biscuits?|crackers?|wrappers?"),
-            rule(FRUITS_VEGETABLES, "onions?|garlic|tomato(es)?|potato(es)?|carrots?|cabbage|lettuce|spinach|broccoli"
-                    + "|chil+i(es)?|capsicum|ginger|lemons?|limes?|bananas?|mango|apples?|pineapple|cucumber|eggplant"
-                    + "|aubergine|mushrooms?|sprouts?|celery|scallions?|spring onions?|leek|pumpkin|squash|corn|peas?"
-                    + "|avocado|kangkong|okra|radish|beet|kale|cassava|taro|calamansi|oranges?|grapes?|strawberr(y|ies)"
-                    + "|berr(y|ies)|papaya|green beans?|string beans?|ampalaya|pechay|bok choy|zucchini|cauliflower"
-                    + "|shallots?|lemongrass|pandan|tamarind|leaves|leaf"),
-            rule(GRAINS_PANTRY, "rice|sugar|oil|oats|oatmeal|lentils?|beans?|nuts?|peanuts?|cashews?|almonds?|chocolate"
-                    + "|cocoa|yeast|water|canned|tinned|coconut|raisins?|sesame|gelatin|tapioca|sago|evaporated"
+            rule(BREAD_BAKERY,
+                    "bread|pandesal|buns?|tortillas?|pastry|baguette|pita|rolls?"
+                    + "|croissant|bagel|brioche|sponge|biscuits?|crackers?|wrappers?"),
+            rule(FRUITS_VEGETABLES,
+                    "onions?|garlic|tomato(es)?|potato(es)?|carrots?|cabbage"
+                    + "|lettuce|spinach|broccoli|chil+i(es)?|capsicum|ginger|lemons?"
+                    + "|limes?|bananas?|mango|apples?|pineapple|cucumber|eggplant"
+                    + "|aubergine|mushrooms?|sprouts?|celery|scallions?"
+                    + "|spring onions?|leek|pumpkin|squash|corn|peas?|avocado"
+                    + "|kangkong|okra|radish|beet|kale|cassava|taro|calamansi"
+                    + "|oranges?|grapes?|strawberr(y|ies)|berr(y|ies)|papaya"
+                    + "|green beans?|string beans?|ampalaya|pechay|bok choy|zucchini"
+                    + "|cauliflower|shallots?|lemongrass|pandan|tamarind|leaves|leaf"),
+            rule(GRAINS_PANTRY,
+                    "rice|sugar|oil|oats|oatmeal|lentils?|beans?|nuts?|peanuts?"
+                    + "|cashews?|almonds?|chocolate|cocoa|yeast|water|canned|tinned"
+                    + "|coconut|raisins?|sesame|gelatin|tapioca|sago|evaporated"
                     + "|condensed|breadcrumbs?|panko"));
 
     private static Map.Entry<FoodGroup, Pattern> rule(FoodGroup group, String words) {

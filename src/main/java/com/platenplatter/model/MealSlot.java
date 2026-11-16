@@ -29,11 +29,14 @@ public enum MealSlot {
         return calorieBudget;
     }
 
-    /** Reads "LUNCH", "Lunch" or "lunch". Anything else throws, with a reason the import can show. */
+    /**
+     * Reads "LUNCH", "Lunch" or "lunch". Anything else throws, with a reason the import can show.
+     */
     public static MealSlot fromText(String text) {
         String clean = text == null ? "" : text.trim();
         return Arrays.stream(values())
-                .filter(slot -> slot.name().equalsIgnoreCase(clean) || slot.label.equalsIgnoreCase(clean))
+                .filter(slot -> slot.name().equalsIgnoreCase(clean)
+                        || slot.label.equalsIgnoreCase(clean))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException(
                         "Unknown meal slot (use Breakfast, Lunch, Dinner or Snack): " + text));
@@ -43,7 +46,8 @@ public enum MealSlot {
     public static MealSlot fromTextOr(String text, MealSlot fallback) {
         String clean = text == null ? "" : text.trim();
         return Arrays.stream(values())
-                .filter(slot -> slot.name().equalsIgnoreCase(clean) || slot.label.equalsIgnoreCase(clean))
+                .filter(slot -> slot.name().equalsIgnoreCase(clean)
+                        || slot.label.equalsIgnoreCase(clean))
                 .findFirst()
                 .orElse(fallback);
     }

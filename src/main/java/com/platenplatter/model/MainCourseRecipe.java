@@ -2,11 +2,13 @@ package com.platenplatter.model;
 
 /** A main-course recipe: 10 extra minutes for cooking setup. */
 public class MainCourseRecipe extends SavedRecipe {
-    public MainCourseRecipe(long savedRecipeId, String recipeName, String cuisine, int basePrepMinutes, int usualCalories) {
+    public MainCourseRecipe(long savedRecipeId, String recipeName, String cuisine,
+            int basePrepMinutes, int usualCalories) {
         this(savedRecipeId, recipeName, cuisine, basePrepMinutes, usualCalories, "");
     }
 
-    public MainCourseRecipe(long savedRecipeId, String recipeName, String cuisine, int basePrepMinutes, int usualCalories,
+    public MainCourseRecipe(long savedRecipeId, String recipeName, String cuisine,
+            int basePrepMinutes, int usualCalories,
             String mealDbId) {
         super(savedRecipeId, recipeName, cuisine, basePrepMinutes, usualCalories, mealDbId);
     }

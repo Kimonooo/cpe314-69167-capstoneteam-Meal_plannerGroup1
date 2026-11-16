@@ -20,13 +20,15 @@ class RecommendationServiceTest {
 
     private static List<MealData> meals(int count) {
         return IntStream.rangeClosed(1, count)
-                .mapToObj(i -> new MealData(String.valueOf(i), "Meal " + i, "Vegetarian", "", "", List.of())).toList();
+                .mapToObj(i -> new MealData(String.valueOf(i), "Meal " + i, "Vegetarian", "", "",
+                        List.of())).toList();
     }
 
     @Test
     void beforeElevenIsBreakfast() {
         assertEquals(new RecommendationService.Pick(MealSlot.BREAKFAST, "Breakfast"), at(6, 0));
         assertEquals(MealSlot.BREAKFAST, at(10, 59).slot());
+        assertEquals("Breakfast", at(6, 0).title()); // not "Breakfast · Breakfast"
     }
 
     @Test
@@ -35,7 +37,9 @@ class RecommendationServiceTest {
         assertEquals(MealSlot.LUNCH, at(15, 59).slot());
         assertEquals("Vegetarian", at(13, 30).category());                 // Saturday: 6 % 4 = 2
         assertEquals("Lunch · Vegetarian", at(13, 30).title());
-        assertEquals("Chicken", RecommendationService.pickFor(LocalDateTime.of(2026, 11, 5, 12, 0)).category()); // Thursday
+        // Thursday
+        assertEquals("Chicken", RecommendationService.pickFor(LocalDateTime.of(2026, 11, 5, 12, 0))
+                .category());
     }
 
     @Test
