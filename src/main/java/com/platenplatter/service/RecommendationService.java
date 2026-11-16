@@ -27,7 +27,8 @@ public class RecommendationService {
     /** The meal slot and the TheMealDB category for a time of day. */
     public record Pick(MealSlot slot, String category) {
         public String title() {
-            return slot.getLabel().equalsIgnoreCase(category) ? slot.getLabel() : slot.getLabel() + " · " + category;
+            return slot.getLabel().equalsIgnoreCase(category) ? slot.getLabel() : slot.getLabel()
+                    + " · " + category;
         }
     }
 
@@ -70,7 +71,8 @@ public class RecommendationService {
         if (cached != null) {
             return cached;
         }
-        List<MealData> picks = todaysPicks(client.listByCategory(pick.category()), now.toLocalDate());
+        List<MealData> picks = todaysPicks(client.listByCategory(pick.category()),
+                now.toLocalDate());
         cache.put(key, picks);
         return picks;
     }
