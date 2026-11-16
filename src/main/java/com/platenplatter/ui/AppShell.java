@@ -1,6 +1,7 @@
 package com.platenplatter.ui;
 
 import com.platenplatter.api.MealDbClient;
+import com.platenplatter.controller.ShoppingListController;
 import com.platenplatter.db.PlanStore;
 import com.platenplatter.model.User;
 import com.platenplatter.service.AuthService;
@@ -63,7 +64,7 @@ public class AppShell {
             recipes.setDate(date);
             open("Recipes");
         });
-        ShoppingListScreen shopping = new ShoppingListScreen(store, client);
+        ShoppingListScreen shopping = new ShoppingListScreen(new ShoppingListController(store, client));
         importScreen = new ImportScreen(store);
         AnalyticsScreen analytics = new AnalyticsScreen(store);
         AccountScreen account = new AccountScreen(auth, user,

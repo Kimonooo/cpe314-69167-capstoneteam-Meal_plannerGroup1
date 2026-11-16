@@ -11,7 +11,8 @@ public class IngredientAmount {
     private final Ingredient ingredient;
     private final String measure;
 
-    public IngredientAmount(long ingredientAmountId, long savedRecipeId, Ingredient ingredient, String measure) {
+    public IngredientAmount(long ingredientAmountId, long savedRecipeId, Ingredient ingredient,
+                            String measure) {
         if (ingredient == null) {
             throw new IllegalArgumentException("An ingredient amount needs an ingredient");
         }
@@ -33,7 +34,8 @@ public class IngredientAmount {
 
     /** "3 cloves garlic", or just "garlic" when there is no measure. */
     public String label() {
-        return measure.isEmpty() ? ingredient.getIngredientName() : measure + " " + ingredient.getIngredientName();
+        String name = ingredient.getIngredientName();
+        return measure.isEmpty() ? name : measure + " " + name;
     }
 
     @Override

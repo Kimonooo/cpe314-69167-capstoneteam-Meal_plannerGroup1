@@ -71,12 +71,13 @@ public final class CsvRecipeParser {
             throw new IllegalArgumentException("Recipe name is empty");
         }
         String category = fields.get(2).isEmpty() ? "MainCourse" : fields.get(2);
-        int prep = number(fields.get(3), "Prep minutes");
+        int prep = number(fields.get(3), "Prep minutes", PlannedMeal.MAX_PREP_MINUTES);
         String slotText = optional(fields, 4);
         MealSlot slot = slotText.isEmpty() ? MealSlot.defaultFor(category)
                 : MealSlot.fromText(slotText);
         String caloriesText = optional(fields, 5);
-        int calories = caloriesText.isEmpty() ? 0 : number(caloriesText, "Calories");
+        int calories = caloriesText.isEmpty() ? 0 : number(caloriesText, "Calories",
+                PlannedMeal.MAX_CALORIES);
         String levelText = optional(fields, 6);
         HealthyLevel level = levelText.isEmpty()
                 ? HealthClassifier.classify(calories, slot, category)
@@ -106,7 +107,8 @@ public final class CsvRecipeParser {
         }
     }
 
-    private static int number(String text, String what) {
+    /** A whole number from 0 to max; 100000 minutes or 2000000000 kcal is a bad row, not a meal. */
+    private static int number(String text, String what, int max) {
         int value;
         try {
             value = Integer.parseInt(text.trim());
@@ -115,6 +117,9 @@ public final class CsvRecipeParser {
         }
         if (value < 0) {
             throw new IllegalArgumentException(what + " cannot be negative: " + value);
+        }
+        if (value > max) {
+            throw new IllegalArgumentException(what + " cannot be more than " + max + ": " + value);
         }
         return value;
     }

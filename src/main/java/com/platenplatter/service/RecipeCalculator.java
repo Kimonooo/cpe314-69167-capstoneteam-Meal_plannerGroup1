@@ -1,6 +1,7 @@
 package com.platenplatter.service;
 
 import com.platenplatter.model.SavedRecipe;
+import java.util.function.ToIntFunction;
 
 /**
  * Totals for nested recipes, worked out with RECURSION and no loop.
@@ -18,15 +19,22 @@ public final class RecipeCalculator {
 
     /** Base case: no sub-recipes, so the stream is empty and its sum is 0. */
     public static int totalPrepMinutes(SavedRecipe recipe) {
-        return recipe.getPrepMinutes() + recipe.getSubRecipes().stream()
-                .mapToInt(RecipeCalculator::totalPrepMinutes)   // recursive case
-                .sum();
+        return totalOf(recipe, SavedRecipe::getPrepMinutes);
     }
 
     /** The same pattern for calories: its own usual calories plus every sub-recipe's total. */
     public static int totalCalories(SavedRecipe recipe) {
-        return recipe.getUsualCalories() + recipe.getSubRecipes().stream()
-                .mapToInt(RecipeCalculator::totalCalories)
+        return totalOf(recipe, SavedRecipe::getUsualCalories);
+    }
+
+    /**
+     * The one recursive walk behind both totals: this recipe's own value plus the total of each
+     * sub-recipe, to any depth. The Meal Plan page uses it too: a day is a tree (the day holds a
+     * group per meal slot, each group holds that slot's meals), and this adds it up.
+     */
+    public static int totalOf(SavedRecipe recipe, ToIntFunction<SavedRecipe> value) {
+        return value.applyAsInt(recipe) + recipe.getSubRecipes().stream()
+                .mapToInt(sub -> totalOf(sub, value))          // recursive case
                 .sum();
     }
 
