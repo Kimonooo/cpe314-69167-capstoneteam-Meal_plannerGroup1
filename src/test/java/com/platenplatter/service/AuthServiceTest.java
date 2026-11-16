@@ -98,7 +98,8 @@ class AuthServiceTest {
     void forgotPasswordShowsTheChosenQuestion() throws Exception {
         registerAna();
         assertEquals(PET, auth.securityQuestionFor(" ANA "));
-        assertThrows(AuthException.class, () -> auth.securityQuestionFor("nobody"));
+        // an unknown name also gets a question, so the page gives no hint that it does not exist
+        assertTrue(AuthService.SECURITY_QUESTIONS.contains(auth.securityQuestionFor("nobody")));
     }
 
     @Test
