@@ -1,4 +1,4 @@
-package com.platenplatter.util;
+package com.platenplatter.service;
 
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
@@ -42,7 +42,8 @@ public final class StreakCalculator {
             return 0;
         }
         LocalDate start = days.contains(today) ? today : today.minusDays(1);
-        return (int) Stream.iterate(start, day -> day.minusDays(1)).takeWhile(days::contains).count();
+        return (int) Stream.iterate(start, day -> day.minusDays(1)).takeWhile(days::contains)
+                .count();
     }
 
     /** The first and last day of the current streak, or null when there is no streak. */
@@ -57,17 +58,21 @@ public final class StreakCalculator {
 
     /** The longest run of days in a row, not counting days after today. */
     public static int longest(Set<LocalDate> days, LocalDate today) {
-        return days == null ? 0 : longest(days.stream().filter(day -> !day.isAfter(today)).collect(toSet()));
+        return days == null ? 0
+                : longest(days.stream().filter(day -> !day.isAfter(today)).collect(toSet()));
     }
 
-    /** The longest run of days in a row: from every day that starts a run, count how far it goes. */
+    /**
+     * The longest run of days in a row: from every day that starts a run, count how far it goes.
+     */
     public static int longest(Set<LocalDate> days) {
         if (days == null) {
             return 0;
         }
         return (int) days.stream()
                 .filter(day -> !days.contains(day.minusDays(1)))          // a run starts here
-                .mapToLong(start -> Stream.iterate(start, day -> day.plusDays(1)).takeWhile(days::contains).count())
+                .mapToLong(start -> Stream.iterate(start,
+                        day -> day.plusDays(1)).takeWhile(days::contains).count())
                 .max()
                 .orElse(0);
     }
@@ -80,7 +85,8 @@ public final class StreakCalculator {
     /** Monday to Sunday of this week: true for each day that has a meal. */
     public static List<Boolean> weekFlags(Set<LocalDate> days, LocalDate today) {
         LocalDate monday = today.minusDays(today.getDayOfWeek().getValue() - 1L);
-        return IntStream.range(0, 7).mapToObj(i -> days != null && days.contains(monday.plusDays(i))).toList();
+        return IntStream.range(0, 7).mapToObj(i -> days != null
+                && days.contains(monday.plusDays(i))).toList();
     }
 
     /** How many meals of each prep tier (every tier is listed, 0 when it has none). */
@@ -88,10 +94,13 @@ public final class StreakCalculator {
         Map<PrepTier, Long> counted = meals == null ? Map.of()
                 : meals.stream().collect(groupingBy(PlannedMeal::getPrepTier, counting()));
         return Arrays.stream(PrepTier.values()).collect(toMap(Function.identity(),
-                tier -> counted.getOrDefault(tier, 0L), (a, b) -> a, () -> new EnumMap<>(PrepTier.class)));
+                tier -> counted.getOrDefault(tier, 0L), (a, b) -> a,
+                        () -> new EnumMap<>(PrepTier.class)));
     }
 
-    /** The tier with the most meals; a tie goes to the QUICKER tier. Null when there are no meals. */
+    /**
+     * The tier with the most meals; a tie goes to the QUICKER tier. Null when there are no meals.
+     */
     public static PrepTier mainTier(Map<PrepTier, Long> counts) {
         if (counts == null) {
             return null;
@@ -103,7 +112,9 @@ public final class StreakCalculator {
                 .orElse(null);
     }
 
-    /** The next goal above the current streak: 0 -> 3, 3 -> 7, 7 -> 14 ... 100 -> 150, 150 -> 200. */
+    /**
+     * The next goal above the current streak: 0 -> 3, 3 -> 7, 7 -> 14 ... 100 -> 150, 150 -> 200.
+     */
     public static int nextMilestone(int current) {
         int days = Math.max(current, 0);
         return MILESTONES.stream()
@@ -135,7 +146,8 @@ public final class StreakCalculator {
     public static String goalLine(int current) {
         int goal = nextMilestone(current);
         int left = goal - Math.max(current, 0);
-        return left + (left == 1 ? " more day" : " more days") + " to reach a " + goal + "-day streak";
+        return left + (left == 1 ? " more day" : " more days") + " to reach a " + goal
+                + "-day streak";
     }
 
     /**
@@ -154,7 +166,10 @@ public final class StreakCalculator {
         };
     }
 
-    /** Why the badge was given: "most meals in this streak take 16 to 45 min". Empty when there is no badge. */
+    /**
+     * Why the badge was given: "most meals in this streak take 16 to 45 min". Empty when there is
+     * no badge.
+     */
     public static String badgeReason(Map<PrepTier, Long> counts) {
         PrepTier main = mainTier(counts);
         return main == null ? "" : "most meals in this streak take " + main.getRange();
@@ -163,7 +178,8 @@ public final class StreakCalculator {
     /** "2 quick · 1 average · 0 slow" */
     public static String tierLine(Map<PrepTier, Long> counts) {
         return Arrays.stream(PrepTier.values())
-                .map(tier -> (counts == null ? 0 : counts.getOrDefault(tier, 0L)) + " " + tier.getLabel().toLowerCase())
+                .map(tier -> (counts == null ? 0 : counts.getOrDefault(tier, 0L)) + " "
+                        + tier.getLabel().toLowerCase())
                 .collect(joining(" · "));
     }
 }

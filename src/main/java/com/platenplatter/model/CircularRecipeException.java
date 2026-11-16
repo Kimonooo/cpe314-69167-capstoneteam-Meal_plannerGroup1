@@ -1,6 +1,4 @@
-package com.platenplatter.util;
-
-import com.platenplatter.model.SavedRecipe;
+package com.platenplatter.model;
 
 /** Thrown when a recipe would end up inside itself, for example a cake inside its own filling. */
 public class CircularRecipeException extends RuntimeException {

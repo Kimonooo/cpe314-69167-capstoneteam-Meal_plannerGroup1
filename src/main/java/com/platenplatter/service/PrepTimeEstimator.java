@@ -1,4 +1,4 @@
-package com.platenplatter.util;
+package com.platenplatter.service;
 
 import java.util.Locale;
 import java.util.regex.MatchResult;

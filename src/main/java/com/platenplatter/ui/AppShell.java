@@ -1,11 +1,11 @@
 package com.platenplatter.ui;
 
 import com.platenplatter.api.MealDbClient;
+import com.platenplatter.db.PlanStore;
 import com.platenplatter.model.User;
 import com.platenplatter.service.AuthService;
 import com.platenplatter.service.RecommendationService;
 import com.platenplatter.util.DataChangeNotifier;
-import com.platenplatter.util.PlanStore;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.LinkedHashMap;

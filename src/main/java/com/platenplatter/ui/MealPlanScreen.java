@@ -1,10 +1,10 @@
 package com.platenplatter.ui;
 
+import com.platenplatter.db.PlanStore;
 import com.platenplatter.model.HealthyLevel;
 import com.platenplatter.model.PlannedMeal;
 import com.platenplatter.service.StatisticsService;
 import com.platenplatter.util.CalendarMath;
-import com.platenplatter.util.PlanStore;
 import com.platenplatter.util.TextFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;

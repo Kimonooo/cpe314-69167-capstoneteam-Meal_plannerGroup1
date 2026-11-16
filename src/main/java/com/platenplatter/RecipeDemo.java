@@ -1,13 +1,13 @@
 package com.platenplatter;
 
 import com.platenplatter.model.BreakfastRecipe;
+import com.platenplatter.model.CircularRecipeException;
 import com.platenplatter.model.DessertRecipe;
 import com.platenplatter.model.MainCourseRecipe;
 import com.platenplatter.model.PrepTier;
 import com.platenplatter.model.SavedRecipe;
-import com.platenplatter.util.CircularRecipeException;
+import com.platenplatter.service.RecipeCalculator;
 import com.platenplatter.util.CookingQueue;
-import com.platenplatter.util.RecipeCalculator;
 import com.platenplatter.util.UndoStack;
 import java.util.stream.Stream;
 

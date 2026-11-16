@@ -1,4 +1,4 @@
-package com.platenplatter.util;
+package com.platenplatter.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.platenplatter.model.BreakfastRecipe;
+import com.platenplatter.model.CircularRecipeException;
 import com.platenplatter.model.DessertRecipe;
 import com.platenplatter.model.MainCourseRecipe;
 import com.platenplatter.model.PrepTier;

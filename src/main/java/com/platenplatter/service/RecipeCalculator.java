@@ -1,4 +1,4 @@
-package com.platenplatter.util;
+package com.platenplatter.service;
 
 import com.platenplatter.model.SavedRecipe;
 
@@ -11,7 +11,7 @@ import com.platenplatter.model.SavedRecipe;
  * Recursive case: its own time plus the total of each sub-recipe, to any depth.
  *
  * A loop in the tree (a recipe inside itself) can never be built: SavedRecipe.addSubRecipe
- * asks wouldCreateCycle first and throws CircularRecipeException. So these walks always end.
+ * checks SavedRecipe.contains first and throws CircularRecipeException. So these walks always end.
  */
 public final class RecipeCalculator {
     private RecipeCalculator() { }
@@ -32,7 +32,6 @@ public final class RecipeCalculator {
 
     /** True when sub is the parent itself or already contains it at any depth. */
     public static boolean wouldCreateCycle(SavedRecipe parent, SavedRecipe sub) {
-        return sub == parent || sub.getSubRecipes().stream()
-                .anyMatch(inner -> wouldCreateCycle(parent, inner));
+        return sub == parent || sub.contains(parent);      // SavedRecipe.contains is recursive too
     }
 }

@@ -1,7 +1,7 @@
 package com.platenplatter.ui;
 
-import com.platenplatter.util.CsvRecipeParser;
-import com.platenplatter.util.PlanStore;
+import com.platenplatter.db.PlanStore;
+import com.platenplatter.service.CsvRecipeParser;
 import java.io.File;
 import java.util.List;
 import java.util.stream.IntStream;

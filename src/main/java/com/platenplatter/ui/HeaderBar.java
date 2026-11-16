@@ -1,9 +1,9 @@
 package com.platenplatter.ui;
 
+import com.platenplatter.db.PlanStore;
 import com.platenplatter.model.PlannedMeal;
 import com.platenplatter.model.PrepTier;
-import com.platenplatter.util.PlanStore;
-import com.platenplatter.util.StreakCalculator;
+import com.platenplatter.service.StreakCalculator;
 import com.platenplatter.util.TextFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;

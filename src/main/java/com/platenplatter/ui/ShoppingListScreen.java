@@ -2,12 +2,12 @@ package com.platenplatter.ui;
 
 import com.platenplatter.api.MealData;
 import com.platenplatter.api.MealDbClient;
+import com.platenplatter.db.PlanStore;
 import com.platenplatter.model.FoodGroup;
 import com.platenplatter.model.IngredientAmount;
 import com.platenplatter.model.PlannedMeal;
+import com.platenplatter.service.ShoppingList;
 import com.platenplatter.service.StatisticsService;
-import com.platenplatter.util.PlanStore;
-import com.platenplatter.util.ShoppingList;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;

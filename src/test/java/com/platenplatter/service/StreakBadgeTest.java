@@ -1,4 +1,4 @@
-package com.platenplatter.util;
+package com.platenplatter.service;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;

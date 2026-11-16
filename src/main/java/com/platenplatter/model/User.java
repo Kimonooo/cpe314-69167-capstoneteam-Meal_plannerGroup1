@@ -14,7 +14,8 @@ public class User {
     private final String gender;
     private final String securityQuestion;
 
-    public User(long userId, String username, String displayName, int age, String gender, String securityQuestion) {
+    public User(long userId, String username, String displayName, int age, String gender,
+            String securityQuestion) {
         this.userId = userId;
         this.username = username;
         this.displayName = displayName;

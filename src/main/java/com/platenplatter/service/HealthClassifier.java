@@ -1,4 +1,4 @@
-package com.platenplatter.util;
+package com.platenplatter.service;
 
 import com.platenplatter.model.HealthyLevel;
 import com.platenplatter.model.MealSlot;
@@ -13,7 +13,8 @@ import com.platenplatter.model.MealSlot;
  *   Indulgent = more than that                   (lunch: over 975 kcal)
  *
  * When the calories are unknown (0), TheMealDB category is used instead, the same rule as the
- * design document: Vegetarian, Vegan and Seafood are Healthy, Dessert is Indulgent, the rest Moderate.
+ * design document: Vegetarian, Vegan and Seafood are Healthy, Dessert is Indulgent, the rest
+ * Moderate.
  * The user can always pick a different level on the Recipes tab; this is only the automatic choice.
  */
 public final class HealthClassifier {
@@ -46,7 +47,8 @@ public final class HealthClassifier {
             return HealthyLevel.MODERATE;
         }
         String c = category.trim();
-        if (c.equalsIgnoreCase("Vegetarian") || c.equalsIgnoreCase("Vegan") || c.equalsIgnoreCase("Seafood")) {
+        if (c.equalsIgnoreCase("Vegetarian") || c.equalsIgnoreCase("Vegan")
+                || c.equalsIgnoreCase("Seafood")) {
             return HealthyLevel.HEALTHY;
         }
         if (c.equalsIgnoreCase("Dessert")) {
@@ -59,7 +61,8 @@ public final class HealthClassifier {
     public static String explain(int calories, MealSlot slot, String category) {
         MealSlot s = slot == null ? MealSlot.defaultFor(category) : slot;
         if (calories > 0) {
-            return calories + " kcal vs " + s.getCalorieBudget() + " kcal budget for " + s.getLabel();
+            return calories + " kcal vs " + s.getCalorieBudget() + " kcal budget for "
+                    + s.getLabel();
         }
         return "no calories given, so it follows the recipe type";
     }

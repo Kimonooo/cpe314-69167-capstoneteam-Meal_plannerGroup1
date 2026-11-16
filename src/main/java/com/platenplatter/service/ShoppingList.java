@@ -1,4 +1,4 @@
-package com.platenplatter.util;
+package com.platenplatter.service;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
@@ -21,7 +21,8 @@ import java.util.stream.Collector;
 /**
  * Builds the shopping list from the ingredient amounts of the planned meals.
  * The user chooses ONE recipe and gets only that recipe's ingredients, or chooses
- * "All planned recipes", where the same ingredient from two recipes is listed once with both measures.
+ * "All planned recipes", where the same ingredient from two recipes is listed once with both
+ * measures.
  */
 public final class ShoppingList {
     private ShoppingList() { }
@@ -37,21 +38,29 @@ public final class ShoppingList {
     /** The choice that puts every planned recipe on one list. */
     public static final RecipeChoice ALL_RECIPES = new RecipeChoice(0, "All planned recipes");
 
-    /** The recipes of the planned meals, A to Z, each one once even when it is planned on several days. */
+    /**
+     * The recipes of the planned meals, A to Z, each one once even when it is planned on several
+     * days.
+     */
     public static List<RecipeChoice> recipeChoices(List<PlannedMeal> meals) {
         return meals.stream()
-                .map(meal -> new RecipeChoice(meal.getRecipe().getSavedRecipeId(), meal.getRecipeName()))
+                .map(meal -> new RecipeChoice(meal.getRecipe().getSavedRecipeId(),
+                        meal.getRecipeName()))
                 .distinct()
-                .sorted(Comparator.comparing((RecipeChoice choice) -> choice.name(), String.CASE_INSENSITIVE_ORDER))
+                .sorted(Comparator.comparing((RecipeChoice choice) -> choice.name(),
+                        String.CASE_INSENSITIVE_ORDER))
                 .toList();
     }
 
     /**
      * Only the ingredient amounts of one recipe. A recipe planned on two days comes back from the
-     * database twice, so each amount is kept once: cooking it twice does not show "garlic (3 cloves, 3 cloves)".
+     * database twice, so each amount is kept once: cooking it twice does not show "garlic (3
+     * cloves, 3 cloves)".
      */
-    public static List<IngredientAmount> forRecipe(List<IngredientAmount> items, long savedRecipeId) {
-        return distinct(items.stream().filter(item -> item.getSavedRecipeId() == savedRecipeId).toList());
+    public static List<IngredientAmount> forRecipe(List<IngredientAmount> items,
+            long savedRecipeId) {
+        return distinct(items.stream().filter(item -> item.getSavedRecipeId() == savedRecipeId)
+                .toList());
     }
 
     /**
@@ -88,8 +97,10 @@ public final class ShoppingList {
     }
 
     /** The planned recipes that have no ingredients saved yet (sorted, no repeats). */
-    public static List<String> missingRecipes(List<PlannedMeal> meals, List<IngredientAmount> items) {
-        Set<Long> withIngredients = items.stream().map(IngredientAmount::getSavedRecipeId).collect(toSet());
+    public static List<String> missingRecipes(List<PlannedMeal> meals,
+            List<IngredientAmount> items) {
+        Set<Long> withIngredients = items.stream().map(IngredientAmount::getSavedRecipeId)
+                .collect(toSet());
         return meals.stream()
                 .filter(meal -> !withIngredients.contains(meal.getRecipe().getSavedRecipeId()))
                 .map(PlannedMeal::getRecipeName)
@@ -107,7 +118,8 @@ public final class ShoppingList {
     /** The whole list as plain text, for Copy and Save. */
     public static String asText(Map<FoodGroup, Map<String, List<String>>> list) {
         return list.entrySet().stream()
-                .map(group -> group.getKey().getLabel() + "\n" + group.getValue().entrySet().stream()
+                .map(group -> group.getKey().getLabel() + "\n"
+                        + group.getValue().entrySet().stream()
                         .map(item -> "  [ ] " + line(item.getKey(), item.getValue()))
                         .collect(joining("\n")))
                 .collect(joining("\n\n"));

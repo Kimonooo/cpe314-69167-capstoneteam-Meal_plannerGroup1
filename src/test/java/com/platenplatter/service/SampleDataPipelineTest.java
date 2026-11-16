@@ -1,9 +1,8 @@
-package com.platenplatter.util;
+package com.platenplatter.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.platenplatter.model.PlannedMeal;
-import com.platenplatter.service.StatisticsService;
 import com.platenplatter.service.StatisticsService.Grouping;
 import java.io.IOException;
 import java.nio.file.Files;

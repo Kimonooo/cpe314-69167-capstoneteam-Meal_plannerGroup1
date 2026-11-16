@@ -47,10 +47,14 @@ public final class StatisticsService {
             return label;
         }
 
-        /** The names of the bars, always in the same order (for example Healthy, Moderate, Indulgent). */
+        /**
+         * The names of the bars, always in the same order (for example Healthy, Moderate,
+         * Indulgent).
+         */
         public List<String> seriesNames() {
             return switch (this) {
-                case HEALTHY_LEVEL -> Arrays.stream(HealthyLevel.values()).map(HealthyLevel::getLabel).toList();
+                case HEALTHY_LEVEL -> Arrays.stream(HealthyLevel.values())
+                        .map(HealthyLevel::getLabel).toList();
                 case PREP_TIME -> Arrays.stream(PrepTier.values()).map(PrepTier::getLabel).toList();
                 case MEAL_SLOT -> Arrays.stream(MealSlot.values()).map(MealSlot::getLabel).toList();
             };
@@ -98,7 +102,8 @@ public final class StatisticsService {
     }
 
     /** For all time: Mon ... Sun -> (group -> number of meals). */
-    public static Map<String, Map<String, Long>> countByWeekday(List<PlannedMeal> meals, Grouping grouping) {
+    public static Map<String, Map<String, Long>> countByWeekday(List<PlannedMeal> meals,
+            Grouping grouping) {
         Map<DayOfWeek, Map<String, Long>> counted = meals.stream()
                 .collect(groupingBy(m -> m.getPlanDate().getDayOfWeek(),
                          groupingBy(grouping::seriesOf, counting())));
@@ -110,18 +115,24 @@ public final class StatisticsService {
 
     /** Number of meals per group, for the breakdown panel. */
     public static Map<String, Long> totals(List<PlannedMeal> meals, Grouping grouping) {
-        return grouping.withZeros(meals.stream().collect(groupingBy(grouping::seriesOf, counting())));
+        return grouping.withZeros(meals.stream()
+                .collect(groupingBy(grouping::seriesOf, counting())));
     }
 
     /** Healthy meals divided by all meals; NaN when there are none (the card shows a dash). */
     public static double healthyShare(List<PlannedMeal> meals) {
         return meals.isEmpty() ? Double.NaN
-                : (double) meals.stream().filter(m -> m.getHealthyLevel() == HealthyLevel.HEALTHY).count() / meals.size();
+                : (double) meals.stream().filter(m -> m.getHealthyLevel() == HealthyLevel.HEALTHY)
+                        .count() / meals.size();
     }
 
-    /** Average calories, only over meals whose calories are known (more than 0). 0 when none are known. */
+    /**
+     * Average calories, only over meals whose calories are known (more than 0). 0 when none are
+     * known.
+     */
     public static double averageCalories(List<PlannedMeal> meals) {
-        return meals.stream().mapToInt(PlannedMeal::getCalories).filter(c -> c > 0).average().orElse(0);
+        return meals.stream().mapToInt(PlannedMeal::getCalories).filter(c -> c > 0).average()
+                .orElse(0);
     }
 
     public static int totalCalories(List<PlannedMeal> meals) {
@@ -142,16 +153,22 @@ public final class StatisticsService {
     public static Map<LocalDate, HealthyLevel> levelByDay(List<PlannedMeal> meals) {
         return meals.stream()
                 .collect(groupingBy(PlannedMeal::getPlanDate, TreeMap::new,
-                         groupingBy(PlannedMeal::getHealthyLevel, () -> new EnumMap<>(HealthyLevel.class), counting())))
+                         groupingBy(PlannedMeal::getHealthyLevel,
+                                 () -> new EnumMap<>(HealthyLevel.class), counting())))
                 .entrySet().stream()
-                .collect(toMap(Map.Entry::getKey, day -> dominant(day.getValue()), (a, b) -> a, TreeMap::new));
+                .collect(toMap(Map.Entry::getKey, day -> dominant(day.getValue()), (a, b) -> a,
+                        TreeMap::new));
     }
 
-    /** The level with the most meals; a tie goes to the LESS healthy level (null when there are none). */
+    /**
+     * The level with the most meals; a tie goes to the LESS healthy level (null when there are
+     * none).
+     */
     public static HealthyLevel dominant(Map<HealthyLevel, Long> counts) {
         return Arrays.stream(HealthyLevel.values())
                 .filter(level -> counts.getOrDefault(level, 0L) > 0)
-                .max(Comparator.comparingLong((HealthyLevel level) -> counts.getOrDefault(level, 0L))
+                .max(Comparator.comparingLong((HealthyLevel level) -> counts.getOrDefault(level,
+                        0L))
                         .thenComparingInt(HealthyLevel::ordinal))
                 .orElse(null);
     }
