@@ -60,13 +60,15 @@ class StreakCalculatorTest {
     @Test
     void weekFlagsMarkTheDaysOfThisWeekMondayFirst() {
         // today is Wednesday 4 Nov; Monday is 2 Nov
-        assertEquals(List.of(true, false, true, false, false, false, false), StreakCalculator.weekFlags(days(0, 2), TODAY));
+        assertEquals(List.of(true, false, true, false, false, false, false),
+                StreakCalculator.weekFlags(days(0, 2), TODAY));
     }
 
     @Test
     void bestStreakIgnoresDaysThatHaveNotHappenedYet() {
         // planned: yesterday, today and the 5 days AFTER today
-        Set<LocalDate> set = IntStream.rangeClosed(-1, 5).mapToObj(TODAY::plusDays).collect(Collectors.toSet());
+        Set<LocalDate> set = IntStream.rangeClosed(-1, 5).mapToObj(TODAY::plusDays)
+                .collect(Collectors.toSet());
         assertEquals(7, StreakCalculator.longest(set));          // every day counted
         assertEquals(2, StreakCalculator.longest(set, TODAY));   // only yesterday and today count
         assertEquals(0, StreakCalculator.longest(null, TODAY));

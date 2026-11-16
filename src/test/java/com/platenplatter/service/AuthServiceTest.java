@@ -56,25 +56,35 @@ class AuthServiceTest {
     void aWrongPasswordOrUnknownUserGivesTheSameMessage() throws Exception {
         registerAna();
         AuthException wrong = assertThrows(AuthException.class, () -> auth.login("ana", "secret2"));
-        AuthException unknown = assertThrows(AuthException.class, () -> auth.login("nobody", "secret1"));
+        AuthException unknown = assertThrows(AuthException.class, () -> auth.login("nobody",
+                "secret1"));
         assertEquals(wrong.getMessage(), unknown.getMessage());
     }
 
     @Test
     void signUpRulesAreChecked() {
-        assertThrows(AuthException.class, () -> auth.register("", "ana", "20", "F", "secret1", "secret1", PET, "x"));
-        assertThrows(AuthException.class, () -> auth.register("Ana", "a b", "20", "F", "secret1", "secret1", PET, "x"));
-        assertThrows(AuthException.class, () -> auth.register("Ana", "ana", "abc", "F", "secret1", "secret1", PET, "x"));
-        assertThrows(AuthException.class, () -> auth.register("Ana", "ana", "121", "F", "secret1", "secret1", PET, "x"));
-        assertThrows(AuthException.class, () -> auth.register("Ana", "ana", "20", "F", "short", "short", PET, "x"));
-        assertThrows(AuthException.class, () -> auth.register("Ana", "ana", "20", "F", "secret1", "secret2", PET, "x"));
+        assertThrows(AuthException.class, () -> auth.register("", "ana", "20", "F", "secret1",
+                "secret1", PET, "x"));
+        assertThrows(AuthException.class, () -> auth.register("Ana", "a b", "20", "F", "secret1",
+                "secret1", PET, "x"));
+        assertThrows(AuthException.class, () -> auth.register("Ana", "ana", "abc", "F", "secret1",
+                "secret1", PET, "x"));
+        assertThrows(AuthException.class, () -> auth.register("Ana", "ana", "121", "F", "secret1",
+                "secret1", PET, "x"));
+        assertThrows(AuthException.class, () -> auth.register("Ana", "ana", "20", "F", "short",
+                "short", PET, "x"));
+        assertThrows(AuthException.class, () -> auth.register("Ana", "ana", "20", "F", "secret1",
+                "secret2", PET, "x"));
     }
 
     @Test
     void aSecurityQuestionAndAnswerAreRequired() {
-        assertThrows(AuthException.class, () -> auth.register("Ana", "ana", "20", "F", "secret1", "secret1", null, "x"));
-        assertThrows(AuthException.class, () -> auth.register("Ana", "ana", "20", "F", "secret1", "secret1", "My own question?", "x"));
-        assertThrows(AuthException.class, () -> auth.register("Ana", "ana", "20", "F", "secret1", "secret1", PET, "   "));
+        assertThrows(AuthException.class, () -> auth.register("Ana", "ana", "20", "F", "secret1",
+                "secret1", null, "x"));
+        assertThrows(AuthException.class, () -> auth.register("Ana", "ana", "20", "F", "secret1",
+                "secret1", "My own question?", "x"));
+        assertThrows(AuthException.class, () -> auth.register("Ana", "ana", "20", "F", "secret1",
+                "secret1", PET, "   "));
     }
 
     @Test
@@ -107,13 +117,15 @@ class AuthServiceTest {
         registerAna();
         auth.resetPassword("ana", " BANTAY ", "newpass1", "newpass1");
         assertEquals("Ana", auth.login("ana", "newpass1").getDisplayName());
-        assertThrows(AuthException.class, () -> auth.login("ana", "secret1"));     // the old one stops working
+        // the old one stops working
+        assertThrows(AuthException.class, () -> auth.login("ana", "secret1"));
     }
 
     @Test
     void aWrongAnswerIsRefusedAndTheOldPasswordStillWorks() throws Exception {
         registerAna();
-        AuthException e = assertThrows(AuthException.class, () -> auth.resetPassword("ana", "Muning", "newpass1", "newpass1"));
+        AuthException e = assertThrows(AuthException.class, () -> auth.resetPassword("ana",
+                "Muning", "newpass1", "newpass1"));
         assertEquals("That answer does not match.", e.getMessage());
         assertEquals("Ana", auth.login("ana", "secret1").getDisplayName());
     }
@@ -121,9 +133,12 @@ class AuthServiceTest {
     @Test
     void theNewPasswordFollowsTheSameRules() throws Exception {
         registerAna();
-        assertThrows(AuthException.class, () -> auth.resetPassword("ana", "bantay", "      ", "      "));
-        assertThrows(AuthException.class, () -> auth.resetPassword("ana", "bantay", "newpass1", "newpass2"));
-        assertThrows(AuthException.class, () -> auth.resetPassword("nobody", "bantay", "newpass1", "newpass1"));
+        assertThrows(AuthException.class, () -> auth.resetPassword("ana", "bantay", "      ",
+                "      "));
+        assertThrows(AuthException.class, () -> auth.resetPassword("ana", "bantay", "newpass1",
+                "newpass2"));
+        assertThrows(AuthException.class, () -> auth.resetPassword("nobody", "bantay", "newpass1",
+                "newpass1"));
     }
 
     @Test
@@ -137,13 +152,14 @@ class AuthServiceTest {
         User ana = registerAna();
         auth.deleteAccount(ana, "secret1");
         assertThrows(AuthException.class, () -> auth.login("ana", "secret1"));
-        assertTrue(registerAna().getUserId() > 0);                  // the same username can sign up again
+        assertTrue(registerAna().getUserId() > 0); // the same username can sign up again
     }
 
     @Test
     void aWrongOrEmptyPasswordDeletesNothing() throws Exception {
         User ana = registerAna();
-        AuthException wrong = assertThrows(AuthException.class, () -> auth.deleteAccount(ana, "secret2"));
+        AuthException wrong = assertThrows(AuthException.class, () -> auth.deleteAccount(ana,
+                "secret2"));
         assertTrue(wrong.getMessage().contains("Nothing was deleted"));
         assertThrows(AuthException.class, () -> auth.deleteAccount(ana, ""));
         assertEquals("Ana", auth.login("ana", "secret1").getDisplayName());

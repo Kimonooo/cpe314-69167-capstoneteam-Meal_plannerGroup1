@@ -42,7 +42,8 @@ class FoodGroupTest {
 
     @Test
     void theSavedNameIsReadBackAndBadValuesBecomeOther() {
-        Arrays.stream(FoodGroup.values()).forEach(group -> assertEquals(group, FoodGroup.fromName(group.name())));
+        Arrays.stream(FoodGroup.values())
+                .forEach(group -> assertEquals(group, FoodGroup.fromName(group.name())));
         assertEquals(FoodGroup.OTHER, FoodGroup.fromName("AISLE_7"));
         assertEquals(FoodGroup.OTHER, FoodGroup.fromName(null));
         assertEquals("Herbs & Spices", FoodGroup.HERBS_SPICES.toString());

@@ -34,7 +34,8 @@ class MealSlotAndLevelTest {
 
     @Test
     void theFourBudgetsAddUpToATwoThousandCalorieDay() {
-        assertEquals(2000, Arrays.stream(MealSlot.values()).mapToInt(MealSlot::getCalorieBudget).sum());
+        assertEquals(2000, Arrays.stream(MealSlot.values()).mapToInt(MealSlot::getCalorieBudget)
+                .sum());
     }
 
     @Test

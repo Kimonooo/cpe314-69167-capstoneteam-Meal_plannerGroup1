@@ -58,8 +58,10 @@ class TextFormatTest {
 
     @Test
     void eachLineOfTheInstructionsIsOneStepAndItsOwnLabelIsRemoved() {
-        assertEquals(List.of("Boil the pasta.", "Fry the garlic.", "2 tablespoons of oil go in last."),
-                TextFormat.steps("STEP 1\r\nBoil the pasta.\r\n\r\nStep 2: Fry the garlic.\r\n3. 2 tablespoons of oil go in last."));
+        assertEquals(List.of("Boil the pasta.", "Fry the garlic.",
+                "2 tablespoons of oil go in last."),
+                TextFormat.steps("STEP 1\r\nBoil the pasta.\r\n\r\nStep 2: Fry the garlic.\r\n3. "
+                        + "2 tablespoons of oil go in last."));
     }
 
     @Test

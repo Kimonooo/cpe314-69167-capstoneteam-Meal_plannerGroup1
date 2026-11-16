@@ -22,7 +22,8 @@ class CalendarMathTest {
 
     @Test
     void rowsNeededRangeFromFourToSix() {
-        assertEquals(4, CalendarMath.weekRows(YearMonth.of(2027, 2)));   // Feb 2027: 28 days, starts Monday
+        // Feb 2027: 28 days, starts Monday
+        assertEquals(4, CalendarMath.weekRows(YearMonth.of(2027, 2)));
         assertEquals(5, CalendarMath.weekRows(YearMonth.of(2026, 6)));
         assertEquals(6, CalendarMath.weekRows(YearMonth.of(2026, 11)));  // Sunday start, 30 days
     }

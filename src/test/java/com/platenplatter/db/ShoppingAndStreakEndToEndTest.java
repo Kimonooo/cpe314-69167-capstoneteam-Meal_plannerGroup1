@@ -29,7 +29,9 @@ class ShoppingAndStreakEndToEndTest {
     void setUp() throws Exception {
         conn = DatabaseConnector.open("jdbc:sqlite::memory:");
         DatabaseConnector.createTables(conn);
-        User kim = new UserDao(conn).insertUser(new User(0, "kim", "Kim", 20, "F", AuthService.SECURITY_QUESTIONS.get(3)),
+        User kim = new UserDao(conn)
+                .insertUser(new User(0, "kim", "Kim", 20, "F",
+                AuthService.SECURITY_QUESTIONS.get(3)),
                 "secret1", "ucmain");
         dao = new MealPlanDao(conn, kim.getUserId());
     }
@@ -56,31 +58,39 @@ class ShoppingAndStreakEndToEndTest {
         LocalDate from = LocalDate.of(2026, 11, 2);
         LocalDate to = LocalDate.of(2026, 11, 6);
         assertTrue(dao.shoppingItems(from, to).isEmpty());
-        assertEquals(5, ShoppingList.missingRecipes(dao.mealsBetween(from, to), dao.shoppingItems(from, to)).size());
+        assertEquals(5, ShoppingList.missingRecipes(dao.mealsBetween(from, to),
+                dao.shoppingItems(from, to)).size());
     }
 
     @Test
     void theSameIngredientInTwoRecipesIsListedOnce() throws Exception {
-        plan("2026-11-03,Chicken Adobo,MainCourse,45", List.of(new IngredientAmount("Garlic", "1 head"),
+        plan("2026-11-03,Chicken Adobo,MainCourse,45",
+                List.of(new IngredientAmount("Garlic", "1 head"),
                 new IngredientAmount("Chicken", "1 kg")));
-        plan("2026-11-04,Garlic Rice,Breakfast,15", List.of(new IngredientAmount("garlic", "5 cloves")));
-        var list = ShoppingList.build(dao.shoppingItems(LocalDate.of(2026, 11, 3), LocalDate.of(2026, 11, 4)));
+        plan("2026-11-04,Garlic Rice,Breakfast,15",
+                List.of(new IngredientAmount("garlic", "5 cloves")));
+        var list = ShoppingList.build(dao.shoppingItems(LocalDate.of(2026, 11, 3),
+                LocalDate.of(2026, 11, 4)));
         assertEquals(2, ShoppingList.count(list));
         assertTrue(ShoppingList.asText(list).contains("garlic (1 head, 5 cloves)"));
     }
 
     @Test
     void aOneDayRangeOnlyUsesThatDaysMeals() throws Exception {
-        plan("2026-11-03,Chicken Adobo,MainCourse,45", List.of(new IngredientAmount("Chicken", "1 kg")));
+        plan("2026-11-03,Chicken Adobo,MainCourse,45",
+                List.of(new IngredientAmount("Chicken", "1 kg")));
         plan("2026-11-04,Leche Flan,Dessert,50", List.of(new IngredientAmount("Eggs", "10")));
-        assertEquals(1, dao.shoppingItems(LocalDate.of(2026, 11, 3), LocalDate.of(2026, 11, 3)).size());
+        assertEquals(1, dao.shoppingItems(LocalDate.of(2026, 11, 3),
+                LocalDate.of(2026, 11, 3)).size());
     }
 
     @Test
     void aMealRemovedFromThePlanDisappearsFromTheList() throws Exception {
-        plan("2026-11-03,Chicken Adobo,MainCourse,45", List.of(new IngredientAmount("Chicken", "1 kg")));
+        plan("2026-11-03,Chicken Adobo,MainCourse,45",
+                List.of(new IngredientAmount("Chicken", "1 kg")));
         dao.deleteMeal(dao.mealsOn(LocalDate.of(2026, 11, 3)).get(0).getPlannedMealId());
-        assertTrue(dao.shoppingItems(LocalDate.of(2026, 11, 3), LocalDate.of(2026, 11, 3)).isEmpty());
+        assertTrue(dao.shoppingItems(LocalDate.of(2026, 11, 3),
+                LocalDate.of(2026, 11, 3)).isEmpty());
     }
 
     @Test

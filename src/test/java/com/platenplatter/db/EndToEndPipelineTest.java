@@ -20,7 +20,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** CSV file -> parser -> the 5 tables -> query -> mined numbers, the whole path of the Import and Analytics pages. */
+/**
+ * CSV file -> parser -> the 5 tables -> query -> mined numbers, the whole path of the Import and
+ * Analytics pages.
+ */
 class EndToEndPipelineTest {
     private Connection conn;
     private MealPlanDao dao;
@@ -29,7 +32,9 @@ class EndToEndPipelineTest {
     void setUp() throws Exception {
         conn = DatabaseConnector.open("jdbc:sqlite::memory:");
         DatabaseConnector.createTables(conn);
-        User kim = new UserDao(conn).insertUser(new User(0, "kim", "Kim", 20, "F", AuthService.SECURITY_QUESTIONS.get(2)),
+        User kim = new UserDao(conn)
+                .insertUser(new User(0, "kim", "Kim", 20, "F",
+                AuthService.SECURITY_QUESTIONS.get(2)),
                 "secret1", "adobo");
         dao = new MealPlanDao(conn, kim.getUserId());
     }
@@ -61,9 +66,11 @@ class EndToEndPipelineTest {
         assertEquals(0, importFile("meal_history_demo.csv"));
         LocalDate monday = LocalDate.of(2026, 11, 2);
         List<PlannedMeal> week = dao.mealsBetween(monday, monday.plusDays(6));
-        Map<String, Map<String, Long>> table = StatisticsService.countByDay(week, monday, Grouping.HEALTHY_LEVEL);
+        Map<String, Map<String, Long>> table = StatisticsService.countByDay(week, monday,
+                Grouping.HEALTHY_LEVEL);
         assertEquals(24, week.size());
-        assertEquals(Map.of("Healthy", 14L, "Moderate", 6L, "Indulgent", 4L), StatisticsService.totals(week, Grouping.HEALTHY_LEVEL));
+        assertEquals(Map.of("Healthy", 14L, "Moderate", 6L, "Indulgent", 4L),
+                StatisticsService.totals(week, Grouping.HEALTHY_LEVEL));
         assertEquals(Map.of("Healthy", 3L, "Moderate", 1L, "Indulgent", 0L), table.get("Tue 3"));
         assertEquals("58%", String.format("%.0f%%", StatisticsService.healthyShare(week) * 100));
         assertEquals(48, dao.allMeals().size());
@@ -87,7 +94,8 @@ class EndToEndPipelineTest {
         long before = StatisticsService.totals(dao.allMeals(), Grouping.MEAL_SLOT).get("Breakfast");
         dao.saveMeal(CsvRecipeParser.parse("2026-11-07,Tapsilog,Breakfast,20"), List.of());
         dao.saveMeal(CsvRecipeParser.parse("2026-11-08,Champorado,Breakfast,25"), List.of());
-        assertEquals(before + 2, StatisticsService.totals(dao.allMeals(), Grouping.MEAL_SLOT).get("Breakfast"));
+        assertEquals(before + 2, StatisticsService.totals(dao.allMeals(),
+                Grouping.MEAL_SLOT).get("Breakfast"));
     }
 
     @Test
@@ -95,6 +103,8 @@ class EndToEndPipelineTest {
         List<PlannedMeal> none = dao.allMeals();
         assertTrue(none.isEmpty());
         assertTrue(Double.isNaN(StatisticsService.healthyShare(none)));
-        assertEquals(0L, StatisticsService.maxCount(StatisticsService.countByWeekday(none, Grouping.HEALTHY_LEVEL)));
+        assertEquals(0L,
+                StatisticsService.maxCount(StatisticsService.countByWeekday(none,
+                Grouping.HEALTHY_LEVEL)));
     }
 }
